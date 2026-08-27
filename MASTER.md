@@ -111,12 +111,15 @@ Hover (desktop): `--sombra-2`.
 
 **Chip / aba** — pill, `--veu` inativo, `--tinta` sobre `--papel` ativo.
 
-**Urna (hero)** — prisma CSS: três faces em `rotateY`, `--superficie` com
-sombra-2, fenda em `--tinta`, um voto (`--acao`) entrando. Flutua 6 s. Sob
-reduced-motion fica parada.
+**Urna (hero)** — a urna eletrônica brasileira em CSS: terminal cinza
+inclinado (`rotateX 28° / rotateY −18°`), tela verde-escura à esquerda com um
+número sendo digitado, teclado 3×4 com BRANCO, CORRIGE (laranja) e CONFIRMA
+(`--acao`). As cores do terminal são as do objeto real, não da paleta — são
+dado, como as cores de partido. Flutua 6 s; sob reduced-motion fica parada
+com o número já digitado.
 
 ## Logo
 
 Marca tipográfica: "Match" 800 + "Eleitoral" 500, Manrope, `--tinta`. Ícone: a
-urna em traço — retângulo `--tinta` com fenda, e um voto `--acao` entrando pela
-metade. SVG inline em `web/logo.svg`; favicon é o ícone sozinho.
+urna eletrônica em traço — terminal com tela à esquerda, quatro teclas à
+direita e o CONFIRMA em `--acao`. SVG inline em `web/logo.svg`; favicon é o ícone sozinho.

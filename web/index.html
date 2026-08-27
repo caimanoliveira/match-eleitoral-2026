@@ -16,12 +16,13 @@
 <header>
   <a class="marca" href="#/" title="Recomeçar">
     <svg class="marca-icone" viewBox="0 0 64 64" width="28" height="28" aria-hidden="true">
-      <rect x="10" y="26" width="44" height="30" rx="6" fill="none" stroke="currentColor" stroke-width="4"/>
-      <rect x="22" y="24" width="20" height="4" rx="2" fill="currentColor"/>
-      <g transform="rotate(-12 32 20)">
-        <rect x="23" y="8" width="18" height="16" rx="2" fill="var(--acao)"/>
-        <path d="M27 16.5l3.2 3.2 6-6.4" fill="none" stroke="var(--acao-tinta)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="6" y="14" width="52" height="36" rx="7" fill="none" stroke="currentColor" stroke-width="4"/>
+      <rect x="12" y="21" width="20" height="22" rx="2" fill="currentColor"/>
+      <g fill="currentColor">
+        <rect x="37" y="21" width="5" height="5" rx="1"/><rect x="45" y="21" width="5" height="5" rx="1"/>
+        <rect x="37" y="29" width="5" height="5" rx="1"/><rect x="45" y="29" width="5" height="5" rx="1"/>
       </g>
+      <rect x="37" y="37" width="13" height="6" rx="2" fill="var(--acao)"/>
     </svg>
     <span><b>Match</b> Eleitoral</span>
   </a>
@@ -37,13 +38,29 @@
         <p class="eyebrow">Eleições · 4 de outubro de 2026</p>
         <h1 class="display">Você vai escolher <em>cinco</em> pessoas na urna. Quantas você conhece?</h1>
       </div>
+      <!-- A urna eletrônica brasileira: terminal inclinado, tela à esquerda,
+           teclado numérico com BRANCO / CORRIGE / CONFIRMA. É o objeto em que
+           o eleitor digita o número da colinha. -->
       <div class="urna" aria-hidden="true">
-        <div class="urna-corpo">
-          <div class="face frente"><span class="fenda"></span></div>
-          <div class="face lado"></div>
-          <div class="face topo"></div>
+        <div class="ue">
+          <div class="ue-corpo">
+            <div class="ue-tela">
+              <span class="ue-tela-rot">SEU VOTO PARA</span>
+              <span class="ue-tela-cargo">Deputado Federal</span>
+              <span class="ue-tela-num"><i>1</i><i>3</i><i>1</i><i>3</i></span>
+            </div>
+            <div class="ue-teclado">
+              <span>1</span><span>2</span><span>3</span>
+              <span>4</span><span>5</span><span>6</span>
+              <span>7</span><span>8</span><span>9</span>
+              <span class="vazio"></span><span>0</span><span class="vazio"></span>
+              <span class="branco">BRANCO</span>
+              <span class="corrige">CORRIGE</span>
+              <span class="confirma">CONFIRMA</span>
+            </div>
+          </div>
+          <div class="ue-lado"></div>
         </div>
-        <div class="voto"><span></span></div>
         <div class="urna-sombra"></div>
       </div>
     </div>
