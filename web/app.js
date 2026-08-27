@@ -19,6 +19,8 @@ const FONTES = {
   "5": { rotulo: "Posição da bancada do partido", inferida: true },
 };
 
+const POR_PAGINA = 30;
+
 const app = document.getElementById("app");
 const estado = {
   uf: null,
@@ -28,20 +30,32 @@ const estado = {
   respostas: {},
   indice: 0,
   candidatos: {},   // cargo -> array
+  falhas: {},       // cargo -> mensagem, quando o shard não carregou
   cargoAtivo: null,
   escolhas: {},     // cargo -> id do candidato
   busca: "",
-  limite: 30,       // quantos candidatos a lista mostra por vez
+  limite: POR_PAGINA,
 };
 
 // ---------------------------------------------------------------- utilidades
 
 const tpl = (id) => document.getElementById(id).content.cloneNode(true);
-
-let soltarTeclado = null;
 const pct = (n) => `${Math.round(n * 100)}%`;
 
-function mostrar(node) {
+const normalizar = (s) =>
+  (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+
+const rotuloCargo = (c) => (CARGOS.find(([k]) => k === c) || [, c])[1];
+
+/** "Dep. Federal — RJ". O mesmo número pertence a pessoas diferentes em cada
+ *  estado (2288 é Carlos Jordy no RJ e Major Mecca em SP), então a UF precisa
+ *  viajar junto de qualquer coisa que mostre um número. Presidente é nacional. */
+const rotuloComUF = (c) =>
+  c === "presidente" ? rotuloCargo(c) : `${rotuloCargo(c)} — ${estado.uf}`;
+
+let soltarTeclado = null;
+
+function mostrar(node, { rolar = true } = {}) {
   // Toda troca de tela passa por aqui, então é aqui que o atalho de teclado da
   // tela anterior morre. Sem isso o ← do quiz continuaria ativo no resultado e
   // devolveria o eleitor ao questionário sem ele pedir.
@@ -49,8 +63,49 @@ function mostrar(node) {
     document.removeEventListener("keydown", soltarTeclado);
     soltarTeclado = null;
   }
+  // replaceChildren esvazia o <main> por um instante: a altura do documento
+  // colapsa e o navegador trunca o scroll para o novo máximo. Guardar e
+  // restaurar é o que de fato preserva a posição — só omitir o scrollTo não
+  // basta.
+  const y = window.scrollY;
   app.replaceChildren(node);
-  window.scrollTo(0, 0);
+  // `rolar: false` nas re-renderizações que não trocam de tela. Fixar um
+  // candidato no 20º lugar não pode jogar o eleitor de volta ao topo.
+  if (rolar) window.scrollTo(0, 0);
+  else window.scrollTo(0, y);
+  // Mandar o foco ao título da tela: sem isso o foco cai no <body> a cada
+  // ação e quem navega por teclado ou leitor de tela recomeça do cabeçalho.
+  const titulo = app.querySelector("h1, h2");
+  if (titulo) {
+    titulo.setAttribute("tabindex", "-1");
+    titulo.focus({ preventScroll: !rolar });
+  }
+}
+
+/** Região viva pequena e dedicada. O <main> inteiro como aria-live faria o
+ *  leitor de tela reler a página toda a cada resposta. */
+function anunciar(texto) {
+  let regiao = document.getElementById("anuncio");
+  if (!regiao) {
+    regiao = document.createElement("p");
+    regiao.id = "anuncio";
+    regiao.className = "sr";
+    regiao.setAttribute("aria-live", "polite");
+    document.body.append(regiao);
+  }
+  regiao.textContent = texto;
+}
+
+/** Atalhos da tela atual. `mostrar()` derruba o anterior a cada troca. */
+function teclado(handler) {
+  if (soltarTeclado) document.removeEventListener("keydown", soltarTeclado);
+  soltarTeclado = (ev) => {
+    if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+    const alvo = ev.target;
+    if (alvo && (alvo.tagName === "INPUT" || alvo.tagName === "SELECT")) return;
+    if (handler(ev)) ev.preventDefault();
+  };
+  document.addEventListener("keydown", soltarTeclado);
 }
 
 // Carimbo do build, anexado a toda URL de dados. Sem isso o navegador (ou um
@@ -61,6 +116,13 @@ function mostrar(node) {
 // agora na camada de cache HTTP.
 let carimbo = "";
 
+class HttpErro extends Error {
+  constructor(caminho, status) {
+    super(`${caminho}: ${status}`);
+    this.status = status;
+  }
+}
+
 async function carregarJSON(caminho, semCache = false) {
   const url = semCache
     ? `${caminho}?t=${Date.now()}`
@@ -68,7 +130,10 @@ async function carregarJSON(caminho, semCache = false) {
       ? `${caminho}?v=${carimbo}`
       : caminho;
   const r = await fetch(url, semCache ? { cache: "no-store" } : undefined);
-  if (!r.ok) throw new Error(`${caminho}: ${r.status}`);
+  // `status` distingue "esta UF não elege esse cargo" (404) de "a rede caiu"
+  // (fetch rejeita, ou 5xx). Tratar os dois igual fazia um cargo inteiro
+  // desaparecer em silêncio quando a conexão oscilava.
+  if (!r.ok) throw new HttpErro(caminho, r.status);
   return r.json();
 }
 
@@ -80,8 +145,11 @@ async function carregarJSON(caminho, semCache = false) {
 // metodologia — se um dia deixar de valer, o filtro entra aqui.
 const tesesDoEleitor = () => estado.teses;
 
+const respondidas = () =>
+  Object.values(estado.respostas).filter((r) => r && r.valor != null).length;
+
 // ------------------------------------------------------------------- estado
-// A colinha vive na URL para que o link compartilhado reabra a mesma escolha,
+// O estado vive na URL para que o link compartilhado reabra a mesma escolha,
 // sem backend e sem localStorage.
 
 function salvarNaURL() {
@@ -89,7 +157,8 @@ function salvarNaURL() {
   const respostas = estado.teses
     .map((t) => {
       const r = estado.respostas[t.id];
-      if (!r || r.valor === PULOU) return "x";
+      if (!r) return "x";                      // ainda não chegou nesta
+      if (r.valor === PULOU) return "p";       // pulou de propósito
       return { "1": "c", "0": "n", "-1": "d" }[String(r.valor)] + (r.importante ? "!" : "");
     })
     .join("");
@@ -98,7 +167,7 @@ function salvarNaURL() {
 }
 
 function lerDaURL() {
-  const m = location.hash.match(/^#\/r\/([a-f0-9]{6})\/([A-Z]{2})\/([cndx!]*)\/(.*)$/);
+  const m = location.hash.match(/^#\/r\/([a-f0-9]{6})\/([A-Z]{2})\/([cndxp!]*)\/(.*)$/);
   if (!m) return false;
   const [, versao, uf, respostas, ids] = m;
 
@@ -109,23 +178,37 @@ function lerDaURL() {
     console.warn("link de outra versão do questionário; recomeçando");
     return false;
   }
-  estado.uf = uf;
+  if (!UFS.includes(uf)) return false;
 
+  const lidas = {};
   let i = 0;
-  for (const tese of estado.teses) {
+  let primeiraSemResposta = null;
+  estado.teses.forEach((tese, k) => {
     const ch = respostas[i++];
-    if (ch === "x" || ch === undefined) continue;
+    if (ch === undefined || ch === "x") {
+      if (primeiraSemResposta === null) primeiraSemResposta = k;
+      return;
+    }
+    if (ch === "p") {
+      lidas[tese.id] = { valor: PULOU, importante: false };
+      return;
+    }
+    const valor = { c: 1, n: 0, d: -1 }[ch];
+    // Hash corrompida não vira resultado plausível: sem isto, `undefined`
+    // escorria para o cálculo e todos os percentuais viravam NaN.
+    if (valor === undefined) throw new RangeError("resposta inválida na URL");
     const importante = respostas[i] === "!";
     if (importante) i++;
-    estado.respostas[tese.id] = {
-      valor: { c: 1, n: 0, d: -1 }[ch],
-      importante,
-    };
-  }
+    lidas[tese.id] = { valor, importante };
+  });
+
+  estado.uf = uf;
+  estado.respostas = lidas;
+  estado.indice = primeiraSemResposta === null ? estado.teses.length : primeiraSemResposta;
   ids.split(".").forEach((id, k) => {
     if (id) estado.escolhas[CARGOS[k][0]] = id;
   });
-  return Object.keys(estado.respostas).length > 0;
+  return Object.keys(lidas).length > 0;
 }
 
 // -------------------------------------------------------------------- telas
@@ -136,13 +219,18 @@ function telaInicio() {
   sel.append(new Option("Selecione…", ""));
   UFS.forEach((uf) => sel.append(new Option(uf, uf)));
 
+  const erro = node.getElementById("erro-uf");
   node.getElementById("comecar").onclick = async (ev) => {
     if (!sel.value) {
+      // Antes o botão só dava focus() e nada aparecia: o eleitor tocava,
+      // nada acontecia, e ele não tinha como saber por quê.
+      erro.textContent = "Escolha seu estado para começar.";
+      sel.setAttribute("aria-invalid", "true");
       sel.focus();
       return;
     }
     ev.target.disabled = true;
-    ev.target.textContent = "Carregando…";
+    ev.target.textContent = "Carregando candidatos…";
     estado.uf = sel.value;
     await carregarCandidatos();
     estado.indice = 0;
@@ -156,18 +244,27 @@ async function carregarCandidatos() {
     c === "presidente" ? true : c === "deputado-distrital" ? estado.uf === "DF" :
     c === "deputado-estadual" ? estado.uf !== "DF" : true);
 
+  estado.falhas = {};
   const pares = await Promise.all(
     cargos.map(async ([cargo]) => {
       const uf = cargo === "presidente" ? "BR" : estado.uf;
       try {
         return [cargo, await carregarJSON(`data/${cargo}-${uf}.json`)];
-      } catch {
-        return [cargo, []]; // UF sem disputa para este cargo (ex.: governador no DF)
+      } catch (e) {
+        // 404 é resposta legítima: a UF não elege esse cargo. Qualquer outra
+        // coisa é falha, e sumir com o cargo esconderia do eleitor que existem
+        // candidatos que ele não está vendo.
+        if (!(e instanceof HttpErro) || e.status !== 404) {
+          estado.falhas[cargo] = e.message;
+        }
+        return [cargo, []];
       }
     })
   );
   estado.candidatos = Object.fromEntries(pares.filter(([, v]) => v.length));
-  estado.cargoAtivo = Object.keys(estado.candidatos)[0];
+  if (!estado.candidatos[estado.cargoAtivo]) {
+    estado.cargoAtivo = Object.keys(estado.candidatos)[0] || null;
+  }
 }
 
 function telaQuiz() {
@@ -190,28 +287,37 @@ function telaQuiz() {
   const check = node.querySelector(".importante input");
   const anterior = estado.respostas[tese.id];
   check.checked = anterior?.importante || false;
+  // Gravar no próprio change: antes o peso só era lido no clique da resposta,
+  // então marcar "muito importante" depois de responder — ou antes de usar
+  // Voltar/Pular — não surtia efeito nenhum.
+  check.onchange = () => {
+    const r = estado.respostas[tese.id];
+    if (r) {
+      r.importante = check.checked;
+      salvarNaURL();
+    }
+  };
 
   node.querySelectorAll(".resp").forEach((btn) => {
     const valor = Number(btn.dataset.valor);
-    if (anterior && anterior.valor === valor) btn.classList.add("escolhida");
+    const escolhida = anterior && anterior.valor === valor;
+    if (escolhida) btn.classList.add("escolhida");
+    btn.setAttribute("aria-pressed", escolhida ? "true" : "false");
     btn.onclick = () => {
       estado.respostas[tese.id] = { valor, importante: check.checked };
       estado.indice++;
+      salvarNaURL();
       telaQuiz();
     };
   });
 
   // Com 34 afirmações, obrigar a responder tudo antes de ver qualquer coisa é
-  // o caminho mais curto para o eleitor desistir no meio. A partir de umas
-  // poucas respostas o ranking já é informativo, então oferecemos a saída —
-  // dizendo quantas ele respondeu, para o número não parecer mais firme do que é.
-  const respondidas = Object.values(estado.respostas).filter(
-    (r) => r && r.valor !== PULOU
-  ).length;
+  // o caminho mais curto para o eleitor desistir no meio.
+  const n = respondidas();
   const parcial = node.getElementById("ver-parcial");
-  if (respondidas >= 5 && estado.indice < teses.length - 1) {
+  if (n >= 5 && estado.indice < teses.length - 1) {
     parcial.hidden = false;
-    parcial.textContent = `Ver meus candidatos agora (${respondidas} de ${teses.length} respondidas)`;
+    parcial.textContent = `Ver meus candidatos agora (${n} de ${teses.length} respondidas)`;
     parcial.onclick = telaResultado;
   }
 
@@ -221,13 +327,22 @@ function telaQuiz() {
     estado.indice--;
     telaQuiz();
   };
-  node.getElementById("pular").onclick = () => {
-    estado.respostas[tese.id] = { valor: PULOU, importante: false };
+
+  const pular = node.getElementById("pular");
+  // "Pular" apagava em silêncio uma resposta já dada. Se há resposta, o botão
+  // só avança.
+  pular.textContent = anterior && anterior.valor !== PULOU ? "Avançar" : "Pular esta";
+  pular.onclick = () => {
+    if (!anterior || anterior.valor === PULOU) {
+      estado.respostas[tese.id] = { valor: PULOU, importante: false };
+    }
     estado.indice++;
+    salvarNaURL();
     telaQuiz();
   };
 
   mostrar(node);
+  anunciar(`Afirmação ${estado.indice + 1} de ${teses.length}. ${tese.texto}`);
 
   // Responder 34 afirmações a mouse é lento. As teclas seguem a ordem visual
   // dos botões, então não há nada a decorar.
@@ -252,137 +367,190 @@ function telaQuiz() {
   });
 }
 
-/** Atalhos da tela atual. `mostrar()` derruba o anterior a cada troca. */
-function teclado(handler) {
-  if (soltarTeclado) document.removeEventListener("keydown", soltarTeclado);
-  soltarTeclado = (ev) => {
-    if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
-    const alvo = ev.target;
-    if (alvo && (alvo.tagName === "INPUT" || alvo.tagName === "SELECT")) return;
-    if (handler(ev)) ev.preventDefault();
-  };
-  document.addEventListener("keydown", soltarTeclado);
-}
-
-function telaResultado() {
+function telaResultado({ rolar = true } = {}) {
   salvarNaURL();
   const node = tpl("tpl-resultado");
   node.getElementById("bussola").append(desenharBussola());
 
+  const teses = tesesDoEleitor();
+  const faltam = teses.length - respondidas();
+  const cabecalho = node.querySelector("h1");
+  if (faltam > 0) {
+    cabecalho.textContent = "Seus candidatos — resultado parcial";
+    const nota = node.getElementById("nota-parcial");
+    nota.hidden = false;
+    nota.textContent =
+      `Baseado em ${respondidas()} de ${teses.length} afirmações. ` +
+      `Quanto mais você responder, mais o resultado separa os candidatos.`;
+    const continuar = node.getElementById("continuar");
+    continuar.hidden = false;
+    continuar.textContent = `Continuar respondendo (faltam ${faltam})`;
+    continuar.onclick = () => {
+      const i = teses.findIndex((t) => !estado.respostas[t.id]);
+      estado.indice = i === -1 ? 0 : i;
+      telaQuiz();
+    };
+  }
+
   const abas = node.getElementById("abas");
   let abaAtiva = null;
-  for (const [cargo, rotulo] of CARGOS) {
+  for (const [cargo] of CARGOS) {
     if (!estado.candidatos[cargo]?.length) continue;
     const b = document.createElement("button");
-    b.textContent = rotulo;
+    b.textContent = rotuloComUF(cargo);
     b.className = cargo === estado.cargoAtivo ? "aba ativa" : "aba";
+    b.setAttribute("aria-current", cargo === estado.cargoAtivo ? "true" : "false");
     if (cargo === estado.cargoAtivo) abaAtiva = b;
     b.onclick = () => {
       estado.cargoAtivo = cargo;
       estado.busca = "";
-      estado.limite = 30;
+      estado.limite = POR_PAGINA;
       telaResultado();
     };
     abas.append(b);
   }
 
-  const lista = node.getElementById("lista");
-  const teses = tesesDoEleitor();
-  const completo = ranquear(estado.respostas, teses, estado.candidatos[estado.cargoAtivo] || []);
-
-  // Busca: o eleitor chega querendo saber onde ficou UM candidato específico,
-  // e sem isso ele só alcança os 30 primeiros — nem consegue pôr o próprio
-  // candidato na colinha se ele estiver em 45º.
-  const alvo = normalizar(estado.busca);
-  const ranking = alvo
-    ? completo.filter(
-        (r) => normalizar(r.candidato.n).includes(alvo) || r.candidato.num.startsWith(alvo)
-      )
-    : completo;
+  // Cargo que não carregou não pode simplesmente sumir: o eleitor não teria
+  // como saber que existem candidatos fora da tela.
+  const falhou = Object.keys(estado.falhas);
+  if (falhou.length) {
+    const aviso = node.getElementById("falha-carga");
+    aviso.hidden = false;
+    aviso.textContent =
+      `Não consegui carregar ${falhou.map(rotuloComUF).join(", ")}. ` +
+      `Sua conexão pode ter oscilado.`;
+    const tentar = document.createElement("button");
+    tentar.className = "secundario";
+    tentar.textContent = "Tentar de novo";
+    tentar.onclick = async () => {
+      tentar.disabled = true;
+      tentar.textContent = "Carregando…";
+      await carregarCandidatos();
+      telaResultado();
+    };
+    aviso.append(document.createElement("br"), tentar);
+  }
 
   const campo = node.getElementById("busca");
   campo.value = estado.busca;
+  // A caixa fica de fora do que é redesenhado: antes ela era recriada a cada
+  // tecla e o cursor pulava para o fim do texto.
   campo.oninput = () => {
     estado.busca = campo.value;
-    estado.limite = 30;
-    const foco = document.activeElement === campo;
-    telaResultado();
-    if (foco) {
-      const novo = document.getElementById("busca");
-      novo.focus();
-      novo.setSelectionRange(novo.value.length, novo.value.length);
-    }
+    estado.limite = POR_PAGINA;
+    renderLista();
   };
 
-  // Quantos candidatos do mesmo partido estão na disputa: é o tamanho do grupo
-  // que herda exatamente a mesma posição quando não há voto próprio.
-  const porPartido = {};
-  ranking.forEach((r) => {
-    porPartido[r.candidato.p] = (porPartido[r.candidato.p] || 0) + 1;
-  });
-
-  const empatados = ranking.filter((r) => r.score === ranking[0]?.score).length;
-  if (empatados > 3) {
-    const aviso = document.createElement("p");
-    aviso.className = "empate";
-    aviso.innerHTML =
-      `<b>${empatados} candidatos empatam no primeiro lugar.</b> Para a maioria deles ` +
-      `a posição vem da bancada do partido, não de voto individual — então candidatos ` +
-      `do mesmo partido ficam idênticos aqui. A ordem entre empatados é sorteada, e ` +
-      `não é uma recomendação. Abra “por quê” para ver de onde vem cada posição.`;
-    lista.before(aviso);
-  }
-
-  ranking.slice(0, estado.limite).forEach((r) => lista.append(itemCandidato(r, porPartido)));
-
+  const lista = node.getElementById("lista");
   const mais = node.getElementById("mais");
-  if (ranking.length > estado.limite) {
-    mais.hidden = false;
-    const restam = ranking.length - estado.limite;
-    mais.textContent = `Mostrar mais ${Math.min(30, restam)} (de ${restam} restantes)`;
-    mais.onclick = () => {
-      estado.limite += 30;
-      telaResultado();
-    };
+  const rodape = node.getElementById("rodape-fonte");
+  const avisos = node.getElementById("avisos-lista");
+
+  function renderLista() {
+    const universo = estado.candidatos[estado.cargoAtivo] || [];
+    const completo = ranquear(estado.respostas, teses, universo);
+
+    const alvo = normalizar(estado.busca);
+    const visiveis = alvo
+      ? completo.filter(
+          (r) => normalizar(r.candidato.n).includes(alvo) || r.candidato.num.startsWith(alvo)
+        )
+      : completo;
+
+    // Contagens SEMPRE sobre o universo do cargo, nunca sobre o filtro da
+    // busca. Calculá-las sobre a lista filtrada fazia buscar um candidato
+    // apagar justamente os dois avisos que dizem que o percentual é do
+    // partido — o oposto do que o projeto promete.
+    const porPartido = {};
+    for (const r of completo) {
+      if (soPosicaoDoPartido(r.detalhe)) {
+        porPartido[r.candidato.p] = (porPartido[r.candidato.p] || 0) + 1;
+      }
+    }
+    const empatados = completo.filter((r) => r.score === completo[0]?.score).length;
+
+    avisos.replaceChildren();
+    if (empatados > 3 && !alvo) {
+      const aviso = document.createElement("p");
+      aviso.className = "empate";
+      aviso.innerHTML =
+        `<b>${empatados} candidatos empatam no primeiro lugar.</b> Para a maioria deles ` +
+        `a posição vem da bancada do partido, não de voto individual — então candidatos ` +
+        `do mesmo partido ficam idênticos aqui. A ordem entre empatados é sorteada, e ` +
+        `não é uma recomendação. Abra “por quê” para ver de onde vem cada posição.`;
+      avisos.append(aviso);
+    }
+    if (alvo && !visiveis.length) {
+      const vazio = document.createElement("p");
+      vazio.className = "aviso";
+      vazio.textContent =
+        `Nenhum candidato a ${rotuloComUF(estado.cargoAtivo)} com “${estado.busca}” ` +
+        `pôde ser comparado com suas respostas. Ele pode estar concorrendo por um ` +
+        `partido sem registro de posição, ou em outro cargo.`;
+      avisos.append(vazio);
+    }
+
+    lista.replaceChildren();
+    visiveis.slice(0, estado.limite).forEach((r) => lista.append(itemCandidato(r, porPartido)));
+
+    const restam = visiveis.length - estado.limite;
+    mais.hidden = restam <= 0;
+    if (restam > 0) {
+      mais.textContent = `Mostrar mais ${Math.min(POR_PAGINA, restam)} (de ${restam} restantes)`;
+      mais.onclick = () => {
+        estado.limite += POR_PAGINA;
+        renderLista();
+      };
+    }
+
+    // Duas causas distintas para um candidato ficar de fora, e antes o rodapé
+    // culpava sempre a falta de dados — inclusive quando quem não respondeu
+    // foi o eleitor.
+    const semRegistroAlgum = universo.filter((c) => [...c.src].every((s) => s === "?")).length;
+    const semTeseEmComum = universo.length - completo.length - semRegistroAlgum;
+    rodape.textContent = [
+      alvo
+        ? `${visiveis.length} de ${universo.length} candidatos a ` +
+          `${rotuloComUF(estado.cargoAtivo)} para “${estado.busca}”.`
+        : visiveis.length > estado.limite
+          ? `Mostrando ${estado.limite} de ${universo.length} candidatos a ${rotuloComUF(estado.cargoAtivo)}.`
+          : `${universo.length} candidatos a ${rotuloComUF(estado.cargoAtivo)}.`,
+      semRegistroAlgum > 0
+        ? `${semRegistroAlgum} não têm registro de posição sobre nenhum tema.`
+        : "",
+      semTeseEmComum > 0
+        ? `${semTeseEmComum} não puderam ser comparados com as afirmações que você respondeu.`
+        : "",
+      idadeDaFonte(),
+    ].filter(Boolean).join(" ");
+
+    if (alvo) anunciar(`${visiveis.length} candidatos encontrados.`);
   }
 
-  if (alvo && !ranking.length) {
-    const vazio = document.createElement("p");
-    vazio.className = "aviso";
-    vazio.textContent =
-      `Nenhum candidato a ${rotuloCargo(estado.cargoAtivo)} com “${estado.busca}” ` +
-      `pôde ser comparado com suas respostas. Ele pode estar concorrendo por um ` +
-      `partido sem registro de posição, ou em outro cargo.`;
-    lista.before(vazio);
-  }
-
-  const total = estado.candidatos[estado.cargoAtivo]?.length || 0;
-  const mostrados = Math.min(estado.limite, ranking.length);
-  const semDados = total - completo.length;
-  node.getElementById("rodape-fonte").textContent = [
-    total > mostrados
-      ? `Mostrando ${mostrados} de ${total} candidatos ao cargo.`
-      : `${total} candidatos ao cargo.`,
-    semDados > 0
-      ? `${semDados} ficaram de fora por não haver registro de posição sobre nenhum tema.`
-      : "",
-    idadeDaFonte(),
-  ].filter(Boolean).join(" ");
-
+  renderLista();
   node.getElementById("ver-colinha").onclick = telaColinha;
-  mostrar(node);
+  mostrar(node, { rolar });
 
   // A aba selecionada pode estar fora da faixa visível num celular: sem isto o
   // eleitor toca "Dep. Estadual", a lista troca e ele continua vendo só
   // "Presidente" e "Governador", sem nenhuma marca de onde está.
-  abaAtiva?.scrollIntoView({ inline: "center", block: "nearest" });
-  marcarRolagem(document.querySelector(".abas"));
+  // scrollLeft direto, e não scrollIntoView: este último também rola a PÁGINA
+  // na vertical para trazer a faixa à vista, desfazendo o `rolar: false`.
+  const faixa = document.querySelector(".abas");
+  if (faixa && abaAtiva) {
+    faixa.scrollLeft = Math.max(
+      0, abaAtiva.offsetLeft - (faixa.clientWidth - abaAtiva.offsetWidth) / 2
+    );
+  }
+  marcarRolagem(faixa);
 }
 
-const normalizar = (s) =>
-  (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-
-const rotuloCargo = (c) => (CARGOS.find(([k]) => k === c) || [, c])[1];
+/** O percentual veio inteiro da bancada? Olha só as teses que ENTRARAM na
+ *  conta: usar a string `src` completa fazia o aviso sumir quando o candidato
+ *  tinha um voto próprio numa tese que o eleitor não respondeu. */
+const soPosicaoDoPartido = (detalhe) =>
+  detalhe.some((d) => d.posicao !== null) &&
+  detalhe.every((d) => d.posicao === null || d.fonte === "5");
 
 /** Marca as bordas quando ainda há aba fora da tela, já que a barra de
  *  rolagem está oculta e sem isso não há pista de que a faixa rola. */
@@ -410,15 +578,9 @@ function idadeDaFonte() {
     : `Lista de candidatos do TSE de ${data}.`;
 }
 
-function itemCandidato({ candidato, score, detalhe, respondidas }, porPartido = {}) {
+function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPartido = {}) {
   const li = document.createElement("li");
   li.className = "candidato";
-
-  // Sem nenhum voto próprio, este percentual é o do partido — e é idêntico
-  // para todos os colegas de legenda. Dizer isso na lista, e não só na quebra
-  // por tese, evita que o ranking pareça distinguir pessoas quando distingue
-  // partidos.
-  const soPartido = [...candidato.src].every((c) => c === "5" || c === "?");
 
   const topo = document.createElement("div");
   topo.className = "topo";
@@ -437,7 +599,8 @@ function itemCandidato({ candidato, score, detalhe, respondidas }, porPartido = 
   const nome = document.createElement("div");
   nome.className = "nome";
   nome.innerHTML =
-    `<b>${candidato.n}</b><span class="numero">${candidato.num}</span>` +
+    `<b>${candidato.n}</b>` +
+    `<span class="numero"><span class="rot">nº na urna</span>${candidato.num}</span>` +
     `<small>${candidato.p}</small>`;
 
   const barra = document.createElement("div");
@@ -459,29 +622,37 @@ function itemCandidato({ candidato, score, detalhe, respondidas }, porPartido = 
   }
 
   let origem = null;
-  if (soPartido) {
+  if (soPosicaoDoPartido(detalhe)) {
     origem = document.createElement("p");
     origem.className = "origem-partido";
     const n = porPartido[candidato.p] || 0;
     origem.textContent =
       n > 1
-        ? `Posição do partido, não deste candidato — idêntica aos outros ${n - 1} do ${candidato.p}.`
+        ? `Posição do partido, não deste candidato — idêntica à de outros ${n - 1} do ${candidato.p}.`
         : `Posição do partido, não deste candidato.`;
   }
 
   const det = document.createElement("details");
   det.className = "quebra";
-  det.innerHTML = `<summary>Por que ${pct(score)}? (${respondidas} temas)</summary>`;
+  det.innerHTML = `<summary>Por que ${pct(score)}? (${temas} temas)</summary>`;
   det.append(quebraPorTese(detalhe));
 
   const fixar = document.createElement("button");
   const jaEscolhido = estado.escolhas[estado.cargoAtivo] === candidato.id;
   fixar.className = jaEscolhido ? "fixar fixado" : "fixar";
   fixar.textContent = jaEscolhido ? "✓ Na minha colinha" : "+ Colocar na colinha";
+  fixar.setAttribute("aria-pressed", jaEscolhido ? "true" : "false");
   fixar.onclick = () => {
     if (jaEscolhido) delete estado.escolhas[estado.cargoAtivo];
     else estado.escolhas[estado.cargoAtivo] = candidato.id;
-    telaResultado();
+    anunciar(
+      jaEscolhido
+        ? `${candidato.n} removido da colinha.`
+        : `${candidato.n}, número ${candidato.num}, na colinha.`
+    );
+    // Sem `rolar: false` o eleitor que fixa o 20º colocado é jogado de volta
+    // ao topo da página e perde o lugar na lista.
+    telaResultado({ rolar: false });
   };
 
   li.append(topo, ...(origem ? [origem] : []), det, fixar);
@@ -495,14 +666,15 @@ function quebraPorTese(detalhe) {
     const li = document.createElement("li");
     if (d.posicao === null) {
       li.className = "tema sem-dado";
-      li.innerHTML = `<span class="marca">—</span><span>${d.tese.texto}
+      li.innerHTML = `<span class="marca" aria-hidden="true">—</span><span>${d.tese.texto}
         <em>Não há registro de posição.</em></span>`;
     } else {
       const fonte = FONTES[d.fonte] || { rotulo: "", inferida: true };
       li.className = d.concorda ? "tema ok" : "tema nao";
       li.innerHTML =
-        `<span class="marca">${d.concorda ? "✓" : "✕"}</span>` +
-        `<span>${d.tese.texto}` +
+        `<span class="marca" aria-hidden="true">${d.concorda ? "✓" : "✕"}</span>` +
+        `<span><span class="sr">${d.concorda ? "Concorda com você:" : "Discorda de você:"}</span> ` +
+        `${d.tese.texto}` +
         `<em class="${fonte.inferida ? "inferida" : ""}">${fonte.rotulo}` +
         (d.tese.fontes?.[0]
           ? ` · <a href="${d.tese.fontes[0].url}" target="_blank" rel="noopener">ver votação</a>`
@@ -516,6 +688,7 @@ function quebraPorTese(detalhe) {
 
 function desenharBussola() {
   const p = bussola(estado.respostas, tesesDoEleitor());
+  const semLastro = !p.pesos.economico && !p.pesos.social;
   // 42, não 45: com poucas teses o eleitor satura em ±1 com facilidade, e um
   // raio maior joga o marcador para cima da borda do quadro.
   const x = 50 + p.economico * 42;
@@ -524,8 +697,11 @@ function desenharBussola() {
   svg.setAttribute("viewBox", "0 0 100 100");
   svg.setAttribute("class", "bussola");
   svg.setAttribute("role", "img");
-  svg.setAttribute("aria-label",
-    `Sua posição: eixo econômico ${p.economico.toFixed(2)}, eixo social ${p.social.toFixed(2)}`);
+  svg.setAttribute("aria-label", semLastro
+    ? "Mapa de posições, ainda sem respostas suficientes para posicionar você."
+    : `Sua posição: eixo econômico ${p.economico.toFixed(2)} de -1 (estatista) a ` +
+      `+1 (mercado); eixo social ${p.social.toFixed(2)} de -1 (progressista) a ` +
+      `+1 (conservador).`);
   svg.innerHTML = `
     <rect x="2" y="2" width="96" height="96" rx="4" class="b-fundo"/>
     <line x1="50" y1="4" x2="50" y2="96" class="b-eixo"/>
@@ -533,8 +709,12 @@ function desenharBussola() {
     <text x="50" y="10" class="b-rot">conservador</text>
     <text x="50" y="95" class="b-rot">progressista</text>
     <text x="7"  y="52" class="b-rot b-esq">estatista</text>
-    <text x="93" y="52" class="b-rot b-dir">mercado</text>
-    <circle cx="${x}" cy="${y}" r="4.5" class="b-voce"/>`;
+    <text x="93" y="52" class="b-rot b-dir">mercado</text>` +
+    // Sem nenhuma resposta com peso de eixo, desenhar um ponto no centro
+    // declararia centrista quem não disse nada.
+    (semLastro
+      ? `<text x="50" y="55" class="b-rot">responda para se posicionar</text>`
+      : `<circle cx="${x}" cy="${y}" r="4.5" class="b-voce"/>`);
   return svg;
 }
 
@@ -542,19 +722,27 @@ function telaColinha() {
   const node = tpl("tpl-colinha");
   salvarNaURL();
 
-  const escolhidos = CARGOS.map(([cargo, rotulo]) => {
+  // Escolha que aponta para um cargo que não carregou não pode sumir em
+  // silêncio: o eleitor levaria para a urna uma colinha com uma linha a menos
+  // sem nunca saber.
+  const escolhidos = [];
+  const perdidos = [];
+  for (const [cargo] of CARGOS) {
     const id = estado.escolhas[cargo];
-    if (!id) return null;
+    if (!id) continue;
     const c = (estado.candidatos[cargo] || []).find((x) => x.id === id);
-    return c && { cargo, rotulo, candidato: c };
-  }).filter(Boolean);
+    if (c) escolhidos.push({ cargo, rotulo: rotuloComUF(cargo), candidato: c });
+    else perdidos.push(cargo);
+  }
 
   const cartao = node.getElementById("cartao");
+  const compartilharBtn = node.getElementById("compartilhar");
+
   if (!escolhidos.length) {
     cartao.innerHTML =
       `<p class="vazio">Você ainda não escolheu ninguém. Volte ao resultado e
        toque em <b>“Colocar na colinha”</b> nos candidatos que quiser levar.</p>`;
-    node.getElementById("compartilhar").disabled = true;
+    compartilharBtn.disabled = true;
   } else {
     escolhidos.forEach(({ rotulo, candidato }) => {
       const linha = document.createElement("div");
@@ -575,7 +763,7 @@ function telaColinha() {
       txt.className = "txt";
       txt.innerHTML =
         `<span class="cargo">${rotulo}</span>` +
-        `<span class="num">${candidato.num}</span>` +
+        `<span class="num"><span class="rot">digite</span>${candidato.num}</span>` +
         `<span class="nome">${candidato.n}</span>`;
 
       linha.append(av, txt, selo(candidato.p, candidato.pn, 34));
@@ -596,41 +784,83 @@ function telaColinha() {
       cartao.after(alerta);
     }
 
-    node.getElementById("compartilhar").onclick = async (ev) => {
-      ev.target.disabled = true;
+    compartilharBtn.onclick = async (ev) => {
+      const btn = ev.currentTarget;
+      const rotulo = btn.textContent;
+      btn.disabled = true;
+      // Gerar o PNG pode levar segundos esperando as fotos; sem sinal o
+      // eleitor toca de novo achando que não funcionou.
+      btn.textContent = "Gerando imagem…";
       try {
-        const blob = await desenharColinha(escolhidos);
-        await compartilhar(blob);
+        await compartilhar(await desenharColinha(escolhidos, estado.uf));
+      } catch (e) {
+        anunciar("Não consegui gerar a imagem.");
+        alertaInline(btn, `Não consegui gerar a imagem (${e.message}).`);
       } finally {
-        ev.target.disabled = false;
+        btn.disabled = false;
+        btn.textContent = rotulo;
       }
     };
   }
 
-  node.getElementById("voltar-resultado").onclick = telaResultado;
+  if (perdidos.length) {
+    const aviso = node.getElementById("colinha-perdidos");
+    aviso.hidden = false;
+    aviso.textContent =
+      `Você escolheu candidato para ${perdidos.map(rotuloComUF).join(", ")}, mas ` +
+      `não consegui carregar esse cargo agora. Volte ao resultado e tente de novo ` +
+      `antes de usar esta colinha.`;
+  }
+
+  node.getElementById("voltar-resultado").onclick = () => telaResultado();
   mostrar(node);
 }
 
+function alertaInline(depois, texto) {
+  const p = document.createElement("p");
+  p.className = "num-disputado";
+  p.textContent = texto;
+  depois.after(p);
+}
+
 // -------------------------------------------------------------------- start
+
+async function rotear() {
+  if (!location.hash || location.hash === "#/" || location.hash === "#") {
+    return telaInicio();
+  }
+  let ok = false;
+  try {
+    ok = lerDaURL();
+  } catch {
+    ok = false; // hash corrompida: recomeça, em vez de mostrar número errado
+  }
+  if (!ok) return telaInicio();
+  await carregarCandidatos();
+  // Link parcial retoma de onde parou em vez de fingir que o teste acabou.
+  if (estado.indice < estado.teses.length && respondidas() < 5) return telaQuiz();
+  telaResultado();
+}
 
 (async function iniciar() {
   try {
     // meta primeiro, sem cache: é ele que define o carimbo de todo o resto.
     estado.meta = await carregarJSON("data/meta.json", true).catch(() => null);
-    carimbo = (estado.meta?.gerado_em || "").replace(/\D/g, "").slice(0, 14);
-
     const arquivo = await carregarJSON("data/teses.json");
     estado.teses = arquivo.teses;
     estado.versaoTeses = arquivo.versao;
+    // Se meta.json falhar, o carimbo cai na versão das teses em vez de ficar
+    // vazio — sem ele o navegador poderia servir shards de builds diferentes.
+    carimbo =
+      (estado.meta?.gerado_em || "").replace(/\D/g, "").slice(0, 14) || arquivo.versao;
   } catch (e) {
     app.innerHTML = `<p class="erro">Não consegui carregar as perguntas (${e.message}).
-      Rode <code>python3 pipeline/build.py</code> antes de abrir o site.</p>`;
+      Recarregue a página; se persistir, os dados do site podem estar sendo publicados.</p>`;
     return;
   }
-  if (lerDaURL()) {
-    await carregarCandidatos();
-    telaResultado();
-  } else {
-    telaInicio();
-  }
+
+  // Sem isto, o link do logo trocava o hash e nada acontecia na tela — o
+  // estado sumia da URL sem aviso, e voltar/avançar do navegador eram inertes.
+  window.addEventListener("hashchange", () => { rotear(); });
+  rotear();
 })();

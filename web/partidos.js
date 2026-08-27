@@ -19,15 +19,31 @@ const PADRAO = "#5a6472";
 
 export const cor = (sigla) => CORES[(sigla || "").toUpperCase()] || PADRAO;
 
+/** Preto ou branco, o que tiver contraste sobre a cor do partido.
+ *  Branco fixo dava 1,7:1 em cima do amarelo do PSOL e do PSB — número de urna
+ *  ilegível justamente para quem mais precisa lê-lo. */
+export function tinta(sigla) {
+  const hex = cor(sigla).slice(1);
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const lin = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  const L = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  // Compara o contraste real contra branco e contra preto e fica com o melhor.
+  return (L + 0.05) / 0.05 > 1.05 / (L + 0.05) ? "#000" : "#fff";
+}
+
 /** Selo do partido: <img> do logo quando existe, senão o número na cor. */
 export function selo(sigla, numeroPartido, tamanho = 28) {
   const el = document.createElement("span");
   el.className = "selo";
   el.style.cssText =
     `width:${tamanho}px;height:${tamanho}px;background:${cor(sigla)};` +
-    `font-size:${Math.round(tamanho * 0.46)}px`;
+    `color:${tinta(sigla)};font-size:${Math.round(tamanho * 0.46)}px`;
   el.textContent = numeroPartido || (sigla || "").slice(0, 3);
   el.title = sigla;
+  // Sem isto o leitor de tela anuncia só "18", sem dizer 18 de quê — e o
+  // eleitor tem dois números na linha, o do partido e o da urna.
+  el.setAttribute("role", "img");
+  el.setAttribute("aria-label", `Partido ${sigla}, número ${numeroPartido || sigla}`);
 
   const logo = new Image();
   logo.src = `partidos/${encodeURIComponent((sigla || "").toUpperCase())}.svg`;

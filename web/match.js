@@ -27,7 +27,10 @@ export function match(respostas, teses, candidato) {
   for (let i = 0; i < teses.length; i++) {
     const tese = teses[i];
     const resposta = respostas[tese.id];
-    if (!resposta || resposta.valor === PULOU) continue;
+    // `== null` pega null E undefined: uma hash malformada produzia
+    // {valor: undefined}, que passava por `!== PULOU` e contaminava a
+    // distância com NaN — todos os percentuais viravam NaN em silêncio.
+    if (!resposta || resposta.valor == null) continue;
 
     const bruta = candidato.pos[i];
     if (bruta === SEM_DADO) {
@@ -67,7 +70,7 @@ export function bussola(respostas, teses) {
 
   for (const tese of teses) {
     const resposta = respostas[tese.id];
-    if (!resposta || resposta.valor === PULOU) continue;
+    if (!resposta || resposta.valor == null) continue;
     const peso = resposta.importante ? 2 : 1;
     for (const eixo of ["economico", "social"]) {
       const w = tese.eixo[eixo];
@@ -77,9 +80,12 @@ export function bussola(respostas, teses) {
     }
   }
 
+  // Os pesos vão junto: sem eles a UI desenharia um ponto exato no centro
+  // para quem não respondeu nada, declarando centrista quem não disse nada.
   return {
     economico: pesos.economico ? eixos.economico / pesos.economico : 0,
     social: pesos.social ? eixos.social / pesos.social : 0,
+    pesos,
   };
 }
 

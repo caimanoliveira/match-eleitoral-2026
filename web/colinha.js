@@ -3,11 +3,11 @@
 // Canvas puro em vez de html2canvas: o layout é fixo (uma linha por cargo), e
 // a biblioteca custaria ~200 KB para desenhar cinco retângulos e texto.
 
-import { cor, iniciais } from "./partidos.js";
+import { cor, tinta, iniciais } from "./partidos.js";
 
 const L = 820;                 // largura do cartão
 const TOPO = 132;
-const LINHA = 128;
+const LINHA = 136;
 const RODAPE = 68;
 const ESCALA = 2;              // exporta em 2x para não borrar em tela retina
 
@@ -16,8 +16,11 @@ const PAPEL = "#ffffff";
 const SUAVE = "#6b7280";
 const ALERTA = "#b42318";
 
-/** @returns {Promise<Blob>} PNG da colinha */
-export async function desenharColinha(escolhidos) {
+/** @param uf sigla do estado; sem ela o PNG de um estado é indistinguível do
+ *  de outro, e o mesmo número pertence a pessoas diferentes em cada UF —
+ *  2288 é Carlos Jordy no RJ e Major Mecca em SP.
+ *  @returns {Promise<Blob>} PNG da colinha */
+export async function desenharColinha(escolhidos, uf = "") {
   const altura = TOPO + escolhidos.length * LINHA + RODAPE;
   const cv = document.createElement("canvas");
   cv.width = L * ESCALA;
@@ -33,7 +36,8 @@ export async function desenharColinha(escolhidos) {
   ctx.fillText("MINHA COLINHA", 48, 66);
   ctx.fillStyle = SUAVE;
   ctx.font = "400 24px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
-  ctx.fillText("Eleições de 4 de outubro de 2026", 48, 100);
+  ctx.fillText(
+    (uf ? uf + " · " : "") + "Eleições de 4 de outubro de 2026", 48, 100);
 
   const fotos = await Promise.all(escolhidos.map((e) => carregarFoto(e.candidato.foto)));
 
@@ -58,7 +62,7 @@ export async function desenharColinha(escolhidos) {
     } else {
       ctx.fillStyle = cor(candidato.p);
       ctx.fillRect(48, y + 10, 72, 72);
-      ctx.fillStyle = "#fff";
+      ctx.fillStyle = tinta(candidato.p);
       ctx.font = "700 28px system-ui, sans-serif";
       ctx.textAlign = "center";
       ctx.fillText(iniciais(candidato.n), 84, y + 56);
@@ -70,21 +74,27 @@ export async function desenharColinha(escolhidos) {
     ctx.font = "600 20px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
     ctx.fillText(rotulo.toUpperCase(), 142, y + 28);
 
+    // Rotular o número: a linha tem dois (o da urna e o do partido) e nada
+    // dizia qual era qual. Vai entre o cargo e o número, não abaixo dele, para
+    // não encostar no separador da linha seguinte.
+    ctx.font = "500 15px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+    ctx.fillText("Nº NA URNA", 142, y + 50);
+
     // O número é o que se digita na urna — é o maior elemento da linha.
     ctx.fillStyle = TINTA;
     ctx.font = "800 54px ui-monospace, SFMono-Regular, Menlo, monospace";
-    ctx.fillText(candidato.num, 142, y + 82);
+    ctx.fillText(candidato.num, 142, y + 92);
 
     const larguraNumero = ctx.measureText(candidato.num).width;
     ctx.font = "600 30px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
     ctx.fillText(cortar(ctx, candidato.n, L - 260 - larguraNumero),
-                 142 + larguraNumero + 22, y + 80);
+                 142 + larguraNumero + 22, y + 90);
 
     // selo do partido
     ctx.fillStyle = cor(candidato.p);
     arredondado(ctx, L - 116, y + 26, 68, 40, 8);
     ctx.fill();
-    ctx.fillStyle = "#fff";
+    ctx.fillStyle = tinta(candidato.p);
     ctx.font = "700 22px system-ui, sans-serif";
     ctx.textAlign = "center";
     ctx.fillText(candidato.pn || candidato.p.slice(0, 3), L - 82, y + 53);

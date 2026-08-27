@@ -10,11 +10,11 @@
 <body>
 
 <header>
-  <a class="marca" href="#/">Match Eleitoral <b>2026</b></a>
+  <span class="marca">Match Eleitoral <b>2026</b></span>
   <a class="link-metodo" href="metodologia.html">Metodologia</a>
 </header>
 
-<main id="app" aria-live="polite"></main>
+<main id="app"></main>
 
 <template id="tpl-inicio">
   <section class="tela inicio">
@@ -27,7 +27,8 @@
 
     <label class="campo">
       <span>Seu estado</span>
-      <select id="uf"></select>
+      <select id="uf" aria-describedby="erro-uf"></select>
+      <span class="erro-campo" id="erro-uf" role="alert"></span>
     </label>
 
     <button class="primario" id="comecar">Começar</button>
@@ -50,16 +51,16 @@
       <p></p>
     </details>
 
+    <label class="importante">
+      <input type="checkbox"> Este tema é <b>muito importante</b> para mim
+      <small>conta em dobro</small>
+    </label>
+
     <div class="respostas">
       <button data-valor="1"  class="resp concordo">Concordo</button>
       <button data-valor="0"  class="resp neutro">Tanto faz</button>
       <button data-valor="-1" class="resp discordo">Discordo</button>
     </div>
-
-    <label class="importante">
-      <input type="checkbox"> Este tema é <b>muito importante</b> para mim
-      <small>conta em dobro</small>
-    </label>
 
     <div class="navegacao">
       <button class="secundario" id="voltar">Voltar</button>
@@ -78,14 +79,19 @@
 <template id="tpl-resultado">
   <section class="tela resultado">
     <h1>Seus candidatos</h1>
+    <p class="nota-parcial" id="nota-parcial" hidden></p>
+    <button class="secundario continuar" id="continuar" hidden></button>
+    <p class="falha-carga" id="falha-carga" hidden></p>
     <div id="bussola"></div>
     <div class="abas-caixa"><nav class="abas" id="abas"></nav></div>
 
     <label class="busca">
+      <span class="sr">Buscar candidato</span>
       <input type="search" id="busca" placeholder="Buscar candidato por nome ou número"
              autocomplete="off" spellcheck="false">
     </label>
 
+    <div id="avisos-lista"></div>
     <ol class="lista" id="lista"></ol>
     <button class="secundario mais" id="mais" hidden>Mostrar mais 30</button>
     <p class="aviso" id="rodape-fonte"></p>
@@ -97,6 +103,7 @@
   <section class="tela colinha">
     <h1>Sua colinha</h1>
     <p class="lead">Leve para a urna. O que você digita é o <b>número</b>.</p>
+    <p class="falha-carga" id="colinha-perdidos" hidden></p>
     <div id="cartao"></div>
     <div class="navegacao">
       <button class="primario" id="compartilhar">Compartilhar</button>

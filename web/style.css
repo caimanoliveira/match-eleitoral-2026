@@ -391,3 +391,46 @@ select {
 .busca input::placeholder { color: var(--suave); }
 
 .mais { width: 100%; margin-top: .8rem; }
+
+/* ------------------------------------------------------- correções do review */
+
+/* Só para leitor de tela. */
+.sr {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+h1:focus-visible, h2:focus-visible { outline: none; }
+
+.erro-campo { display: block; margin-top: .4rem; font-size: .85rem; color: var(--nao); }
+.erro-campo:empty { display: none; }
+
+.nota-parcial { margin: -.4rem 0 .9rem; font-size: .9rem; color: var(--suave); }
+.continuar { width: 100%; margin-bottom: 1.2rem; }
+
+.falha-carga {
+  margin: 0 0 1rem;
+  font-size: .88rem;
+  line-height: 1.5;
+  color: var(--nao);
+}
+.falha-carga button { margin-top: .5rem; }
+
+/* Rótulo do número: a linha tem dois números (urna e partido) e nada dizia
+   qual era qual. */
+.nome .numero { display: inline-flex; align-items: baseline; gap: .3rem; }
+.numero .rot, .linha-colinha .num .rot {
+  font: 500 .62rem/1 system-ui, sans-serif;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--suave);
+}
+.linha-colinha .num { display: inline-flex; align-items: baseline; gap: .35rem; }
+
+/* Área de toque mínima em alvos pequenos. */
+.contexto summary, .link-metodo { display: inline-block; padding: .35rem 0; }
