@@ -14,14 +14,19 @@
   .form { max-width: 640px; }
   .cand { display: flex; align-items: center; gap: .9rem; padding: 1rem; background: var(--superficie); border-radius: var(--raio); box-shadow: var(--sombra-1); margin: 1rem 0 1.6rem; }
   .cand .avatar { width: 52px; height: 52px; }
-  .cand b { display: block; font-size: 1.05rem; }
+  .cand b { display: block; font-size: 1.15rem; letter-spacing: -.01em; }
   .cand small { color: var(--suave); }
   .pergunta { padding: 1rem 0; border-bottom: 1px solid var(--linha); }
   .pergunta p { margin: 0 0 .6rem; font-weight: 700; line-height: 1.4; }
+  /* Segunda voz do site (a mono do número de urna) onde há número: o índice
+     da afirmação e o nº do candidato. É o que separa a hierarquia por família,
+     não só por tamanho. */
+  .pergunta p .idx { font: 800 .82rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--acao); margin-right: .45rem; vertical-align: .1em; }
+  .cand .num { font: 800 1em ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--tinta); }
   .opcoes { display: flex; gap: .4rem; flex-wrap: wrap; }
   .opcoes label { flex: 1 1 8rem; }
   .opcoes input { position: absolute; opacity: 0; pointer-events: none; }
-  .opcoes span { display: block; text-align: center; padding: .6rem .5rem; border-radius: var(--raio-pill); background: var(--veu); font-weight: 700; font-size: .9rem; cursor: pointer; transition: background var(--rapido) var(--ease), color var(--rapido) var(--ease); }
+  .opcoes span { display: block; text-align: center; padding: .6rem .5rem; border-radius: var(--raio-pill); background: var(--veu); font-weight: 700; cursor: pointer; transition: background var(--rapido) var(--ease), color var(--rapido) var(--ease); }
   .opcoes input:checked + span { background: var(--acao); color: var(--acao-tinta); }
   .opcoes input:focus-visible + span { outline: 3px solid var(--acao); outline-offset: 2px; }
   .campo-texto input { font: inherit; width: 100%; padding: .75rem .9rem; border-radius: var(--raio-pill); border: 0; background: var(--superficie); box-shadow: var(--sombra-1); color: var(--tinta); }
@@ -126,12 +131,13 @@ async function carregar() {
   av.style.background = cor(cand.p); av.style.color = tinta(cand.p); av.textContent = iniciais(cand.n);
   if (cand.foto) { const img = new Image(); img.src = cand.foto; img.alt = ""; img.onload = () => av.replaceChildren(img); }
   document.getElementById("cand-nome").textContent = cand.n;
-  document.getElementById("cand-meta").textContent =
-    `${cand.p} · nº ${cand.num} · ${cand.cargo.replace(/-/g, " ").replace(/\b\w/g, (m) => m.toUpperCase())}`;
+  document.getElementById("cand-meta").innerHTML =
+    `${cand.p} · nº <span class="num">${cand.num}</span> · ` +
+    cand.cargo.replace(/-/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
 
   perguntas.innerHTML = teses.map((t, i) => `
     <div class="pergunta">
-      <p>${i + 1}. ${t.texto}</p>
+      <p><span class="idx">${String(i + 1).padStart(2, "0")}</span>${t.texto}</p>
       <div class="opcoes">
         ${opcao(t.id, "concordo", "Concorda")}
         ${opcao(t.id, "neutro", "Neutro")}
