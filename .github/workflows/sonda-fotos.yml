@@ -7,29 +7,23 @@ jobs:
       - uses: actions/checkout@v4
       - run: |
           python3 - <<'PY'
-          import sys, json, urllib.request, urllib.error
+          import sys
           sys.path.insert(0, "pipeline")
-          from fetch import HEADERS
-          # O CKAN do TSE lista os recursos reais do dataset de fotos: nome,
-          # URL e tamanho. É a fonte da verdade sobre o caminho — chega de chute.
+          from fetch import get_json   # descomprime gzip e usa os headers que o WAF aceita
           for ds in ["candidatos-2026", "fotos-de-candidatos-2026", "candidatos-2022"]:
-              u = f"https://dadosabertos.tse.jus.br/api/3/action/package_show?id={ds}"
               try:
-                  with urllib.request.urlopen(urllib.request.Request(u, headers=dict(HEADERS, Accept="application/json")), timeout=60) as r:
-                      d = json.load(r)["result"]
-                      print(f"## {ds}: {len(d['resources'])} recursos")
-                      for res in d["resources"]:
-                          n = res.get("name", "")
-                          if "foto" in n.lower() or "foto" in res.get("url", "").lower():
-                              print(f"   {res.get('size') or '?':>12}  {res['url']}")
-              except urllib.error.HTTPError as e:
-                  print(f"## {ds}: HTTP {e.code}")
-          # e a busca livre por 'foto' no CKAN
-          u = "https://dadosabertos.tse.jus.br/api/3/action/package_search?q=foto+2026&rows=10"
+                  d = get_json(f"https://dadosabertos.tse.jus.br/api/3/action/package_show?id={ds}", f"ckan-{ds}.json", max_age=0)["result"]
+                  print(f"## {ds}: {len(d['resources'])} recursos")
+                  for res in d["resources"]:
+                      if "foto" in (res.get("name","") + res.get("url","")).lower():
+                          print(f"   {str(res.get('size') or '?'):>12}  {res['url']}")
+              except Exception as e:
+                  print(f"## {ds}: {type(e).__name__} {str(e)[:80]}")
           try:
-              with urllib.request.urlopen(urllib.request.Request(u, headers=dict(HEADERS, Accept="application/json")), timeout=60) as r:
-                  for p in json.load(r)["result"]["results"]:
-                      print(f"## busca: {p['name']}  ({len(p['resources'])} recursos)")
-          except urllib.error.HTTPError as e:
-              print(f"## busca: HTTP {e.code}")
+              r = get_json("https://dadosabertos.tse.jus.br/api/3/action/package_search?q=foto&rows=20", "ckan-busca.json", max_age=0)["result"]
+              print(f"## busca 'foto': {r['count']} datasets")
+              for p in r["results"]:
+                  print(f"   {p['name']}")
+          except Exception as e:
+              print(f"## busca: {type(e).__name__} {str(e)[:80]}")
           PY
