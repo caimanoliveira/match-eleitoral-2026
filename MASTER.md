@@ -1,4 +1,4 @@
-# Design system — Colinha.vote
+# Design system — Colinha
 
 Fonte única de verdade para cor, tipo, espaço e movimento. Todo valor em
 `web/style.css` vem daqui; nenhum hex solto no código.
@@ -120,6 +120,6 @@ com o número já digitado.
 
 ## Logo
 
-Marca tipográfica: "Colinha" 800 + ".vote" 500 em itálico, Manrope, `--tinta`. Ícone: a
+Marca tipográfica: "Colinha" 800 + ".app.br" 500 em itálico, Manrope, `--tinta`. Ícone: a
 urna eletrônica em traço — terminal com tela à esquerda, quatro teclas à
 direita e o CONFIRMA em `--acao`. SVG inline em `web/logo.svg`; favicon é o ícone sozinho.

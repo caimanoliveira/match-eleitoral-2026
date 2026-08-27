@@ -36,7 +36,7 @@ export async function desenharColinha(escolhidos, uf = "") {
   ctx.fillText("MINHA COLINHA", 48, 66);
   ctx.font = "500 18px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
   ctx.textAlign = "right";
-  ctx.fillText("colinha.vote", L - 48, 66);
+  ctx.fillText("colinha.app.br", L - 48, 66);
   ctx.textAlign = "left";
   ctx.fillStyle = SUAVE;
   ctx.font = "400 24px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";

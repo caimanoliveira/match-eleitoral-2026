@@ -1,4 +1,4 @@
-# Colinha.vote
+# Colinha
 
 Vá votar, e vá sabendo em quem. Compara as posições do eleitor com as dos
 candidatos às eleições de **4 de outubro de 2026** e devolve a colinha com os
@@ -76,18 +76,18 @@ com exatamente um candidato.
 
 ## Site no ar
 
-**https://colinha.vote** (enquanto o DNS não propaga:
+**https://colinha.app.br** (enquanto o DNS não propaga:
 https://caimanoliveira.github.io/match-eleitoral-2026/)
 
-O domínio é servido pelo GitHub Pages via `web/CNAME`. No registrador, o DNS
-precisa de:
+Registro.br, R$ 40/ano. O domínio é servido pelo GitHub Pages via `web/CNAME`.
+No painel de DNS do Registro.br, criar:
 
 ```
-colinha.vote.      A      185.199.108.153
-colinha.vote.      A      185.199.109.153
-colinha.vote.      A      185.199.110.153
-colinha.vote.      A      185.199.111.153
-www.colinha.vote.  CNAME  caimanoliveira.github.io.
+colinha.app.br.      A      185.199.108.153
+colinha.app.br.      A      185.199.109.153
+colinha.app.br.      A      185.199.110.153
+colinha.app.br.      A      185.199.111.153
+www.colinha.app.br.  CNAME  caimanoliveira.github.io.
 ```
 
 Depois, em Settings → Pages do repositório, marcar "Enforce HTTPS" (o
