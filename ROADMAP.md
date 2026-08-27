@@ -6,8 +6,14 @@ Escrito em 27/08/2026. Eleição em **04/10/2026** — restam ~5 semanas.
 
 34 afirmações verificadas, 19.867 candidatos, 85% com alguma evidência de
 posição, 568 com voto nominal próprio. Site estático, sem backend, testado no
-celular. Dois reviews adversariais de 5 e 4 lentes já rodaram; 20 defeitos
-corrigidos.
+celular em 390px e 320px.
+
+Dois reviews adversariais rodaram — 5 lentes sobre o código e 4 sobre a própria
+reescrita —, com cada achado reproduzido por um segundo agente antes de entrar.
+62 achados confirmados, 48 defeitos distintos corrigidos. Vale registrar que o
+segundo review existiu porque o primeiro me fez reescrever `app.js` inteiro, e
+a reescrita introduziu regressões próprias: uma delas reintroduziu, no mesmo
+commit que dizia corrigi-lo, o bug de cache que o carimbo existe para impedir.
 
 ## O diagnóstico que importa
 
@@ -110,7 +116,19 @@ eleitor exatamente o candidato oposto ao que ele quis, e isso vira notícia, nã
 bug. Cada afirmação tem em `theses.toml` a votação, a nota do verificador e o
 link para o portal da Câmara. Ler as 34 leva umas duas horas.
 
-## 6. Publicar (decisão, não tarefa)
+## 6. Botão voltar do navegador (adiado de propósito)
+
+Dentro da app, o voltar do celular ainda sai do site em vez de recuar uma tela.
+O roteador de `hashchange` já existe, mas as trocas de tela usam
+`replaceState`, então há uma entrada de histórico só.
+
+A correção é `pushState` nas trocas de tela mantendo `replaceState` na gravação
+a cada resposta. Não fiz porque o roteador acabou de nascer e um review já
+alertou para o risco de laço de re-render (rotear → telaX → salvarNaURL →
+hashchange → rotear). Severidade baixa, risco desproporcional na véspera —
+merece ser feito com calma e com teste próprio.
+
+## 7. Publicar (decisão, não tarefa)
 
 O repositório é público; o site não está no ar. GitHub Pages serve a raiz ou
 `/docs`, não `/web` — precisa de uma Action ou de reestruturação.
