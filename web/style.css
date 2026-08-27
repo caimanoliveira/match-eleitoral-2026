@@ -785,7 +785,7 @@ button:active:not(:disabled), a.cta:active { transform: scale(.98); }
 .importante input { accent-color: var(--acao); width: 20px; height: 20px; }
 button:disabled { opacity: .55; }
 
-/* ---- marca Colinha.vote ---- */
+/* ---- marca Colinha ---- */
 .marca i { font-style: italic; font-weight: 500; color: var(--acao); }
 
 /* ---- bloco cívico: chamada para votar, sem virar cartaz ---- */
