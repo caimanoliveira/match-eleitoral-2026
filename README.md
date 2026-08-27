@@ -1,7 +1,8 @@
-# Match Eleitoral 2026
+# Colinha.vote
 
-Quiz que compara as posições do eleitor com as dos candidatos às eleições de
-**4 de outubro de 2026**, e devolve uma colinha para levar à urna.
+Vá votar, e vá sabendo em quem. Compara as posições do eleitor com as dos
+candidatos às eleições de **4 de outubro de 2026** e devolve a colinha com os
+números para digitar na urna.
 
 O diferencial não é o presidente — é o deputado. Cobrimos os **19.867 candidatos
 votáveis**, incluindo deputado federal e estadual, que é onde o eleitor decide
@@ -75,7 +76,22 @@ com exatamente um candidato.
 
 ## Site no ar
 
-**https://caimanoliveira.github.io/match-eleitoral-2026/**
+**https://colinha.vote** (enquanto o DNS não propaga:
+https://caimanoliveira.github.io/match-eleitoral-2026/)
+
+O domínio é servido pelo GitHub Pages via `web/CNAME`. No registrador, o DNS
+precisa de:
+
+```
+colinha.vote.      A      185.199.108.153
+colinha.vote.      A      185.199.109.153
+colinha.vote.      A      185.199.110.153
+colinha.vote.      A      185.199.111.153
+www.colinha.vote.  CNAME  caimanoliveira.github.io.
+```
+
+Depois, em Settings → Pages do repositório, marcar "Enforce HTTPS" (o
+certificado leva alguns minutos para emitir após o DNS propagar).
 
 Publicado pelo próprio rebuild diário (abaixo). As fotos dos candidatos (~70 MB,
 dataset oficial do TSE) não ficam no repositório: só existem no runner que as

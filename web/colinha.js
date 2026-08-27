@@ -34,6 +34,10 @@ export async function desenharColinha(escolhidos, uf = "") {
   ctx.fillStyle = TINTA;
   ctx.font = "700 42px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
   ctx.fillText("MINHA COLINHA", 48, 66);
+  ctx.font = "500 18px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+  ctx.textAlign = "right";
+  ctx.fillText("colinha.vote", L - 48, 66);
+  ctx.textAlign = "left";
   ctx.fillStyle = SUAVE;
   ctx.font = "400 24px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
   ctx.fillText(
@@ -153,11 +157,11 @@ function carregarFoto(url) {
 
 /** Web Share no celular; download no desktop. */
 export async function compartilhar(blob) {
-  const arquivo = new File([blob], "minha-colinha-2026.png", { type: "image/png" });
+  const arquivo = new File([blob], "colinha-2026.png", { type: "image/png" });
 
   if (navigator.canShare?.({ files: [arquivo] })) {
     try {
-      await navigator.share({ files: [arquivo], title: "Minha colinha 2026" });
+      await navigator.share({ files: [arquivo], title: "Minha colinha para 4 de outubro" });
       return;
     } catch (e) {
       if (e.name === "AbortError") return; // o eleitor cancelou
