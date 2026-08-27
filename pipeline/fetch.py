@@ -11,6 +11,7 @@ import zlib
 from pathlib import Path
 
 CACHE = Path(__file__).resolve().parent.parent / ".cache"
+SEMENTE = Path(__file__).resolve().parent / "semente"
 
 HEADERS = {
     "User-Agent": (
@@ -36,12 +37,20 @@ def _decompress(raw: bytes, encoding: str) -> bytes:
 
 
 def get(
-    url: str, cache_name: str | None = None, max_age: float = 86400, accept: str | None = None
+    url: str, cache_name: str | None = None, max_age: float = 86400, accept: str | None = None,
+    timeout: float = 120,
 ) -> bytes:
     """GET com cache. `max_age` em segundos; 0 força refetch;
     `float("inf")` usa o cache sem nunca ir à rede."""
     CACHE.mkdir(exist_ok=True)
     path = CACHE / (cache_name or url.rsplit("/", 1)[-1].replace("?", "_"))
+    # Semente versionada: cópia commitada de fontes que respondem mal a IPs
+    # de datacenter (o Senado estourou timeout 3x seguidas num runner limpo,
+    # respondendo em 0,5 s daqui). Garante que um runner sem cache tenha um
+    # ponto de partida; a rede ainda é tentada quando a semente envelhece.
+    semente = SEMENTE / path.name
+    if not path.exists() and semente.exists():
+        path.write_bytes(semente.read_bytes())
     fresco = path.exists() and path.stat().st_size and max_age and (
         time.time() - path.stat().st_mtime < max_age
     )
@@ -58,7 +67,7 @@ def get(
     for attempt in range(3):
         try:
             req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=120) as resp:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
                 body = _decompress(resp.read(), resp.headers.get("Content-Encoding", ""))
             path.write_bytes(body)
             return body
@@ -89,7 +98,8 @@ def get(
     raise RuntimeError(f"{url}: {last}")
 
 
-def get_json(url: str, cache_name: str | None = None, max_age: float = 86400):
+def get_json(url: str, cache_name: str | None = None, max_age: float = 86400,
+             timeout: float = 120):
     # A API da Câmara negocia conteúdo pelo Accept: com o text/html que o WAF do
     # TSE exige, ela responde XML. JSON precisa ser pedido explicitamente.
-    return json.loads(get(url, cache_name, max_age, accept="application/json"))
+    return json.loads(get(url, cache_name, max_age, accept="application/json", timeout=timeout))

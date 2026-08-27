@@ -154,6 +154,16 @@ def main() -> None:
     por_senador = posicoes_senado(ts, votacoes_sen, cod_para_sq)
     print(f"senado: {len(votacoes_sen)} votações, {len(cod_para_sq)} senadores casados, "
           f"{len(por_senador)} com voto em tese")
+    # As teses listam votações do Senado que TÊM de existir neste build. Se o
+    # Senado veio vazio (rede caiu, sem cache), publicar faria os 8 candidatos
+    # a governador que são senadores regredirem para "só a bancada" em
+    # silêncio. Melhor não publicar: o commit anterior continua valendo.
+    esperadas = {v["id"] for t in ts for v in t.get("votacoes_senado", [])}
+    faltando = esperadas - set(votacoes_sen)
+    if faltando and not args.dry_run:
+        raise SystemExit(
+            f"3: votações do Senado ausentes neste build ({sorted(faltando)}) — não publico"
+        )
     print(f"candidatos: {len(candidatos)} | partidos com posição: {len(por_partido)}")
     print(f"deputados com voto: {len(por_deputado)} | CPFs mapeados: {len(cpf_para_dep)}")
 

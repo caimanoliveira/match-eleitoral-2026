@@ -45,8 +45,17 @@ def votacoes(anos=ANOS) -> dict[str, dict]:
     """
     out = {}
     for ano in anos:
-        lista = get_json(f"{API}/votacao?ano={ano}", f"senado-votacoes-{ano}.json",
-                         max_age=6 * 3600)
+        try:
+            # O Senado responde devagar e de forma instável para IPs de fora
+            # (no runner do GitHub estourou 120 s três vezes seguidas num JSON
+            # de 2 MB). Timeout longo, e se ainda assim falhar sem cache, este
+            # ano fica de fora deste build: o Senado cobre 4 de 34 teses e não
+            # pode ser motivo para não publicar a lista fresca do TSE.
+            lista = get_json(f"{API}/votacao?ano={ano}", f"senado-votacoes-{ano}.json",
+                             max_age=6 * 3600, timeout=600)
+        except RuntimeError as exc:
+            print(f"  ! senado {ano} indisponível e sem cache — segue sem ele ({exc})")
+            continue
         for v in lista:
             if v.get("votacaoSecreta") == "S":
                 continue
