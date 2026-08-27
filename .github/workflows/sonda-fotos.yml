@@ -7,21 +7,29 @@ jobs:
       - uses: actions/checkout@v4
       - run: |
           python3 - <<'PY'
-          import sys, urllib.request, urllib.error
+          import sys, json, urllib.request, urllib.error
           sys.path.insert(0, "pipeline")
           from fetch import HEADERS
-          base = "https://cdn.tse.jus.br/estatistica/sead/odsele/foto_cand/"
-          total = 0
-          for uf in ["BR", "AC", "SP", "MG", "RJ", "DF"]:
-              u = f"{base}foto_cand2026_{uf}_div.zip"
-              req = urllib.request.Request(u, headers=dict(HEADERS, Range="bytes=0-0"))
+          # O CKAN do TSE lista os recursos reais do dataset de fotos: nome,
+          # URL e tamanho. É a fonte da verdade sobre o caminho — chega de chute.
+          for ds in ["candidatos-2026", "fotos-de-candidatos-2026", "candidatos-2022"]:
+              u = f"https://dadosabertos.tse.jus.br/api/3/action/package_show?id={ds}"
               try:
-                  with urllib.request.urlopen(req, timeout=60) as r:
-                      cr = r.headers.get("Content-Range", "")
-                      size = int(cr.split("/")[-1]) if "/" in cr else 0
-                      total += size
-                      print(f"{r.status}  {size/1048576:8.1f} MB  {uf}")
+                  with urllib.request.urlopen(urllib.request.Request(u, headers=dict(HEADERS, Accept="application/json")), timeout=60) as r:
+                      d = json.load(r)["result"]
+                      print(f"## {ds}: {len(d['resources'])} recursos")
+                      for res in d["resources"]:
+                          n = res.get("name", "")
+                          if "foto" in n.lower() or "foto" in res.get("url", "").lower():
+                              print(f"   {res.get('size') or '?':>12}  {res['url']}")
               except urllib.error.HTTPError as e:
-                  print(f"{e.code}  {uf}")
-          print(f"amostra de 6 UFs: {total/1048576:.0f} MB")
+                  print(f"## {ds}: HTTP {e.code}")
+          # e a busca livre por 'foto' no CKAN
+          u = "https://dadosabertos.tse.jus.br/api/3/action/package_search?q=foto+2026&rows=10"
+          try:
+              with urllib.request.urlopen(urllib.request.Request(u, headers=dict(HEADERS, Accept="application/json")), timeout=60) as r:
+                  for p in json.load(r)["result"]["results"]:
+                      print(f"## busca: {p['name']}  ({len(p['resources'])} recursos)")
+          except urllib.error.HTTPError as e:
+              print(f"## busca: HTTP {e.code}")
           PY
