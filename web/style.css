@@ -1,27 +1,59 @@
 :root {
-  --papel: #ffffff;
-  --tinta: #12161c;
-  --suave: #5b6472;
-  --linha: #e4e7ec;
-  --campo: #f5f6f8;
-  --acento: #1a56db;
-  --ok: #067647;
-  --nao: #b42318;
-  --raio: 12px;
+  /* Tokens de MASTER.md. Os nomes antigos (--acento, --ok, --nao, --campo)
+     viram aliases dos novos, para nenhuma regra existente quebrar. */
+  --papel: #FBFBF9;
+  --veu: #E6F4EE;
+  --superficie: #FFFFFF;
+  --tinta: #14201B;
+  --suave: #5C6B64;
+  --linha: #E3EAE6;
+  --acao: #087A54;
+  --acao-tinta: #FFFFFF;
+  --acao-suave: #DCF2E8;
+  --contra: #B4452C;
+  --contra-suave: #F8E7E2;
+
+  --acento: var(--acao);
+  --ok: var(--acao);
+  --nao: var(--contra);
+  --campo: var(--veu);
+
+  --raio: 16px;
+  --raio-sm: 8px;
+  --raio-pill: 999px;
+  --sombra-1: 0 1px 2px rgb(20 32 27 / .06), 0 4px 12px rgb(20 32 27 / .05);
+  --sombra-2: 0 2px 4px rgb(20 32 27 / .08), 0 12px 32px rgb(20 32 27 / .10);
+  --sombra-cta: 0 8px 24px rgb(8 122 84 / .28);
+  --rapido: 150ms;
+  --normal: 250ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --ease-sai: ease-in;
   color-scheme: light dark;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --papel: #0f1319;
-    --tinta: #e8ebf0;
-    --suave: #98a2b3;
-    --linha: #232a35;
-    --campo: #171d26;
-    --acento: #7aa2f7;
-    --ok: #4ade80;
-    --nao: #f87171;
+  :root:not([data-theme="light"]) {
+    --papel: #0F1412;
+    --veu: #12201A;
+    --superficie: #161D1A;
+    --tinta: #EAF1ED;
+    --suave: #9AAAA2;
+    --linha: #26302B;
+    --acao: #3DCB95;
+    --acao-tinta: #0F1412;
+    --acao-suave: #173A2C;
+    --contra: #F0836A;
+    --contra-suave: #3A1E17;
+    --sombra-1: none;
+    --sombra-2: none;
+    --sombra-cta: none;
   }
+}
+:root[data-theme="dark"] {
+  --papel: #0F1412; --veu: #12201A; --superficie: #161D1A; --tinta: #EAF1ED;
+  --suave: #9AAAA2; --linha: #26302B; --acao: #3DCB95; --acao-tinta: #0F1412;
+  --acao-suave: #173A2C; --contra: #F0836A; --contra-suave: #3A1E17;
+  --sombra-1: none; --sombra-2: none; --sombra-cta: none;
 }
 
 * { box-sizing: border-box; }
@@ -30,7 +62,7 @@ body {
   margin: 0;
   background: var(--papel);
   color: var(--tinta);
-  font: 17px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 500 17px/1.6 Manrope, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   -webkit-text-size-adjust: 100%;
 }
 
@@ -82,7 +114,7 @@ button:disabled { opacity: .5; cursor: default; }
   width: 100%;
   padding: .95rem;
   background: var(--acento);
-  color: #fff;
+  color: var(--acao-tinta);
   font-weight: 600;
   font-size: 1.02rem;
 }
@@ -141,7 +173,7 @@ select {
   padding-left: 1.2rem;
 }
 .resp:hover { border-color: var(--acento); }
-.resp.escolhida { background: var(--acento); color: #fff; border-color: var(--acento); }
+.resp.escolhida { background: var(--acento); color: var(--acao-tinta); border-color: var(--acento); }
 
 .importante {
   display: flex;
@@ -204,7 +236,7 @@ select {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  color: #fff;
+  color: var(--acao-tinta);
   font-weight: 700;
   font-size: .92rem;
   overflow: hidden;
@@ -225,7 +257,7 @@ select {
   border-radius: 7px;
   display: grid;
   place-items: center;
-  color: #fff;
+  color: var(--acao-tinta);
   font-weight: 700;
   overflow: hidden;
   flex: none;
@@ -260,7 +292,7 @@ select {
   color: var(--acento);
   border-color: var(--linha);
 }
-.fixar.fixado { background: var(--ok); color: #fff; border-color: var(--ok); }
+.fixar.fixado { background: var(--ok); color: var(--acao-tinta); border-color: var(--ok); }
 
 /* ----------------------------------------------------------------- colinha */
 
@@ -433,7 +465,7 @@ h1:focus-visible, h2:focus-visible { outline: none; }
 .linha-colinha .num { display: inline-flex; align-items: baseline; gap: .35rem; }
 
 /* Área de toque mínima em alvos pequenos. */
-.contexto summary, .link-metodo { display: inline-block; padding: .35rem 0; }
+.contexto summary, .link-metodo, .honesto a { display: inline-block; padding: .65rem 0; min-height: 44px; }
 
 /* Voto próprio que contraria a bancada: é o que distingue a pessoa da sigla.
    Deliberadamente FORA da escala verde/vermelho — ali verde significa
@@ -538,3 +570,197 @@ a.cta {
 .honesto h2 { font-size: 1.1rem; margin: 0 0 .6rem; }
 .honesto p { color: var(--suave); font-size: .95rem; margin: 0 0 .8rem; }
 .honesto a { color: var(--acento); }
+
+/* =================================================== identidade (MASTER.md) */
+
+header {
+  border-bottom: 0;
+  background: color-mix(in srgb, var(--papel) 88%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.marca { display: inline-flex; align-items: center; gap: .55rem; font-weight: 500; letter-spacing: -.01em; }
+.marca b { color: var(--tinta); font-weight: 800; }
+.marca-icone { color: var(--tinta); flex: none; }
+.link-metodo { font-weight: 700; }
+
+/* ---- hero ---- */
+.landing { position: relative; }
+/* O véu vive num pseudo-elemento de tela cheia preso ao <main>, não a um
+   filho: assim nada extrapola a largura do documento e não há scroll
+   horizontal. O radial fica centrado no conteúdo. */
+main:has(.landing) { position: relative; isolation: isolate; }
+main:has(.landing)::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: 36rem;
+  background: radial-gradient(90% 60% at 50% 0%, var(--veu) 0%, transparent 70%);
+  z-index: -1;
+  pointer-events: none;
+}
+.landing::before {
+  content: none;
+  position: absolute;
+  inset: 0;
+  height: 0;
+  background: radial-gradient(120% 70% at 50% 0%, var(--veu) 0%, transparent 70%);
+  z-index: -1;
+  pointer-events: none;
+}
+.hero {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  align-items: center;
+  margin-bottom: .6rem;
+}
+@media (min-width: 40rem) { .hero { grid-template-columns: 1.3fr 1fr; gap: 2rem; } }
+
+.display {
+  font-size: clamp(2.2rem, 7vw, 3.4rem);
+  font-weight: 800;
+  letter-spacing: -.03em;
+  line-height: 1.05;
+  text-wrap: balance;
+  margin: 0 0 1rem;
+}
+.display em { color: var(--acao); font-style: normal; }
+.landing .lead { font-weight: 500; }
+
+/* ---- urna 3D em CSS: um prisma fechado de 140 x 110 x 90. Cada face parte
+   da mesma origem e vai ao lugar só por transform — é assim que um prisma se
+   monta. Three.js seria 600 KB para desenhar um paralelepípedo. ---- */
+.urna {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  margin: 0 auto;
+  perspective: 900px;
+}
+.urna-corpo {
+  --w: 140px; --h: 110px; --d: 90px;
+  position: absolute;
+  left: 40px; top: 60px;
+  width: var(--w); height: var(--h);
+  transform-style: preserve-3d;
+  transform: rotateX(-16deg) rotateY(-28deg);
+  animation: flutua 6s ease-in-out infinite alternate;
+}
+.face { position: absolute; left: 0; top: 0; backface-visibility: hidden; }
+.face.frente {
+  width: var(--w); height: var(--h);
+  border-radius: 12px;
+  background: var(--superficie);
+  box-shadow: var(--sombra-2);
+  transform: translateZ(calc(var(--d) / 2));
+  display: grid; place-items: start center; padding-top: 20px;
+}
+.face.lado {
+  width: var(--d); height: var(--h);
+  border-radius: 0 12px 12px 0;
+  background: color-mix(in srgb, var(--superficie) 78%, var(--tinta));
+  transform: translateX(var(--w)) rotateY(90deg);
+  transform-origin: left center;
+}
+.face.topo {
+  width: var(--w); height: var(--d);
+  border-radius: 12px 12px 0 0;
+  background: color-mix(in srgb, var(--superficie) 90%, var(--tinta));
+  transform: rotateX(90deg);
+  transform-origin: top center;
+  display: grid; place-items: center;
+}
+/* a fenda fica no TOPO da urna, onde o voto entra */
+.face.topo::after { content: ""; width: 70px; height: 7px; border-radius: 4px; background: var(--tinta); }
+.fenda { display: none; }
+.voto {
+  position: absolute;
+  left: 96px; top: 12px;
+  width: 42px; height: 36px;
+  border-radius: 6px;
+  background: var(--acao);
+  box-shadow: var(--sombra-cta);
+  transform: rotate(-12deg);
+  display: grid; place-items: center;
+  animation: entra-voto 6s ease-in-out infinite alternate;
+}
+.voto span {
+  width: 16px; height: 9px;
+  border-left: 3px solid var(--acao-tinta);
+  border-bottom: 3px solid var(--acao-tinta);
+  transform: rotate(-45deg) translate(2px, -2px);
+}
+.urna-sombra {
+  position: absolute;
+  left: 40px; right: 40px; bottom: 4px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(20 32 27 / .16), transparent);
+  animation: sombra-respira 6s ease-in-out infinite alternate;
+}
+@keyframes flutua        { from { transform: rotateX(-16deg) rotateY(-28deg) translateY(0); } to { transform: rotateX(-14deg) rotateY(-24deg) translateY(-8px); } }
+@keyframes entra-voto    { from { transform: rotate(-12deg) translateY(0); } to { transform: rotate(-8deg) translateY(14px); } }
+@keyframes sombra-respira{ from { transform: scaleX(1); opacity: 1; } to { transform: scaleX(.88); opacity: .7; } }
+
+/* ---- CTA e botões: pill, uma cor de ação ---- */
+.primario, a.cta {
+  border-radius: var(--raio-pill);
+  background: var(--acao);
+  color: var(--acao-tinta);
+  font-weight: 800;
+  min-height: 56px;
+  box-shadow: var(--sombra-cta);
+  transition: transform var(--rapido) var(--ease), box-shadow var(--rapido) var(--ease), filter var(--rapido) var(--ease);
+}
+.secundario, .aba, .filtro, .fixar, .ver-parcial, .continuar, .mais {
+  border-radius: var(--raio-pill);
+}
+.secundario { background: var(--superficie); color: var(--tinta); border-color: transparent; box-shadow: var(--sombra-1); font-weight: 700; }
+.aba { background: var(--veu); color: var(--tinta); border-color: transparent; font-weight: 700; }
+.aba.ativa { background: var(--tinta); color: var(--papel); }
+.busca input, select { border-radius: var(--raio-pill); border-color: transparent; background: var(--superficie); box-shadow: var(--sombra-1); }
+.fixar { background: var(--acao-suave); color: var(--acao); border-color: transparent; font-weight: 800; }
+.fixar.fixado { background: var(--acao); color: var(--acao-tinta); }
+.resp { border-radius: var(--raio); background: var(--superficie); border-color: transparent; box-shadow: var(--sombra-1); font-weight: 700; }
+.resp.escolhida { background: var(--acao); color: var(--acao-tinta); }
+
+/* ---- cartões sem borda ---- */
+.candidato, #cartao, .porque, .linha-colinha { border-color: transparent; }
+.candidato, #cartao { background: var(--superficie); box-shadow: var(--sombra-1); transition: box-shadow var(--rapido) var(--ease), transform var(--rapido) var(--ease); }
+.linha-colinha { border-bottom-color: var(--linha); }
+.como li::before { background: var(--acao-suave); color: var(--acao); border-color: transparent; font-weight: 800; }
+.fatos dt { color: var(--acao); }
+
+/* ---- hover só onde existe ponteiro fino ---- */
+@media (hover: hover) and (pointer: fine) {
+  .primario:hover:not(:disabled), a.cta:hover { transform: translateY(-2px); filter: brightness(.94); box-shadow: 0 12px 28px rgb(8 122 84 / .34); }
+  .candidato:hover { box-shadow: var(--sombra-2); }
+  .secundario:hover, .fixar:hover { transform: translateY(-1px); box-shadow: var(--sombra-2); }
+}
+button:active:not(:disabled), a.cta:active { transform: scale(.98); }
+:focus-visible { outline: 3px solid var(--acao); outline-offset: 3px; }
+
+/* ---- revelação por scroll no "como funciona" ---- */
+@supports (animation-timeline: view()) {
+  .como li, .fatos div, .honesto {
+    animation: revela linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 40%;
+  }
+  .como li:nth-child(2) { animation-range: entry 10% entry 50%; }
+  .como li:nth-child(3) { animation-range: entry 20% entry 60%; }
+}
+@keyframes revela { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+/* ---- reduced motion: tudo congela ---- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  .urna-corpo, .voto, .urna-sombra { animation: none !important; }
+  .como li, .fatos div, .honesto { animation: none !important; opacity: 1 !important; transform: none !important; }
+}
+
+/* ---- quiz: o checkbox deixa de ser nu; o desabilitado continua legível ---- */
+.importante { padding: .7rem .9rem; border-radius: var(--raio); background: var(--superficie); box-shadow: var(--sombra-1); }
+.importante input { accent-color: var(--acao); width: 20px; height: 20px; }
+button:disabled { opacity: .55; }
