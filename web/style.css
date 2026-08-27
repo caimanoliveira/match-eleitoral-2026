@@ -560,10 +560,14 @@ a.cta {
 }
 @media (max-width: 34rem) { .fatos { grid-template-columns: 1fr; gap: 1rem; } }
 .fatos div { display: flex; flex-direction: column; gap: .2rem; }
+/* A segunda voz tipográfica do site é a mono do número de urna. Os fatos da
+   landing são números — falam nessa voz, com peso e tamanho para se
+   distinguirem do corpo em Manrope. */
 .fatos dt {
-  font: 700 1.7rem/1.1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 800 2.1rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -.02em;
+  letter-spacing: -.03em;
+  color: var(--acao);
 }
 .fatos dd { margin: 0; font-size: .85rem; color: var(--suave); line-height: 1.4; }
 
