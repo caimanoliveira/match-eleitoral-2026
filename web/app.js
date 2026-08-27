@@ -27,6 +27,7 @@ const estado = {
   meta: null,
   versaoTeses: null,
   teses: [],
+  partidos: {},     // sigla -> {tese_id: posição da bancada}
   respostas: {},
   indice: 0,
   // Carregados juntos e trocados de uma vez só: se `uf` e `porCargo` puderem
@@ -622,6 +623,26 @@ function telaResultado({ rolar = true } = {}) {
   marcarRolagem(faixa);
 }
 
+/** Teses em que o candidato votou DIFERENTE da bancada do próprio partido.
+ *  Só conta o que entrou no match: um voto divergente numa tese que o eleitor
+ *  não respondeu não tem por que aparecer no percentual dele.
+ *
+ *  É a informação que separa a pessoa da sigla — dois terços dos candidatos
+ *  com voto próprio divergem em ao menos um tema — e estava calculada e
+ *  escondida desde o começo. */
+function divergencias(detalhe, sigla) {
+  const bancada = estado.partidos[(sigla || "").toUpperCase()];
+  if (!bancada) return [];
+  return detalhe.filter(
+    (d) =>
+      d.fonte === "2" &&
+      bancada[d.tese.id] &&
+      bancada[d.tese.id] !== POSICAO_CHAR[d.posicao]
+  );
+}
+
+const POSICAO_CHAR = { 1: "+", "-1": "-", 0: "0" };
+
 /** O percentual veio inteiro da bancada? Olha só as teses que ENTRARAM na
  *  conta: usar a string `src` completa fazia o aviso sumir quando o candidato
  *  tinha um voto próprio numa tese que o eleitor não respondeu. */
@@ -699,6 +720,17 @@ function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPar
     topo.append(alerta);
   }
 
+  const divergiu = divergencias(detalhe, candidato.p);
+  if (divergiu.length) {
+    const p = document.createElement("p");
+    p.className = "divergiu";
+    p.textContent =
+      `Votou diferente da bancada do ${candidato.p} em ` +
+      `${divergiu.length} ${divergiu.length === 1 ? "tema" : "temas"} — ` +
+      `este percentual é dele, não do partido.`;
+    topo.append(p);
+  }
+
   let origem = null;
   if (soPosicaoDoPartido(detalhe)) {
     origem = document.createElement("p");
@@ -713,7 +745,7 @@ function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPar
   const det = document.createElement("details");
   det.className = "quebra";
   det.innerHTML = `<summary>Por que ${pct(score)}? (${temas} temas)</summary>`;
-  det.append(quebraPorTese(detalhe));
+  det.append(quebraPorTese(detalhe, candidato.p));
 
   const fixar = document.createElement("button");
   const jaEscolhido = estado.escolhas[estado.cargoAtivo] === candidato.id;
@@ -752,7 +784,8 @@ function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPar
   return li;
 }
 
-function quebraPorTese(detalhe) {
+function quebraPorTese(detalhe, sigla) {
+  const divergiu = new Set(divergencias(detalhe, sigla).map((d) => d.tese.id));
   const ul = document.createElement("ul");
   ul.className = "temas";
   for (const d of detalhe) {
@@ -763,12 +796,14 @@ function quebraPorTese(detalhe) {
         <em>Não há registro de posição.</em></span>`;
     } else {
       const fonte = FONTES[d.fonte] || { rotulo: "", inferida: true };
+      const rompeu = divergiu.has(d.tese.id);
       li.className = d.concorda ? "tema ok" : "tema nao";
       li.innerHTML =
         `<span class="marca" aria-hidden="true">${d.concorda ? "✓" : "✕"}</span>` +
         `<span><span class="sr">${d.concorda ? "Concorda com você:" : "Discorda de você:"}</span> ` +
         `${d.tese.texto}` +
-        `<em class="${fonte.inferida ? "inferida" : ""}">${fonte.rotulo}` +
+        `<em class="${fonte.inferida ? "inferida" : ""}${rompeu ? " rompeu" : ""}">` +
+        `${fonte.rotulo}${rompeu ? ` — <b>diferente da bancada do ${sigla}</b>` : ""}` +
         (d.tese.fontes?.[0]
           ? ` · <a href="${d.tese.fontes[0].url}" target="_blank" rel="noopener">ver votação</a>`
           : "") +
@@ -971,6 +1006,10 @@ async function rotear() {
     estado.teses = arquivo.teses;
     estado.versaoTeses = arquivo.versao;
     carimbo = carimbo || arquivo.versao;
+    // Posições por bancada: é o que permite dizer, na tela, quando o candidato
+    // votou diferente do próprio partido. Já era gerado pelo build e ninguém
+    // lia. 23 KB.
+    estado.partidos = await carregarJSON("data/partidos.json").catch(() => ({}));
   } catch (e) {
     app.innerHTML = `<p class="erro">Não consegui carregar as perguntas (${e.message}).
       Recarregue a página; se persistir, os dados do site podem estar sendo publicados.</p>`;

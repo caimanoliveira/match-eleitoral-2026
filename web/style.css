@@ -434,3 +434,21 @@ h1:focus-visible, h2:focus-visible { outline: none; }
 
 /* Área de toque mínima em alvos pequenos. */
 .contexto summary, .link-metodo { display: inline-block; padding: .35rem 0; }
+
+/* Voto próprio que contraria a bancada: é o que distingue a pessoa da sigla.
+   Deliberadamente FORA da escala verde/vermelho — ali verde significa
+   "concorda com você" e vermelho "discorda de você". Divergir da bancada não é
+   bom nem ruim: é a fonte sendo mais forte. Então isso se diz com peso de
+   tinta, no mesmo registro do rótulo de fonte, e não com uma terceira cor. */
+.divergiu {
+  grid-column: 1 / -1;
+  margin: .6rem 0 0;
+  padding: .5rem .65rem;
+  font-size: .8rem;
+  line-height: 1.45;
+  color: var(--tinta);
+  background: var(--campo);
+  border-radius: 6px;
+}
+.tema em.rompeu { color: var(--tinta); }
+.tema em.rompeu::before { content: "" !important; }
