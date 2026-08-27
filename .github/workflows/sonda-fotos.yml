@@ -1,0 +1,27 @@
+name: sonda-fotos
+on: { workflow_dispatch: {} }
+jobs:
+  sonda:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          python3 - <<'PY'
+          import sys, urllib.request, urllib.error
+          sys.path.insert(0, "pipeline")
+          from fetch import HEADERS
+          base = "https://cdn.tse.jus.br/estatistica/sead/odsele/foto_cand/"
+          total = 0
+          for uf in ["BR", "AC", "SP", "MG", "RJ", "DF"]:
+              u = f"{base}foto_cand2026_{uf}_div.zip"
+              req = urllib.request.Request(u, headers=dict(HEADERS, Range="bytes=0-0"))
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as r:
+                      cr = r.headers.get("Content-Range", "")
+                      size = int(cr.split("/")[-1]) if "/" in cr else 0
+                      total += size
+                      print(f"{r.status}  {size/1048576:8.1f} MB  {uf}")
+              except urllib.error.HTTPError as e:
+                  print(f"{e.code}  {uf}")
+          print(f"amostra de 6 UFs: {total/1048576:.0f} MB")
+          PY
