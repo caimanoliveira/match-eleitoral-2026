@@ -106,15 +106,20 @@ o eleitor mais olha. `pipeline/survey.py` (previsto no plano original, nunca
 escrito) leria um CSV de respostas — formato simples, para a coleta poder
 acontecer por qualquer meio.
 
-## 4. Espelho dos dados do TSE (impede o projeto de congelar)
+## 4. Espelho dos dados do TSE — feito como rebuild diário no GitHub Actions
 
-O CDN do TSE bloqueia por IP quando o volume sobe, e o bloqueio pega o domínio
-inteiro — aconteceu durante o desenvolvimento e ainda está ativo. `fetch.py` já
-não repete 4xx e cai no cache com aviso de idade, mas isso só adia o problema.
+Não é um espelho no sentido de cópia própria do `consulta_cand`: é um runner
+limpo fazendo **uma** requisição por dia, que é o que o WAF do TSE tolera. O
+resultado vai para `web/data/` por commit automático.
 
-Candidatura muda até a véspera: indeferimento, renúncia, substituição. Um site
-que não atualiza vai mandar gente votar em quem saiu da disputa. Sem espelho
-próprio do `consulta_cand`, não há rebuild diário.
+O que só o runner ensinou (nada disso aparecia em desenvolvimento, porque o
+cache local escondia): a Câmara corta conexões longas, o Senado recusa IPs de
+datacenter, e um build morto por fonte secundária impediria a publicação da
+lista fresca do TSE. Ver o bloco "Rebuild diário" do README para as travas.
+
+Pendência real: o TSE **ainda não foi testado a partir do runner** — os dois
+primeiros runs morreram antes de chegar nele. Se o WAF também bloquear IPs do
+GitHub, o plano B é um proxy residencial ou pedir acesso à API oficial.
 
 ## 5. Revisão humana das 34 afirmações (antes de qualquer divulgação)
 

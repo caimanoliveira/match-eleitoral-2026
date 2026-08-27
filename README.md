@@ -73,11 +73,28 @@ Join TSE ↔ Câmara por CPF, exposto em `/deputados/{id}`. Join TSE ↔ Senado 
 nome completo normalizado (a API do Senado não expõe CPF); só entra quando casa
 com exatamente um candidato.
 
-**Aviso operacional:** o CDN do TSE fica atrás de um WAF que bloqueia por IP
-quando o volume sobe, e o bloqueio pega o domínio inteiro. `fetch.py` não repete
-4xx (repetir aproxima o bloqueio em vez de contorná-lo) e cai no cache local
-avisando a idade. Rebuild automático diário provavelmente precisa de espelho
-próprio do `consulta_cand`.
+## Rebuild diário
+
+`.github/workflows/rebuild.yml` roda às 06:17 (Brasília) num runner limpo do
+GitHub, refaz `web/data/` e commita se mudou. Três travas impedem publicar
+dado ruim:
+
+- `--exigir-tse-fresco 12`: se a lista do TSE tiver mais de 12 h, o job falha
+  sem escrever nada. O commit anterior fica valendo — e ele já declara ao
+  eleitor a data real da fonte (`meta.json: fonte_tse_em`).
+- Votações do Senado listadas em `theses.toml` precisam existir no build;
+  senão, não publica. Evita que os 8 governadores-senadores regridam a "só a
+  bancada" em silêncio.
+- Nenhum CPF pode aparecer em `web/data/` (checado a cada run).
+
+**O que cada fonte faz com IP de datacenter**, medido nos primeiros runs: o
+CDN do TSE bloqueia por IP quando o volume sobe (pegou a máquina de
+desenvolvimento por dias); a Câmara entrega, mas corta conexões longas
+(`IncompleteRead`, com retry); o Senado estoura timeout repetidamente em
+JSONs de 2 MB que respondem em 0,5 s de uma conexão doméstica. Por isso
+`pipeline/semente/` versiona os JSONs do Senado — um runner limpo nunca
+depende do Senado ao vivo — e `.cache/` da Câmara é preservado entre runs
+pelo `actions/cache`.
 
 ## O que falta
 
