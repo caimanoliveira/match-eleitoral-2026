@@ -24,6 +24,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import congresso
+import fotos
 import senado
 import teses as teses_mod
 import tse
@@ -126,6 +127,11 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument(
+        "--fotos", action="store_true",
+        help="baixa as fotos oficiais do TSE para web/fotos/ (~70 MB; só no runner — "
+             "a máquina de desenvolvimento está bloqueada pelo WAF)",
+    )
+    ap.add_argument(
         "--exigir-tse-fresco", type=float, metavar="HORAS", default=None,
         help="falha (exit 3) se a lista do TSE for mais velha que HORAS. Para o "
              "rebuild automático: sem isto o robô publicaria dados velhos com "
@@ -166,6 +172,12 @@ def main() -> None:
         )
     print(f"candidatos: {len(candidatos)} | partidos com posição: {len(por_partido)}")
     print(f"deputados com voto: {len(por_deputado)} | CPFs mapeados: {len(cpf_para_dep)}")
+
+    if args.fotos:
+        com_foto = fotos.baixar()
+    else:
+        com_foto = {p.stem for p in fotos.DESTINO.glob("*.jpg")} if fotos.DESTINO.exists() else set()
+    print(f"fotos: {len(com_foto)} candidatos")
 
     cobertura = collections.Counter()
     shards: dict[str, list] = collections.defaultdict(list)
@@ -220,15 +232,17 @@ def main() -> None:
             registro["numDisputado"] = True
         if c["id"] in por_senador:
             registro["sen"] = True  # tem voto nominal no Senado
-        if dep:
-            registro["dep"] = dep["id"]  # para linkar o voto real na UI
-            # Foto oficial da Câmara: URL pública e estável, cobre os deputados
-            # em exercício. O padrão equivalente no TSE, que cobriria todos os
-            # candidatos, ainda não foi confirmado — sem ele a UI cai no avatar
-            # de iniciais.
+        if c["id"] in com_foto:
+            # Foto oficial do TSE, extraída do dataset por UF para web/fotos/.
+            # Caminho relativo: o site vive num subcaminho no Pages.
+            registro["foto"] = f"fotos/{c['id']}.jpg"
+        elif dep:
+            # Sem foto do TSE, a da Câmara cobre o incumbente.
             registro["foto"] = (
                 f"https://www.camara.leg.br/internet/deputado/bandep/{dep['id']}.jpg"
             )
+        if dep:
+            registro["dep"] = dep["id"]  # para linkar o voto real na UI
         shards[f"{c['cargo']}-{c['uf']}"].append(registro)
 
     total = sum(cobertura.values())

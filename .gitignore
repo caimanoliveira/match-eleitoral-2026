@@ -2,6 +2,9 @@
 .cache/
 __pycache__/
 
+# Fotos dos candidatos (~70 MB): geradas no runner, sobem no artefato do Pages.
+web/fotos/
+
 # Cache do hook de design
 .impeccable/
 

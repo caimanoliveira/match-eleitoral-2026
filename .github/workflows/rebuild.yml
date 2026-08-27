@@ -20,6 +20,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: rebuild
@@ -28,7 +30,10 @@ concurrency:
 jobs:
   rebuild:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -48,8 +53,10 @@ jobs:
           key: pipeline-cache-${{ github.run_id }}
           restore-keys: pipeline-cache-
 
+      # Os zips de fotos (~70 MB) entram no mesmo cache da Câmara: mudam
+      # pouco e o TSE não precisa servi-los de novo todo dia.
       - name: build
-        run: python3 pipeline/build.py --exigir-tse-fresco 12
+        run: python3 pipeline/build.py --fotos --exigir-tse-fresco 12
 
       - name: testes
         run: |
@@ -82,3 +89,12 @@ jobs:
           # confunde o parser YAML do bloco `run: |`.
           printf 'Dados: TSE de %s\n\nRebuild automático. Só entra quando a lista do TSE veio com menos de 12h; caso contrário o job falha e o commit anterior continua valendo.\n' "$fonte" | git commit -q -F -
           git push
+
+      # Publica a partir DESTE run: web/fotos/ não está no repositório, só
+      # existe aqui. Publicar num workflow separado subiria o site sem fotos.
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+      - id: deploy
+        uses: actions/deploy-pages@v4

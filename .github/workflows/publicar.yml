@@ -31,6 +31,20 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # Sem isto, um push de CSS publicaria o site sem fotos: elas não estão
+      # no repositório. Reaproveita os zips cacheados pelo rebuild.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            .cache
+            !.cache/consulta_cand_2026.zip
+          key: pipeline-cache-${{ github.run_id }}
+          restore-keys: pipeline-cache-
+      - name: fotos
+        run: python3 -c "import sys; sys.path.insert(0,'pipeline'); import fotos; fotos.baixar()"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
