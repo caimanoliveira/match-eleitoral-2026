@@ -53,22 +53,26 @@ export function selo(sigla, numeroPartido, tamanho = 28) {
 // sondar `partidos/{SIGLA}.svg` por selo disparava um 404 para cada candidato
 // da lista — e a lista é redesenhada a cada tecla da busca. O manifesto é lido
 // uma única vez: sem ele, nenhuma requisição acontece.
+// O manifesto mapeia sigla -> URL do logo hospedado pela Câmara dos Deputados
+// (campo urlLogo da API oficial de partidos). Não copiamos nem redistribuímos
+// o arquivo: marca é do partido, e quem serve é o Estado. Cobre 12 dos 22
+// partidos com bancada; para os demais fica o selo com o número de urna.
 let manifesto = null;
 function logosDisponiveis() {
   if (!manifesto) {
     manifesto = fetch("partidos/logos.json")
-      .then((r) => (r.ok ? r.json() : []))
-      .catch(() => [])
-      .then((lista) => new Set(lista.map((s) => String(s).toUpperCase())));
+      .then((r) => (r.ok ? r.json() : {}))
+      .catch(() => ({}));
   }
   return manifesto;
 }
 
 async function aplicarLogo(el, sigla) {
   const chave = (sigla || "").toUpperCase();
-  if (!(await logosDisponiveis()).has(chave)) return;
+  const url = (await logosDisponiveis())[chave];
+  if (!url) return;
   const logo = new Image();
-  logo.src = `partidos/${encodeURIComponent(chave)}.svg`;
+  logo.src = url;
   logo.alt = "";
   logo.onload = () => {
     el.textContent = "";

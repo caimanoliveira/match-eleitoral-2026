@@ -7,23 +7,35 @@ jobs:
       - uses: actions/checkout@v4
       - run: |
           python3 - <<'PY'
-          import sys
+          import sys, io, zipfile, urllib.request, urllib.error, json
           sys.path.insert(0, "pipeline")
-          from fetch import get_json   # descomprime gzip e usa os headers que o WAF aceita
-          for ds in ["candidatos-2026", "fotos-de-candidatos-2026", "candidatos-2022"]:
+          from fetch import HEADERS, get
+          base = "https://cdn.tse.jus.br/estatistica/sead/eleicoes/eleicoes2026/fotos/"
+          ufs = "AC AL AM AP BA BR CE DF ES GO MA MG MS MT PA PB PE PI PR RJ RN RO RR RS SC SE SP TO".split()
+          # 1) tamanho de todos, por HEAD com Range
+          total = 0
+          for uf in ufs:
+              req = urllib.request.Request(f"{base}foto_cand2026_{uf}_div.zip", headers=dict(HEADERS, Range="bytes=0-0"))
               try:
-                  d = get_json(f"https://dadosabertos.tse.jus.br/api/3/action/package_show?id={ds}", f"ckan-{ds}.json", max_age=0)["result"]
-                  print(f"## {ds}: {len(d['resources'])} recursos")
-                  for res in d["resources"]:
-                      if "foto" in (res.get("name","") + res.get("url","")).lower():
-                          print(f"   {str(res.get('size') or '?'):>12}  {res['url']}")
-              except Exception as e:
-                  print(f"## {ds}: {type(e).__name__} {str(e)[:80]}")
-          try:
-              r = get_json("https://dadosabertos.tse.jus.br/api/3/action/package_search?q=foto&rows=20", "ckan-busca.json", max_age=0)["result"]
-              print(f"## busca 'foto': {r['count']} datasets")
-              for p in r["results"]:
-                  print(f"   {p['name']}")
-          except Exception as e:
-              print(f"## busca: {type(e).__name__} {str(e)[:80]}")
+                  with urllib.request.urlopen(req, timeout=60) as r:
+                      cr = r.headers.get("Content-Range", ""); size = int(cr.split("/")[-1]) if "/" in cr else 0
+                      total += size; print(f"TAM {uf} {size/1048576:.1f}")
+              except urllib.error.HTTPError as e:
+                  print(f"TAM {uf} HTTP{e.code}")
+          print(f"TOTAL {total/1048576:.0f} MB")
+          # 2) estrutura interna: o menor zip (AC)
+          raw = get(f"{base}foto_cand2026_AC_div.zip", "foto_AC.zip", max_age=0)
+          zf = zipfile.ZipFile(io.BytesIO(raw)); names = zf.namelist()
+          print(f"ZIP AC: {len(names)} arquivos, {len(raw)/1048576:.1f} MB; primeiros: {names[:4]}")
+          info = zf.getinfo(names[1]); print(f"ARQ exemplo: {info.filename} {info.file_size} bytes")
+          # 3) foto individual por URL direta no DivulgaCand?
+          sq = names[1].split("/")[-1].split(".")[0].lstrip("F")
+          for u in [f"https://divulgacandcontas.tse.jus.br/divulga/rest/arquivo/img/2026/{sq}",
+                    f"https://divulgacandcontas.tse.jus.br/candidaturas/oficial/2026/AC/AC/544/candidatos/{sq}/foto.jpeg"]:
+              req = urllib.request.Request(u, headers=HEADERS)
+              try:
+                  with urllib.request.urlopen(req, timeout=30) as r:
+                      print(f"DIRETA {r.status} {r.headers.get('Content-Type')} {u}")
+              except urllib.error.HTTPError as e:
+                  print(f"DIRETA {e.code} {u}")
           PY
