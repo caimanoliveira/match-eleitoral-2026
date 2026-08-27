@@ -17,7 +17,7 @@ DATA = RAIZ / "web" / "data"
 sys.path.insert(0, str(RAIZ / "pipeline"))
 
 POSICOES = set("+-0?")
-NIVEIS = set("25?")  # níveis da cascata em uso + sem dado
+NIVEIS = set("125?")  # níveis da cascata em uso + sem dado
 
 
 def main() -> None:

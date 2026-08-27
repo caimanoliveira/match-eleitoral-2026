@@ -11,3 +11,8 @@ web/fotos/
 # Clone de teste feito dentro do worktree. Sem isto, um `git add -A` aninharia
 # o repositório inteiro dentro dele mesmo.
 /match-eleitoral-2026/
+
+# Lista consolidada de contatos para o disparo às assessorias. Os e-mails são
+# públicos um a um (API da Câmara), mas 495 numa lista pronta num repositório
+# aberto é convite a spam de terceiros. Gera-se localmente; ver ESTRATEGIA.md.
+pipeline/respostas/disparo-deputados.csv

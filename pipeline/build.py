@@ -26,6 +26,7 @@ from pathlib import Path
 import congresso
 import fotos
 import senado
+import survey
 import teses as teses_mod
 import tse
 from fetch import CACHE
@@ -154,6 +155,10 @@ def main() -> None:
     por_deputado = posicoes_deputado(ts, votos)
     cpf_para_dep = {d["cpf"]: d for d in deputados}
 
+    # Nível 1: o que o candidato declarou, conferido. Vence tudo.
+    declaradas = survey.carregar({t["id"] for t in ts})
+    print(f"survey: {len(declaradas)} candidatos com resposta própria")
+
     votacoes_sen = senado.votacoes()
     senadores = senado.senadores(votacoes_sen)
     cod_para_sq = senado.casar_com_tse(senadores, candidatos)
@@ -204,9 +209,14 @@ def main() -> None:
             incumbentes += 1
         do_partido = por_partido.get(c["partido"].upper(), {})
 
+        declarou = declaradas.get(c["id"], {})
         pos, src = [], []
         for t in ts:
-            if t["id"] in proprios:  # nível 2: como o próprio votou
+            if t["id"] in declarou:  # nível 1: o candidato respondeu
+                pos.append(declarou[t["id"]])
+                src.append("1")
+                cobertura[1] += 1
+            elif t["id"] in proprios:  # nível 2: como o próprio votou
                 pos.append(proprios[t["id"]])
                 src.append("2")
                 cobertura[2] += 1
@@ -247,7 +257,7 @@ def main() -> None:
 
     total = sum(cobertura.values())
     print("\ncobertura das células (candidato x tese):")
-    for nivel, rotulo in ((2, "voto do próprio"), (5, "bancada do partido"), (0, "sem dado")):
+    for nivel, rotulo in ((1, "declarado pelo candidato"), (2, "voto do próprio"), (5, "bancada do partido"), (0, "sem dado")):
         n = cobertura[nivel]
         print(f"  nível {nivel} {rotulo:<20} {n:>8} ({100 * n / total:5.1f}%)")
     print(f"\ncandidatos com voto próprio: {incumbentes}")

@@ -15,6 +15,7 @@ const UFS = ("AC AL AM AP BA CE DF ES GO MA MG MS MT PA PB PE PI PR RJ RN RO RR 
   "RS SC SE SP TO").split(" ");
 
 const FONTES = {
+  "1": { rotulo: "Declarado pelo próprio candidato", inferida: false },
   "2": { rotulo: "Como votou no Congresso", inferida: false },
   "5": { rotulo: "Posição da bancada do partido", inferida: true },
 };
@@ -795,7 +796,16 @@ function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPar
     // que o eleitor tinha aberto e reordenava a lista sob o dedo dele.
   };
 
-  li.append(topo, ...(origem ? [origem] : []), det, fixar);
+  // Convite à assessoria. Todo card tem: é assim que o questionário chega a
+  // quem não tem e-mail no TSE — o eleitor manda o link, a assessoria vê o
+  // percentual herdado do partido e responde para ter o próprio.
+  const responder = document.createElement("a");
+  responder.className = "responder";
+  responder.href = `responder.html#${encodeURIComponent(candidato.id)}`;
+  responder.textContent = detalhe.some((d) => d.fonte === "1")
+    ? "Respostas do candidato · atualizar"
+    : "É da campanha? Responda pelo candidato";
+  li.append(topo, ...(origem ? [origem] : []), det, fixar, responder);
   return li;
 }
 
