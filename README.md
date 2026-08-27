@@ -73,11 +73,21 @@ Join TSE ↔ Câmara por CPF, exposto em `/deputados/{id}`. Join TSE ↔ Senado 
 nome completo normalizado (a API do Senado não expõe CPF); só entra quando casa
 com exatamente um candidato.
 
+## Site no ar
+
+**https://caimanoliveira.github.io/match-eleitoral-2026/**
+
+Publicado pelo próprio rebuild diário (abaixo). As fotos dos candidatos (~70 MB,
+dataset oficial do TSE) não ficam no repositório: só existem no runner que as
+baixou, então o Pages é gerado pelo mesmo run — publicar num workflow separado
+subiria o site sem fotos. `publicar.yml` cobre um push manual em `web/` (CSS,
+texto) e baixa as fotos antes, pelo cache.
+
 ## Rebuild diário
 
 `.github/workflows/rebuild.yml` roda às 06:17 (Brasília) num runner limpo do
-GitHub, refaz `web/data/` e commita se mudou. Três travas impedem publicar
-dado ruim:
+GitHub, refaz `web/data/` e `web/fotos/`, commita os dados se mudaram e
+publica o site. Três travas impedem publicar dado ruim:
 
 - `--exigir-tse-fresco 12`: se a lista do TSE tiver mais de 12 h, o job falha
   sem escrever nada. O commit anterior fica valendo — e ele já declara ao
@@ -102,5 +112,7 @@ pelo `actions/cache`.
   registrado no TSE, declarações públicas. Hoje só rodam os níveis 2 e 5.
 - 5 afirmações rejeitadas na verificação, marcadas como recuperáveis com o texto
   reescrito — ver as notas em `theses.toml` e o histórico de curadoria.
-- Logos de partido: `web/partidos/{SIGLA}.svg` se alguém obtiver autorização de
-  uso. Sem o arquivo, o selo cai no número de urna sobre a cor do partido.
+- Logos de partido: o site aponta para o `urlLogo` da API oficial da Câmara —
+  não copia nem redistribui. Cobre 12 dos 22 partidos com bancada; PL, MDB,
+  NOVO, REPUBLICANOS e UNIÃO estão entre os que a Câmara não serve, e ficam
+  com o selo do número de urna.
