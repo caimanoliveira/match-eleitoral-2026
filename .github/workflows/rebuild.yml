@@ -78,8 +78,7 @@ jobs:
             exit 0
           fi
           fonte=$(python3 -c "import json;print(json.load(open('web/data/meta.json'))['fonte_tse_em'][:16])")
-          git commit -m "Dados: TSE de ${fonte}
-
-Rebuild automático. Só entra quando a lista do TSE veio com menos de 12h;
-caso contrário o job falha e o commit anterior continua valendo."
+          # Mensagem via stdin: um -m com quebra de linha dentro de aspas
+          # confunde o parser YAML do bloco `run: |`.
+          printf 'Dados: TSE de %s\n\nRebuild automático. Só entra quando a lista do TSE veio com menos de 12h; caso contrário o job falha e o commit anterior continua valendo.\n' "$fonte" | git commit -q -F -
           git push
