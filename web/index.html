@@ -16,13 +16,64 @@
 
 <main id="app"></main>
 
+<template id="tpl-landing">
+  <section class="tela landing">
+    <p class="eyebrow">Eleições · 4 de outubro de 2026</p>
+    <h1>Você vai escolher <em>cinco</em> pessoas na urna. Quantas você conhece?</h1>
+    <p class="lead">
+      Presidente e governador, talvez. Mas deputado federal e estadual — onde a maior
+      parte das leis é decidida — quase todo mundo escolhe no escuro. Este teste
+      compara o que você pensa com o que <b>cada candidato votou</b>.
+    </p>
+
+    <a class="primario cta" href="#/comecar">Fazer o teste</a>
+    <p class="cta-nota">Leva uns 5 minutos. Sem cadastro, sem coletar suas respostas.</p>
+
+    <ol class="como">
+      <li>
+        <b>Responda a afirmações sobre o que está em disputa</b>
+        <span>Terras indígenas, anistia, armas, impostos, redes sociais. Frases
+        diretas: concordo, tanto faz, discordo.</span>
+      </li>
+      <li>
+        <b>Veja quem votou como você pensa</b>
+        <span>Para cada cargo, do presidente ao deputado estadual, um percentual de
+        afinidade — e o porquê, tema a tema, com link para a votação.</span>
+      </li>
+      <li>
+        <b>Monte sua colinha e leve para a urna</b>
+        <span>Os números dos seus candidatos numa imagem para guardar no celular.</span>
+      </li>
+    </ol>
+
+    <dl class="fatos">
+      <div><dt id="fato-candidatos">—</dt><dd>candidatos comparados, todos os cargos e estados</dd></div>
+      <div><dt id="fato-teses">—</dt><dd>afirmações, cada uma ancorada em uma votação real</dd></div>
+      <div><dt>0</dt><dd>dados seus enviados a qualquer lugar</dd></div>
+    </dl>
+
+    <section class="honesto">
+      <h2>De onde vem a posição de cada candidato</h2>
+      <p>
+        Do voto dele no Congresso, quando é deputado ou senador. Quando não é, da
+        forma como a bancada do partido dele votou — e o site diz qual dos dois é o
+        caso, sempre. Não há opinião nossa em lugar nenhum: é registro público,
+        e cada um tem link para a fonte.
+      </p>
+      <p>
+        Isto compara posições. <b>Não é recomendação de voto</b>, e não tem vínculo
+        com partido, candidatura ou governo. <a href="metodologia.html">Como funciona, em detalhe.</a>
+      </p>
+    </section>
+  </section>
+</template>
+
 <template id="tpl-inicio">
   <section class="tela inicio">
-    <h1>Com quem você <em>de fato</em> concorda?</h1>
+    <h1>Em que estado você vota?</h1>
     <p class="lead">
-      Responda a algumas afirmações sobre o que está em disputa no país. Comparamos
-      suas respostas com o que cada candidato votou no Congresso — ou com o que a
-      bancada do partido dele votou.
+      Governador, senador e deputados mudam de estado para estado. Com isso a gente
+      carrega só os candidatos que vão aparecer na sua urna.
     </p>
 
     <label class="campo">

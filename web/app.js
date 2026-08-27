@@ -1000,8 +1000,27 @@ function alertaInline(depois, texto) {
 
 // -------------------------------------------------------------------- start
 
+function telaLanding() {
+  zerarSessao();
+  const node = tpl("tpl-landing");
+  // Números reais, do build — uma landing eleitoral convence com fato, não
+  // com adjetivo. Se meta.json não veio, o travessão fica.
+  if (estado.meta) {
+    node.getElementById("fato-candidatos").textContent =
+      estado.meta.candidatos.toLocaleString("pt-BR");
+    node.getElementById("fato-teses").textContent = estado.meta.teses;
+  }
+  mostrar(node);
+}
+
 async function rotear() {
+  // "#/" é a landing: quem chega pelo link raiz precisa entender o que é
+  // isto antes de ser perguntado em que estado vota. "#/comecar" é a tela
+  // de estado, para onde o CTA aponta e para onde o logo volta.
   if (!location.hash || location.hash === "#/" || location.hash === "#") {
+    return telaLanding();
+  }
+  if (location.hash === "#/comecar") {
     return telaInicio();
   }
   const geracao = estado.geracao;
@@ -1015,7 +1034,7 @@ async function rotear() {
     motivo = "Esse link parece estar corrompido. Refaça o teste.";
   }
   if (!ok) {
-    history.replaceState(null, "", location.pathname);
+    history.replaceState(null, "", location.pathname + "#/comecar");
     return telaInicio(motivo);
   }
   await carregarCandidatos();
