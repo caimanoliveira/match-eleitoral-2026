@@ -93,6 +93,13 @@ www.colinha.app.br.  CNAME  caimanoliveira.github.io.
 Depois, em Settings → Pages do repositório, marcar "Enforce HTTPS" (o
 certificado leva alguns minutos para emitir após o DNS propagar).
 
+**E-mail do projeto.** `respostas@colinha.app.br` recebe as respostas das
+campanhas (é o destino do formulário `responder.html`). Não precisa de
+provedor de e-mail: no painel do Registro.br, em "Redirecionamento de
+e-mail", criar `respostas` → o Gmail pessoal de quem opera o projeto. É
+gratuito e leva um minuto. O disparo às campanhas sai desse Gmail — ver
+`pipeline/respostas/EMAIL.md`.
+
 Publicado pelo próprio rebuild diário (abaixo). As fotos dos candidatos (~70 MB,
 dataset oficial do TSE) não ficam no repositório: só existem no runner que as
 baixou, então o Pages é gerado pelo mesmo run — publicar num workflow separado
