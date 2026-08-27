@@ -2,6 +2,7 @@
 headers de browser completos — daí a lista abaixo, que foi obtida na tentativa."""
 
 import gzip
+import http.client
 import json
 import time
 import urllib.error
@@ -73,7 +74,11 @@ def get(
             if 400 <= exc.code < 500:
                 break
             time.sleep(5 * 2**attempt)
-        except (urllib.error.URLError, OSError) as exc:  # timeout, reset, DNS
+        except (urllib.error.URLError, OSError, http.client.HTTPException) as exc:
+            # timeout, reset, DNS — e IncompleteRead, que é HTTPException e
+            # não OSError: a conexão caiu no meio de um JSON de 100 MB da
+            # Câmara e escapava deste except, matando o build inteiro num
+            # runner sem cache.
             last = exc
             time.sleep(5 * 2**attempt)
 
