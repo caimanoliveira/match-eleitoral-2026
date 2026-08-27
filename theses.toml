@@ -13,6 +13,13 @@
 #   votacoes  votações da Câmara que operacionalizam a tese.
 #               direcao = +1  votar "Sim" equivale a CONCORDAR com a tese
 #               direcao = -1  votar "Sim" equivale a DISCORDAR
+#   votacoes_senado
+#             O mesmo, para o Senado (id = codigoSessaoVotacao). Só entra depois de
+#             ler o texto votado: o Senado renumera e vota substitutivo inteiro, então
+#             "mesma matéria" NÃO significa "mesma pergunta". Das 34 teses, 7 tinham
+#             rastro no Senado e só 4 mediam a mesma coisa — uma delas com o sinal
+#             invertido em relação à Câmara. Dá voto próprio aos 47 senadores que
+#             são candidatos em 2026, 9 deles a governador.
 #
 #   verificado / verificado_em / verificado_por
 #             O build DESCARTA tese não verificada. A direção não pode ser inferida do
@@ -45,6 +52,9 @@ verificado_em = "2026-08-26"
 verificado_por = "curadoria inicial"
 nota = "Votação de 09/12/2025 do substitutivo do relator. 'Sim' = aprovar a redução de penas."
 votacoes = [{ id = "2358548-89", direcao = 1 }]
+# Senado 17/12/2025, mérito do PL 2162/2023 "nos termos do parecer", 48x25.
+# Sim = aprovar a redução de penas. Mesma pergunta da Câmara.
+votacoes_senado = [{ id = "7041", direcao = 1 }]
 
 [[tese]]
 id = "compra-alimentos-agricultura-familiar"
@@ -177,6 +187,12 @@ verificado_em = "2026-08-26"
 verificado_por = "curadoria assistida + verificação independente"
 nota = "Sim aprovou o Substitutivo da CCTCI ao PL 6.385/2016 (PL 2721/2023). Li a redação final (RDF 1, codteor 2276482): o art. 2º diz que órgãos da administração direta e entidades da indireta federal, para serviços postais não exclusivos, 'devem, preferencialmente, nos termos do inciso IX do caput do art. 75 da Lei nº 14.133/2021 (Lei de Licitações), contratar a prestação desses serviços diretamente com a Empresa Brasileira de Correios e Telégrafos' — o art. 75, IX é hipótese de contratação direta (sem licitação). O projeto tem só quatro artigos, todos sobre isso, então não há ambiguidade sobre o q"
 votacoes = [{ id = "2115253-118", direcao = 1 }]
+# Senado 10/10/2023, Emenda 1-CCJ (substitutivo) ao PL 2721/2023, 41x23.
+# Li o parecer (Dorinha Seabra): art. 2º manda contratar a ECT "diretamente,
+# nos termos do inciso IX do art. 75 da Lei 14.133" — hipótese de dispensa de
+# licitação. O substitutivo só acrescenta a Telebrás. Sim = contratar sem
+# licitação. Flávio Bolsonaro e Girão vencidos na CCJ, coerente com o corte.
+votacoes_senado = [{ id = "6760", direcao = 1 }]
 
 [[tese]]
 id = "crime-preco-abusivo"
@@ -273,6 +289,12 @@ verificado_em = "2026-08-26"
 verificado_por = "curadoria assistida + verificação independente"
 nota = "Votação do DTQ 7, do PL, destaque para votação em separado do art. 15 do substitutivo ao PLP 93/2023 'para fins de supressão' (art. 161, I). 'Mantido o texto' = Sim manteve o artigo. Li o art. 15 na redação final (RDF 1, codteor 2284827): 'No exercício financeiro de 2024, o limite do Poder Executivo poderá ser ampliado por crédito suplementar, após a segunda avaliação bimestral de receitas e despesas primárias, em montante decorrente da aplicação de índice equivalente à diferença entre 70% do crescimento real da receita para 2024 estimado nessa avaliação... e o índice calculado para fins do cr"
 votacoes = [{ id = "2357053-65", direcao = 1 }]
+# Senado 21/06/2023, Emenda 89 (Ciro Nogueira) ao PLP 93/2023, destacada,
+# REJEITADA 21x48. Li o texto: cria travas ao crescimento real da despesa
+# indexadas à relação dívida/PIB, chegando a suspender o crescimento acima de
+# 80%. É o OPOSTO da tese (gasto extra fora do limite). Sim = mais trava =
+# discordar da tese. Direção invertida em relação à votação da Câmara.
+votacoes_senado = [{ id = "6716", direcao = -1 }]
 
 [[tese]]
 id = "medida-protetiva-mesmo-com-consentimento"
@@ -321,6 +343,10 @@ verificado_em = "2026-08-26"
 verificado_por = "curadoria assistida + verificação independente"
 nota = "Aprovar o mérito do PLP 163/2025 em turno único (aprovacao=1), que exclui do cômputo dos limites de despesas primárias e das metas fiscais as despesas temporárias com educação e saúde custeadas pelo Fundo Social do pré-sal (art. 6º da Lei 15.164/2025). Sim = liberar o gasto para fora do arcabouço; Não = manter tudo sob o limite. 296x145."
 votacoes = [{ id = "2541109-38", direcao = 1 }]
+# Senado 03/12/2025, substitutivo ao PLP 163/2025, 47x16. A ementa diz
+# literalmente "excluir do cômputo dos limites de despesas primárias as
+# despesas com educação e saúde". Sim = tirar do teto.
+votacoes_senado = [{ id = "7030", direcao = 1 }]
 
 [[tese]]
 id = "primeiro-emprego-encargos-reduzidos"

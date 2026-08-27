@@ -8,7 +8,7 @@ votáveis**, incluindo deputado federal e estadual, que é onde o eleitor decide
 no escuro.
 
 Estado atual: **34 afirmações verificadas**, 85% dos candidatos com alguma
-evidência de posição, 568 com voto nominal próprio no Congresso.
+evidência de posição, 611 com voto nominal próprio na Câmara ou no Senado.
 
 ## Rodar
 
@@ -67,8 +67,11 @@ Cloudflare Pages, Netlify). Não publique a raiz do repositório: exporia
 
 - Candidaturas: [dados abertos do TSE](https://dadosabertos.tse.jus.br), `consulta_cand_2026`
 - Votações nominais, votos e orientações: [dados abertos da Câmara](https://dadosabertos.camara.leg.br)
+- Votações nominais do Senado: [dados abertos do Senado](https://legis.senado.leg.br/dadosabertos), endpoint `/votacao?ano=`
 
-Join TSE ↔ Câmara por CPF, exposto em `/deputados/{id}`.
+Join TSE ↔ Câmara por CPF, exposto em `/deputados/{id}`. Join TSE ↔ Senado por
+nome completo normalizado (a API do Senado não expõe CPF); só entra quando casa
+com exatamente um candidato.
 
 **Aviso operacional:** o CDN do TSE fica atrás de um WAF que bloqueia por IP
 quando o volume sobe, e o bloqueio pega o domínio inteiro. `fetch.py` não repete

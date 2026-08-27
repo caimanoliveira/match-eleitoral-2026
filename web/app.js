@@ -760,7 +760,7 @@ function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPar
   const det = document.createElement("details");
   det.className = "quebra";
   det.innerHTML = `<summary>Por que ${pct(score)}? (${temas} temas)</summary>`;
-  det.append(quebraPorTese(detalhe, candidato.p));
+  det.append(quebraPorTese(detalhe, candidato.p, candidato));
 
   const fixar = document.createElement("button");
   const jaEscolhido = estado.escolhas[estado.cargoAtivo] === candidato.id;
@@ -799,8 +799,13 @@ function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPar
   return li;
 }
 
-function quebraPorTese(detalhe, sigla) {
+function quebraPorTese(detalhe, sigla, candidato = {}) {
   const divergiu = new Set(divergencias(detalhe, sigla).map((d) => d.tese.id));
+  // src "2" é voto próprio em qualquer casa. Quem é senador e não deputado
+  // (governador vindo do Senado, por exemplo) votou no Senado — e a tese só
+  // tem voto dele se lista uma votação do Senado.
+  const votouNoSenado = (tese) =>
+    candidato.sen && !candidato.dep && (tese.fontes || []).some((f) => f.casa === "senado");
   const ul = document.createElement("ul");
   ul.className = "temas";
   for (const d of detalhe) {
@@ -810,7 +815,9 @@ function quebraPorTese(detalhe, sigla) {
       li.innerHTML = `<span class="marca" aria-hidden="true">—</span><span>${d.tese.texto}
         <em>Não há registro de posição.</em></span>`;
     } else {
-      const fonte = FONTES[d.fonte] || { rotulo: "", inferida: true };
+      const fonte = d.fonte === "2" && votouNoSenado(d.tese)
+        ? { rotulo: "Como votou no Senado", inferida: false }
+        : FONTES[d.fonte] || { rotulo: "", inferida: true };
       const rompeu = divergiu.has(d.tese.id);
       // Quanto da bancada de fato votou assim. "O PP é contra" e "o PP é
       // contra por 55% a 45%" não podem sair na tela com o mesmo peso.
@@ -830,9 +837,11 @@ function quebraPorTese(detalhe, sigla) {
         `${fraca ? " fraca" : ""}">` +
         `${b ? `Posição da bancada do ${sigla}` : fonte.rotulo}` +
         `${rompeu ? ` — <b>diferente da bancada do ${sigla}</b>` : ""}${detalheBancada}` +
-        (d.tese.fontes?.[0]
-          ? ` · <a href="${d.tese.fontes[0].url}" target="_blank" rel="noopener">ver votação</a>`
-          : "") +
+        ((() => {
+          const casa = d.fonte === "2" && votouNoSenado(d.tese) ? "senado" : "camara";
+          const f = (d.tese.fontes || []).find((x) => x.casa === casa) || d.tese.fontes?.[0];
+          return f ? ` · <a href="${f.url}" target="_blank" rel="noopener">ver votação</a>` : "";
+        })()) +
         `</em></span>`;
     }
     ul.append(li);

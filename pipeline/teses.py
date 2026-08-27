@@ -26,7 +26,7 @@ def carregar_todas() -> list[dict]:
             v = t["eixo"].get(eixo)
             if not isinstance(v, (int, float)) or not -1 <= v <= 1:
                 raise ValueError(f"tese {t['id']}: eixo.{eixo} deve estar entre -1 e 1")
-        for v in t["votacoes"]:
+        for v in t["votacoes"] + t.get("votacoes_senado", []):
             if v.get("direcao") not in (1, -1):
                 raise ValueError(f"tese {t['id']}: direcao deve ser 1 ou -1")
     return teses

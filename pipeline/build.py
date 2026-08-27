@@ -24,6 +24,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import congresso
+import senado
 import teses as teses_mod
 import tse
 from fetch import CACHE
@@ -103,6 +104,24 @@ def posicoes_deputado(ts: list[dict], votos: dict) -> dict[int, dict[str, str]]:
     }
 
 
+def posicoes_senado(ts: list[dict], votacoes_sen: dict, cod_para_sq: dict) -> dict[str, dict[str, str]]:
+    """SQ_CANDIDATO -> {tese_id: posição} a partir do voto nominal no Senado.
+
+    Só para teses que listam `votacoes_senado` — a direção foi conferida uma a
+    uma lendo o texto votado, porque o Senado renumera e vota substitutivo
+    inteiro. Sem isso, "mesma matéria" viraria "mesma pergunta" por engano.
+    """
+    out: dict[str, dict[str, list]] = {}
+    for t in ts:
+        for v in t.get("votacoes_senado", []):
+            votos = votacoes_sen.get(v["id"], {}).get("votos", {})
+            for cod, voto in votos.items():
+                sq = cod_para_sq.get(cod)
+                if sq:
+                    out.setdefault(sq, {}).setdefault(t["id"], []).append((voto, v["direcao"]))
+    return {sq: {tid: _posicao(vs) for tid, vs in tsi.items()} for sq, tsi in out.items()}
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
@@ -122,6 +141,13 @@ def main() -> None:
     por_partido = posicoes_partido(ts, banc)
     por_deputado = posicoes_deputado(ts, votos)
     cpf_para_dep = {d["cpf"]: d for d in deputados}
+
+    votacoes_sen = senado.votacoes()
+    senadores = senado.senadores(votacoes_sen)
+    cod_para_sq = senado.casar_com_tse(senadores, candidatos)
+    por_senador = posicoes_senado(ts, votacoes_sen, cod_para_sq)
+    print(f"senado: {len(votacoes_sen)} votações, {len(cod_para_sq)} senadores casados, "
+          f"{len(por_senador)} com voto em tese")
     print(f"candidatos: {len(candidatos)} | partidos com posição: {len(por_partido)}")
     print(f"deputados com voto: {len(por_deputado)} | CPFs mapeados: {len(cpf_para_dep)}")
 
@@ -140,7 +166,12 @@ def main() -> None:
 
     for c in candidatos:
         dep = cpf_para_dep.get(c["cpf"])
-        proprios = por_deputado.get(dep["id"], {}) if dep else {}
+        # Câmara e Senado são ambos voto próprio. Se a mesma pessoa votou nas
+        # duas casas sobre a mesma tese (deputado que virou senador), a Câmara
+        # prevalece por ser a votação-mãe da tese; o caso é raro.
+        proprios = dict(por_senador.get(c["id"], {}))
+        if dep:
+            proprios.update(por_deputado.get(dep["id"], {}))
         if proprios:
             incumbentes += 1
         do_partido = por_partido.get(c["partido"].upper(), {})
@@ -171,6 +202,8 @@ def main() -> None:
         }
         if (c["cargo"], c["uf"], c["numero"]) in disputados:
             registro["numDisputado"] = True
+        if c["id"] in por_senador:
+            registro["sen"] = True  # tem voto nominal no Senado
         if dep:
             registro["dep"] = dep["id"]  # para linkar o voto real na UI
             # Foto oficial da Câmara: URL pública e estável, cobre os deputados
@@ -238,8 +271,13 @@ def main() -> None:
                     "esfera": t["esfera"],
                     "eixo": t["eixo"],
                     "fontes": [
-                        {"id": v["id"], "url": f"https://www.camara.leg.br/votacoes/{v['id']}"}
+                        {"id": v["id"], "casa": "camara",
+                         "url": f"https://www.camara.leg.br/votacoes/{v['id']}"}
                         for v in t["votacoes"]
+                    ] + [
+                        {"id": v["id"], "casa": "senado",
+                         "url": f"https://www25.senado.leg.br/web/atividade/sessao-plenaria/-/pauta/{v['id']}"}
+                        for v in t.get("votacoes_senado", [])
                     ],
                 }
                 for t in ts

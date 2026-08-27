@@ -5,7 +5,7 @@ Escrito em 27/08/2026. Eleição em **04/10/2026** — restam ~5 semanas.
 ## Onde o projeto está
 
 34 afirmações verificadas, 19.867 candidatos, 85% com alguma evidência de
-posição, 568 com voto nominal próprio. Site estático, sem backend, testado no
+posição, 611 com voto nominal próprio (Câmara ou Senado). Site estático, sem backend, testado no
 celular em 390px e 320px.
 
 Dois reviews adversariais rodaram — 5 lentes sobre o código e 4 sobre a própria
@@ -27,7 +27,7 @@ só dois rodam:
 | Nível | Fonte | Estado |
 |---|---|---|
 | 1 | Questionário respondido pelo candidato | **não existe** |
-| 2 | Voto nominal do próprio candidato | roda — 568 candidatos |
+| 2 | Voto nominal do próprio candidato | roda — 611 candidatos, Câmara e Senado |
 | 3 | Plano de governo registrado no TSE | **não existe** |
 | 4 | Declaração pública | **não existe** |
 | 5 | Posição da bancada do partido | roda — cobre o resto |
@@ -64,19 +64,31 @@ O que fazer: gravar a coesão junto da posição, exibir na quebra por tese
 inferência é fraca — ou não atribuir posição. Custo: uma tarde. É a melhor
 relação valor/esforço que sobrou.
 
-## 2. Senado (médio esforço, desbloqueia os cargos majoritários)
+## 2. Senado — feito, e rendeu menos do que eu prometi
 
-`legis.senado.leg.br` responde normalmente e **fica fora do WAF que bloqueia o
-TSE**. São 81 senadores em exercício, e boa parte dos 527 candidatos a
-presidente, governador e senador ou é senador hoje ou foi.
+Implementado em `pipeline/senado.py`. O balanço honesto, contra o que este
+roadmap dizia antes:
 
-Hoje esses candidatos só têm evidência se passaram pela Câmara na legislatura 57
-— é assim que Marina Silva, Ricardo Salles e Guilherme Derrite têm voto próprio.
-Quem veio pelo Senado não tem nada.
+| | Prometido | Medido |
+|---|---|---|
+| Senadores que são candidatos | "boa parte dos 527 majoritários" | **47** (33 à reeleição, 8 a governador) |
+| Teses com votação no Senado | "a maioria passou pelas duas casas" | **4 de 34** |
 
-O que fazer: espelhar o modelo de `congresso.py` para o Senado, casar por CPF
-como já se faz com a Câmara, e vincular as teses existentes às votações
-equivalentes no Senado (a maioria dos projetos passou pelas duas casas).
+O Senado renumera e vota substitutivo inteiro, não o destaque que virou tese
+na Câmara. Das 7 teses com rastro, 3 caíram na leitura: uma casou com uma
+mensagem sobre embaixador por homonímia de número, outra era emenda sobre
+tratamento de resíduos e não sobre agro. E uma das 4 que entraram tem o
+sentido **invertido** em relação à Câmara — a Emenda 89 de Ciro Nogueira ao
+arcabouço criava trava de gasto, o oposto da tese. Sem ler o texto, teria
+entrado com o sinal errado.
+
+O que valeu: 8 candidatos a governador (Moro, Efraim, Marcos Rogério,
+Dorinha, Alan Rick, Cleitinho, Wilder, Wellington Fagundes) saíram de "só a
+bancada do partido" para voto próprio em 3–4 temas. Voto próprio subiu de
+568 para 611 candidatos.
+
+Lição registrada em `theses.toml`: `votacoes_senado` só entra tese a tese,
+com o texto lido. Casamento automático por número de proposição está proibido.
 
 ## 3. Questionário ao candidato (o que de fato resolve, e o mais caro)
 
