@@ -452,3 +452,6 @@ h1:focus-visible, h2:focus-visible { outline: none; }
 }
 .tema em.rompeu { color: var(--tinta); }
 .tema em.rompeu::before { content: "" !important; }
+
+/* Bancada dividida: a inferência é fraca e a tela precisa dizer isso. */
+.tema em.fraca { color: var(--nao); }

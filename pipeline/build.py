@@ -53,17 +53,38 @@ def _posicao(votos_por_votacao: list[tuple[str, int]]) -> str:
 
 def posicoes_partido(ts: list[dict], banc: dict) -> dict[str, dict[str, str]]:
     """PARTIDO -> {tese_id: '+'|'-'|'0'} a partir do voto da bancada."""
-    out: dict[str, dict[str, str]] = {}
+    return {
+        partido: {tid: d["pos"] for tid, d in teses.items()}
+        for partido, teses in bancadas_detalhadas(ts, banc).items()
+    }
+
+
+def bancadas_detalhadas(ts: list[dict], banc: dict) -> dict[str, dict[str, dict]]:
+    """PARTIDO -> {tese_id: {pos, coesao, n}}.
+
+    A coesão é o que separa "o PL votou Não" de "o PL votou Não, com 55% da
+    bancada". Sem ela o site apresenta as duas com a mesma firmeza — e um
+    candidato ouve "seu partido é contra" quando quase metade da bancada foi a
+    favor.
+    """
+    out: dict[str, dict[str, dict]] = {}
     partidos = {p for v in banc.values() for p in v}
     for partido in partidos:
         for t in ts:
-            votos = [
-                (banc[v["id"]][partido]["voto"], v["direcao"])
+            registros = [
+                (banc[v["id"]][partido], v["direcao"])
                 for v in t["votacoes"]
                 if v["id"] in banc and partido in banc[v["id"]]
             ]
-            if votos:
-                out.setdefault(partido, {})[t["id"]] = _posicao(votos)
+            if not registros:
+                continue
+            pos = _posicao([(r["voto"], d) for r, d in registros])
+            out.setdefault(partido, {})[t["id"]] = {
+                "pos": pos,
+                # Média das votações que compõem a tese (hoje sempre uma).
+                "coesao": round(sum(r["coesao"] for r, _ in registros) / len(registros), 3),
+                "n": max(r["n"] for r, _ in registros),
+            }
     return out
 
 
@@ -229,7 +250,7 @@ def main() -> None:
         encoding="utf-8",
     )
     (DATA / "partidos.json").write_text(
-        json.dumps(por_partido, ensure_ascii=False), encoding="utf-8"
+        json.dumps(bancadas_detalhadas(ts, banc), ensure_ascii=False), encoding="utf-8"
     )
     (DATA / "meta.json").write_text(
         json.dumps(

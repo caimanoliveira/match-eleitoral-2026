@@ -637,11 +637,19 @@ function divergencias(detalhe, sigla) {
     (d) =>
       d.fonte === "2" &&
       bancada[d.tese.id] &&
-      bancada[d.tese.id] !== POSICAO_CHAR[d.posicao]
+      bancada[d.tese.id].pos !== POSICAO_CHAR[d.posicao]
   );
 }
 
 const POSICAO_CHAR = { 1: "+", "-1": "-", 0: "0" };
+
+// Abaixo disto a bancada não tem uma posição, tem uma maioria apertada. São
+// 90 das 622 células (14,5%), e até aqui o site as apresentava com a mesma
+// firmeza de uma votação unânime.
+const COESAO_FRACA = 0.7;
+
+const bancadaNaTese = (sigla, teseId) =>
+  estado.partidos[(sigla || "").toUpperCase()]?.[teseId];
 
 /** O percentual veio inteiro da bancada? Olha só as teses que ENTRARAM na
  *  conta: usar a string `src` completa fazia o aviso sumir quando o candidato
@@ -736,10 +744,17 @@ function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPar
     origem = document.createElement("p");
     origem.className = "origem-partido";
     const n = porPartido[candidato.p] || 0;
+    const divididas = detalhe.filter((d) => {
+      const b = d.fonte === "5" ? bancadaNaTese(candidato.p, d.tese.id) : null;
+      return b && b.coesao < COESAO_FRACA;
+    }).length;
     origem.textContent =
-      n > 1
+      (n > 1
         ? `Posição do partido, não deste candidato — idêntica à de outros ${n - 1} do ${candidato.p}.`
-        : `Posição do partido, não deste candidato.`;
+        : `Posição do partido, não deste candidato.`) +
+      (divididas
+        ? ` Em ${divididas} ${divididas === 1 ? "tema" : "temas"} a bancada estava dividida.`
+        : "");
   }
 
   const det = document.createElement("details");
@@ -797,13 +812,24 @@ function quebraPorTese(detalhe, sigla) {
     } else {
       const fonte = FONTES[d.fonte] || { rotulo: "", inferida: true };
       const rompeu = divergiu.has(d.tese.id);
+      // Quanto da bancada de fato votou assim. "O PP é contra" e "o PP é
+      // contra por 55% a 45%" não podem sair na tela com o mesmo peso.
+      const b = d.fonte === "5" ? bancadaNaTese(sigla, d.tese.id) : null;
+      const fraca = b && b.coesao < COESAO_FRACA;
+      const detalheBancada = b
+        ? fraca
+          ? ` — <b>bancada dividida</b>, ${Math.round(b.coesao * 100)}% votaram assim`
+          : ` — ${Math.round(b.coesao * 100)}% da bancada votou assim`
+        : "";
       li.className = d.concorda ? "tema ok" : "tema nao";
       li.innerHTML =
         `<span class="marca" aria-hidden="true">${d.concorda ? "✓" : "✕"}</span>` +
         `<span><span class="sr">${d.concorda ? "Concorda com você:" : "Discorda de você:"}</span> ` +
         `${d.tese.texto}` +
-        `<em class="${fonte.inferida ? "inferida" : ""}${rompeu ? " rompeu" : ""}">` +
-        `${fonte.rotulo}${rompeu ? ` — <b>diferente da bancada do ${sigla}</b>` : ""}` +
+        `<em class="${fonte.inferida ? "inferida" : ""}${rompeu ? " rompeu" : ""}` +
+        `${fraca ? " fraca" : ""}">` +
+        `${b ? `Posição da bancada do ${sigla}` : fonte.rotulo}` +
+        `${rompeu ? ` — <b>diferente da bancada do ${sigla}</b>` : ""}${detalheBancada}` +
         (d.tese.fontes?.[0]
           ? ` · <a href="${d.tese.fontes[0].url}" target="_blank" rel="noopener">ver votação</a>`
           : "") +
