@@ -8,7 +8,7 @@ import { cor, tinta, iniciais } from "./partidos.js";
 const L = 820;                 // largura do cartão
 const TOPO = 132;
 const LINHA = 136;
-const RODAPE = 68;
+const RODAPE = 100;
 const ESCALA = 2;              // exporta em 2x para não borrar em tela retina
 
 const TINTA = "#12161c";
@@ -112,11 +112,15 @@ export async function desenharColinha(escolhidos, uf = "") {
     ctx.fillStyle = ALERTA;
     ctx.fillText(
       `⚠ ${ambiguos.map((e) => e.candidato.num).join(", ")}: substituição pendente no TSE — confira.`,
-      48, altura - 26);
+      48, altura - 48);
   } else {
     ctx.fillStyle = SUAVE;
-    ctx.fillText("Confira os números no site do TSE antes de votar.", 48, altura - 26);
+    ctx.fillText("Confira os números no site do TSE antes de votar.", 48, altura - 48);
   }
+  // A imagem circula sem o site em volta: o aviso de independência vai nela.
+  ctx.fillStyle = SUAVE;
+  ctx.font = "400 15px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+  ctx.fillText("Projeto independente, sem relação com o TSE ou a Justiça Eleitoral.", 48, altura - 22);
 
   return new Promise((resolve) => cv.toBlob(resolve, "image/png"));
 }
