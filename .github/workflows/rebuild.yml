@@ -1,0 +1,85 @@
+# Rebuild diário dos dados do site.
+#
+# Por que existe: candidatura muda até a véspera — indeferimento, renúncia,
+# substituição. Um site que não atualiza manda gente votar em quem saiu da
+# disputa. E o CDN do TSE bloqueia por IP quando o volume sobe (pegou a máquina
+# de desenvolvimento e o bloqueio dura dias), então o espelho tem que ser um
+# runner limpo fazendo UMA requisição por dia, não um laptop insistindo.
+#
+# Por que não publica dados velhos: build.py roda com --exigir-tse-fresco. Se
+# o TSE recusar ou cair, o job falha em vez de commitar o cache antigo com
+# carimbo novo — o commit anterior fica valendo, e ele já declara ao eleitor
+# a data real da fonte (meta.json: fonte_tse_em).
+
+name: rebuild
+
+on:
+  schedule:
+    - cron: "17 9 * * *"   # 06:17 em Brasília; o TSE atualiza de hora em hora
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rebuild
+  cancel-in-progress: false
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"   # tomllib pede >= 3.11; o pipeline é só stdlib
+
+      # Os JSON da Câmara somam ~360 MB e mudam devagar. Sem cache, cada run
+      # baixaria tudo de novo — lento, e volume desnecessário numa fonte que
+      # também tem limite. O TSE (3 MB) fica de fora do cache de propósito:
+      # é ele que precisa vir fresco todo dia.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            .cache
+            !.cache/consulta_cand_2026.zip
+          key: pipeline-cache-${{ github.run_id }}
+          restore-keys: pipeline-cache-
+
+      - name: build
+        run: python3 pipeline/build.py --exigir-tse-fresco 12
+
+      - name: testes
+        run: |
+          npm test
+          # Nada de CPF nos dados publicados — a checagem que valeu antes do
+          # primeiro push, agora em cada rebuild.
+          python3 - <<'PY'
+          import glob, sys
+          sys.path.insert(0, "pipeline")
+          import tse
+          cpfs = {c["cpf"] for c in tse.candidatos(offline=True)}
+          for f in glob.glob("web/data/*.json"):
+              txt = open(f, encoding="utf-8").read()
+              vazou = [c for c in cpfs if c in txt]
+              assert not vazou, f"CPF nos dados publicados: {f}"
+          print(f"ok — {len(cpfs)} CPFs conferidos, nenhum publicado")
+          PY
+
+      - name: commit se mudou
+        run: |
+          git config user.name "rebuild diário"
+          git config user.email "rebuild@users.noreply.github.com"
+          git add web/data
+          if git diff --cached --quiet; then
+            echo "dados iguais aos de ontem — nada a commitar"
+            exit 0
+          fi
+          fonte=$(python3 -c "import json;print(json.load(open('web/data/meta.json'))['fonte_tse_em'][:16])")
+          git commit -m "Dados: TSE de ${fonte}
+
+Rebuild automático. Só entra quando a lista do TSE veio com menos de 12h;
+caso contrário o job falha e o commit anterior continua valendo."
+          git push

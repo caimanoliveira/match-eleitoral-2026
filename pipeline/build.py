@@ -125,6 +125,12 @@ def posicoes_senado(ts: list[dict], votacoes_sen: dict, cod_para_sq: dict) -> di
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument(
+        "--exigir-tse-fresco", type=float, metavar="HORAS", default=None,
+        help="falha (exit 3) se a lista do TSE for mais velha que HORAS. Para o "
+             "rebuild automático: sem isto o robô publicaria dados velhos com "
+             "carimbo novo, e o eleitor não teria como saber.",
+    )
     args = ap.parse_args()
 
     ts = teses_mod.carregar()
@@ -243,6 +249,13 @@ def main() -> None:
     )
     if idade_h and idade_h > 48:
         print(f"\n  ! dados do TSE têm {idade_h:.0f}h — o site vai avisar o eleitor")
+    if args.exigir_tse_fresco is not None and (idade_h is None or idade_h > args.exigir_tse_fresco):
+        # Nada é escrito em web/data/: o commit anterior continua valendo, com
+        # a data de fonte que ele já declara ao eleitor.
+        raise SystemExit(
+            f"3: TSE tem {idade_h:.0f}h, limite {args.exigir_tse_fresco:.0f}h — não publico"
+            if idade_h is not None else "3: sem dados do TSE — não publico"
+        )
 
     DATA.mkdir(parents=True, exist_ok=True)
     for nome, lista in shards.items():
