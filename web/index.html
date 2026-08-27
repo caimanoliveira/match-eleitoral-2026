@@ -65,6 +65,13 @@
       <button class="secundario" id="voltar">Voltar</button>
       <button class="secundario" id="pular">Pular esta</button>
     </div>
+
+    <button class="ver-parcial" id="ver-parcial" hidden></button>
+
+    <p class="dica-teclado" aria-hidden="true">
+      No teclado: <kbd>1</kbd> concordo · <kbd>2</kbd> tanto faz · <kbd>3</kbd> discordo
+      · <kbd>←</kbd> voltar
+    </p>
   </section>
 </template>
 
@@ -72,8 +79,15 @@
   <section class="tela resultado">
     <h1>Seus candidatos</h1>
     <div id="bussola"></div>
-    <nav class="abas" id="abas"></nav>
+    <div class="abas-caixa"><nav class="abas" id="abas"></nav></div>
+
+    <label class="busca">
+      <input type="search" id="busca" placeholder="Buscar candidato por nome ou número"
+             autocomplete="off" spellcheck="false">
+    </label>
+
     <ol class="lista" id="lista"></ol>
+    <button class="secundario mais" id="mais" hidden>Mostrar mais 30</button>
     <p class="aviso" id="rodape-fonte"></p>
     <button class="primario" id="ver-colinha">Ver minha colinha</button>
   </section>

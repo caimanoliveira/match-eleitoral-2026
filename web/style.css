@@ -327,3 +327,67 @@ select {
 }
 
 .colinha-alerta { margin: -.4rem 0 1.2rem; font-size: .84rem; }
+
+/* --------------------------------------------------------- quiz: extras UX */
+
+.ver-parcial {
+  width: 100%;
+  margin-top: 1.4rem;
+  padding: .75rem;
+  font-size: .9rem;
+  font-weight: 600;
+  background: transparent;
+  color: var(--acento);
+  border-color: var(--linha);
+}
+
+.dica-teclado {
+  margin: 1.4rem 0 0;
+  font-size: .78rem;
+  color: var(--suave);
+}
+.dica-teclado kbd {
+  font: 600 .9em/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  border: 1px solid var(--linha);
+  border-radius: 4px;
+  padding: .15em .4em;
+  background: var(--campo);
+}
+/* Dica de teclado só faz sentido onde há teclado. */
+@media (hover: none) { .dica-teclado { display: none; } }
+
+/* ----------------------------------------------------- resultado: extras UX */
+
+/* A faixa de abas rola, mas a barra está oculta. Estas sombras nas bordas são
+   a única pista de que há cargo fora da tela. */
+.abas-caixa { position: relative; }
+.abas-caixa::before,
+.abas-caixa::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 8px;
+  width: 28px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .15s ease;
+  z-index: 1;
+}
+.abas-caixa::before { left: 0; background: linear-gradient(to right, var(--papel), transparent); }
+.abas-caixa::after { right: 0; background: linear-gradient(to left, var(--papel), transparent); }
+.abas-caixa:has(.tem-antes)::before,
+.abas-caixa:has(.tem-depois)::after { opacity: 1; }
+
+.busca { display: block; margin-bottom: 1rem; }
+.busca input {
+  font: inherit;
+  width: 100%;
+  padding: .7rem .9rem;
+  border-radius: var(--raio);
+  border: 1px solid var(--linha);
+  background: var(--campo);
+  color: var(--tinta);
+}
+.busca input::placeholder { color: var(--suave); }
+
+.mais { width: 100%; margin-top: .8rem; }

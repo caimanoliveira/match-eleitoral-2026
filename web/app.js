@@ -30,14 +30,25 @@ const estado = {
   candidatos: {},   // cargo -> array
   cargoAtivo: null,
   escolhas: {},     // cargo -> id do candidato
+  busca: "",
+  limite: 30,       // quantos candidatos a lista mostra por vez
 };
 
 // ---------------------------------------------------------------- utilidades
 
 const tpl = (id) => document.getElementById(id).content.cloneNode(true);
+
+let soltarTeclado = null;
 const pct = (n) => `${Math.round(n * 100)}%`;
 
 function mostrar(node) {
+  // Toda troca de tela passa por aqui, então é aqui que o atalho de teclado da
+  // tela anterior morre. Sem isso o ← do quiz continuaria ativo no resultado e
+  // devolveria o eleitor ao questionário sem ele pedir.
+  if (soltarTeclado) {
+    document.removeEventListener("keydown", soltarTeclado);
+    soltarTeclado = null;
+  }
   app.replaceChildren(node);
   window.scrollTo(0, 0);
 }
@@ -190,6 +201,20 @@ function telaQuiz() {
     };
   });
 
+  // Com 34 afirmações, obrigar a responder tudo antes de ver qualquer coisa é
+  // o caminho mais curto para o eleitor desistir no meio. A partir de umas
+  // poucas respostas o ranking já é informativo, então oferecemos a saída —
+  // dizendo quantas ele respondeu, para o número não parecer mais firme do que é.
+  const respondidas = Object.values(estado.respostas).filter(
+    (r) => r && r.valor !== PULOU
+  ).length;
+  const parcial = node.getElementById("ver-parcial");
+  if (respondidas >= 5 && estado.indice < teses.length - 1) {
+    parcial.hidden = false;
+    parcial.textContent = `Ver meus candidatos agora (${respondidas} de ${teses.length} respondidas)`;
+    parcial.onclick = telaResultado;
+  }
+
   const voltar = node.getElementById("voltar");
   voltar.disabled = estado.indice === 0;
   voltar.onclick = () => {
@@ -203,6 +228,40 @@ function telaQuiz() {
   };
 
   mostrar(node);
+
+  // Responder 34 afirmações a mouse é lento. As teclas seguem a ordem visual
+  // dos botões, então não há nada a decorar.
+  // Consultar o documento, não `node`: mostrar() move os filhos do fragmento
+  // para o DOM e o fragmento fica vazio — querySelector nele devolveria null.
+  teclado((ev) => {
+    const porTecla = { 1: "1", 2: "0", 3: "-1" };
+    if (porTecla[ev.key]) {
+      document.querySelector(`.resp[data-valor="${porTecla[ev.key]}"]`)?.click();
+      return true;
+    }
+    if (ev.key === "ArrowLeft" && estado.indice > 0) {
+      estado.indice--;
+      telaQuiz();
+      return true;
+    }
+    if (ev.key === "ArrowRight") {
+      document.getElementById("pular")?.click();
+      return true;
+    }
+    return false;
+  });
+}
+
+/** Atalhos da tela atual. `mostrar()` derruba o anterior a cada troca. */
+function teclado(handler) {
+  if (soltarTeclado) document.removeEventListener("keydown", soltarTeclado);
+  soltarTeclado = (ev) => {
+    if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+    const alvo = ev.target;
+    if (alvo && (alvo.tagName === "INPUT" || alvo.tagName === "SELECT")) return;
+    if (handler(ev)) ev.preventDefault();
+  };
+  document.addEventListener("keydown", soltarTeclado);
 }
 
 function telaResultado() {
@@ -211,13 +270,17 @@ function telaResultado() {
   node.getElementById("bussola").append(desenharBussola());
 
   const abas = node.getElementById("abas");
+  let abaAtiva = null;
   for (const [cargo, rotulo] of CARGOS) {
     if (!estado.candidatos[cargo]?.length) continue;
     const b = document.createElement("button");
     b.textContent = rotulo;
     b.className = cargo === estado.cargoAtivo ? "aba ativa" : "aba";
+    if (cargo === estado.cargoAtivo) abaAtiva = b;
     b.onclick = () => {
       estado.cargoAtivo = cargo;
+      estado.busca = "";
+      estado.limite = 30;
       telaResultado();
     };
     abas.append(b);
@@ -225,7 +288,31 @@ function telaResultado() {
 
   const lista = node.getElementById("lista");
   const teses = tesesDoEleitor();
-  const ranking = ranquear(estado.respostas, teses, estado.candidatos[estado.cargoAtivo] || []);
+  const completo = ranquear(estado.respostas, teses, estado.candidatos[estado.cargoAtivo] || []);
+
+  // Busca: o eleitor chega querendo saber onde ficou UM candidato específico,
+  // e sem isso ele só alcança os 30 primeiros — nem consegue pôr o próprio
+  // candidato na colinha se ele estiver em 45º.
+  const alvo = normalizar(estado.busca);
+  const ranking = alvo
+    ? completo.filter(
+        (r) => normalizar(r.candidato.n).includes(alvo) || r.candidato.num.startsWith(alvo)
+      )
+    : completo;
+
+  const campo = node.getElementById("busca");
+  campo.value = estado.busca;
+  campo.oninput = () => {
+    estado.busca = campo.value;
+    estado.limite = 30;
+    const foco = document.activeElement === campo;
+    telaResultado();
+    if (foco) {
+      const novo = document.getElementById("busca");
+      novo.focus();
+      novo.setSelectionRange(novo.value.length, novo.value.length);
+    }
+  };
 
   // Quantos candidatos do mesmo partido estão na disputa: é o tamanho do grupo
   // que herda exatamente a mesma posição quando não há voto próprio.
@@ -246,11 +333,32 @@ function telaResultado() {
     lista.before(aviso);
   }
 
-  ranking.slice(0, 30).forEach((r) => lista.append(itemCandidato(r, porPartido)));
+  ranking.slice(0, estado.limite).forEach((r) => lista.append(itemCandidato(r, porPartido)));
+
+  const mais = node.getElementById("mais");
+  if (ranking.length > estado.limite) {
+    mais.hidden = false;
+    const restam = ranking.length - estado.limite;
+    mais.textContent = `Mostrar mais ${Math.min(30, restam)} (de ${restam} restantes)`;
+    mais.onclick = () => {
+      estado.limite += 30;
+      telaResultado();
+    };
+  }
+
+  if (alvo && !ranking.length) {
+    const vazio = document.createElement("p");
+    vazio.className = "aviso";
+    vazio.textContent =
+      `Nenhum candidato a ${rotuloCargo(estado.cargoAtivo)} com “${estado.busca}” ` +
+      `pôde ser comparado com suas respostas. Ele pode estar concorrendo por um ` +
+      `partido sem registro de posição, ou em outro cargo.`;
+    lista.before(vazio);
+  }
 
   const total = estado.candidatos[estado.cargoAtivo]?.length || 0;
-  const mostrados = Math.min(30, ranking.length);
-  const semDados = total - ranking.length;
+  const mostrados = Math.min(estado.limite, ranking.length);
+  const semDados = total - completo.length;
   node.getElementById("rodape-fonte").textContent = [
     total > mostrados
       ? `Mostrando ${mostrados} de ${total} candidatos ao cargo.`
@@ -263,6 +371,32 @@ function telaResultado() {
 
   node.getElementById("ver-colinha").onclick = telaColinha;
   mostrar(node);
+
+  // A aba selecionada pode estar fora da faixa visível num celular: sem isto o
+  // eleitor toca "Dep. Estadual", a lista troca e ele continua vendo só
+  // "Presidente" e "Governador", sem nenhuma marca de onde está.
+  abaAtiva?.scrollIntoView({ inline: "center", block: "nearest" });
+  marcarRolagem(document.querySelector(".abas"));
+}
+
+const normalizar = (s) =>
+  (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+const rotuloCargo = (c) => (CARGOS.find(([k]) => k === c) || [, c])[1];
+
+/** Marca as bordas quando ainda há aba fora da tela, já que a barra de
+ *  rolagem está oculta e sem isso não há pista de que a faixa rola. */
+function marcarRolagem(el) {
+  if (!el) return;
+  const atualizar = () => {
+    el.classList.toggle("tem-antes", el.scrollLeft > 4);
+    el.classList.toggle(
+      "tem-depois",
+      el.scrollLeft + el.clientWidth < el.scrollWidth - 4
+    );
+  };
+  el.addEventListener("scroll", atualizar, { passive: true });
+  atualizar();
 }
 
 /** Candidatura muda até a véspera: dizer a data da fonte é parte do produto. */

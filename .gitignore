@@ -4,3 +4,7 @@ __pycache__/
 
 # Cache do hook de design
 .impeccable/
+
+# Clone de teste feito dentro do worktree. Sem isto, um `git add -A` aninharia
+# o repositório inteiro dentro dele mesmo.
+/match-eleitoral-2026/
