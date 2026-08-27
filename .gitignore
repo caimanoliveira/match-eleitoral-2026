@@ -1,0 +1,6 @@
+# Cache de download (TSE ~3 MB, Câmara ~290 MB). Reproduzível pelo pipeline.
+.cache/
+__pycache__/
+
+# Cache do hook de design
+.impeccable/

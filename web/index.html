@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Match Eleitoral 2026</title>
+<meta name="description" content="Compare suas posições com as dos candidatos de 2026 e monte sua colinha para a urna.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <a class="marca" href="#/">Match Eleitoral <b>2026</b></a>
+  <a class="link-metodo" href="metodologia.html">Metodologia</a>
+</header>
+
+<main id="app" aria-live="polite"></main>
+
+<template id="tpl-inicio">
+  <section class="tela inicio">
+    <h1>Com quem você <em>de fato</em> concorda?</h1>
+    <p class="lead">
+      Responda a algumas afirmações sobre o que está em disputa no país. Comparamos
+      suas respostas com o que cada candidato votou no Congresso — ou com o que a
+      bancada do partido dele votou.
+    </p>
+
+    <label class="campo">
+      <span>Seu estado</span>
+      <select id="uf"></select>
+    </label>
+
+    <button class="primario" id="comecar">Começar</button>
+
+    <p class="aviso">
+      Suas respostas não saem deste aparelho: o cálculo roda no seu navegador e nada
+      é enviado para lugar nenhum. Isto compara posições — não é recomendação de voto.
+    </p>
+  </section>
+</template>
+
+<template id="tpl-quiz">
+  <section class="tela quiz">
+    <div class="progresso"><div class="barra"></div></div>
+    <p class="contador"></p>
+
+    <h2 class="tese"></h2>
+    <details class="contexto">
+      <summary>Entenda a disputa</summary>
+      <p></p>
+    </details>
+
+    <div class="respostas">
+      <button data-valor="1"  class="resp concordo">Concordo</button>
+      <button data-valor="0"  class="resp neutro">Tanto faz</button>
+      <button data-valor="-1" class="resp discordo">Discordo</button>
+    </div>
+
+    <label class="importante">
+      <input type="checkbox"> Este tema é <b>muito importante</b> para mim
+      <small>conta em dobro</small>
+    </label>
+
+    <div class="navegacao">
+      <button class="secundario" id="voltar">Voltar</button>
+      <button class="secundario" id="pular">Pular esta</button>
+    </div>
+  </section>
+</template>
+
+<template id="tpl-resultado">
+  <section class="tela resultado">
+    <h1>Seus candidatos</h1>
+    <div id="bussola"></div>
+    <nav class="abas" id="abas"></nav>
+    <ol class="lista" id="lista"></ol>
+    <p class="aviso" id="rodape-fonte"></p>
+    <button class="primario" id="ver-colinha">Ver minha colinha</button>
+  </section>
+</template>
+
+<template id="tpl-colinha">
+  <section class="tela colinha">
+    <h1>Sua colinha</h1>
+    <p class="lead">Leve para a urna. O que você digita é o <b>número</b>.</p>
+    <div id="cartao"></div>
+    <div class="navegacao">
+      <button class="primario" id="compartilhar">Compartilhar</button>
+      <button class="secundario" id="voltar-resultado">Voltar</button>
+    </div>
+    <p class="aviso">
+      Confira sempre o número no site oficial do TSE antes de votar.
+    </p>
+  </section>
+</template>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

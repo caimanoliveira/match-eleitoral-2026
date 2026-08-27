@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Metodologia — Match Eleitoral 2026</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .doc { max-width: 680px; }
+  .doc h2 { font-size: 1.35rem; margin: 2.2rem 0 .6rem; letter-spacing: -.015em; }
+  .doc p, .doc li { color: var(--tinta); }
+  .doc table { width: 100%; border-collapse: collapse; font-size: .9rem; margin: 1rem 0; }
+  .doc th, .doc td { text-align: left; padding: .5rem .4rem; border-bottom: 1px solid var(--linha); vertical-align: top; }
+  .doc th { color: var(--suave); font-weight: 600; }
+  /* Mesmo passo da tabela, não um terceiro: .88em ficava indistinguível de
+     .9rem — dois tamanhos para o mesmo peso visual. */
+  .doc code {
+    background: var(--campo); padding: .1rem .35rem; border-radius: 5px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="marca" href="index.html">Match Eleitoral <b>2026</b></a>
+  <a class="link-metodo" href="index.html">Fazer o teste</a>
+</header>
+
+<main class="doc">
+  <h1>Como isto funciona</h1>
+  <p class="lead">
+    Esta página existe para você poder discordar do que fizemos. Todo número que o
+    site mostra sai das regras abaixo, e todo dado vem de fonte pública.
+  </p>
+
+  <h2>1. O que perguntamos</h2>
+  <p>
+    As afirmações do quiz não são inventadas: cada uma corresponde a uma votação
+    nominal já realizada na Câmara dos Deputados. Isso é o que permite comparar
+    você com um candidato — comparamos com um registro, não com uma promessa.
+  </p>
+  <p>
+    A lista completa de afirmações, com a votação vinculada a cada uma, está em
+    <code>theses.toml</code> no repositório. Uma afirmação só vai ao ar depois que
+    uma pessoa confere, na própria votação, o que o voto "Sim" significou ali.
+    A descrição oficial de uma votação costuma dizer apenas <em>"Mantido o texto"</em>,
+    o que não revela o que o texto dizia — inverter uma afirmação entregaria a você
+    exatamente o candidato oposto ao que você quis.
+  </p>
+
+  <h2>2. De onde vem a posição de cada candidato</h2>
+  <p>
+    Usamos a primeira fonte disponível, nesta ordem. O site sempre mostra qual delas
+    foi usada em cada tema — posição inferida nunca aparece como se fosse declarada.
+  </p>
+  <table>
+    <tr><th>#</th><th>Fonte</th><th>Cobertura</th></tr>
+    <tr><td>1</td><td>Questionário respondido pelo próprio candidato</td><td>em implantação</td></tr>
+    <tr><td>2</td><td><b>Voto nominal do próprio candidato</b> na votação vinculada</td><td>deputados federais em exercício</td></tr>
+    <tr><td>3</td><td>Proposta no plano de governo registrado no TSE</td><td>em implantação</td></tr>
+    <tr><td>4</td><td>Declaração pública, com link para a fonte</td><td>em implantação</td></tr>
+    <tr><td>5</td><td><b>Posição da bancada do partido</b> na mesma votação</td><td>quase todos os candidatos</td></tr>
+  </table>
+  <p>
+    O nível 5 usa como a bancada do partido <em>de fato votou</em> — a posição
+    majoritária dos deputados daquele partido —, e não a orientação anunciada pelo
+    líder. A orientação oficial é registrada por bloco parlamentar, com siglas
+    truncadas na origem, enquanto o voto de cada deputado traz o partido dele de
+    forma limpa. Quando a bancada se divide meio a meio, não atribuímos posição.
+  </p>
+  <p>
+    Partidos sem bancada na Câmara não têm nível 5. Os candidatos deles aparecem com
+    menos temas comparados, e o site diz isso em vez de preencher a lacuna com palpite.
+  </p>
+
+  <h2>3. Como o percentual é calculado</h2>
+  <p>
+    Para cada tema comparável, medimos a distância entre a sua resposta e a posição do
+    candidato numa escala de três pontos (concorda, tanto faz, discorda). Marcar um
+    tema como muito importante dobra o peso dele.
+  </p>
+  <p><code>match = 1 − Σ(peso × distância) ÷ Σ(peso × 2)</code></p>
+  <p>
+    Temas sem evidência sobre o candidato saem da conta — não contam a favor nem
+    contra. Se nenhum tema puder ser comparado, o candidato não aparece no ranking:
+    mostrar 0% seria dizer que ele discorda de você, quando na verdade não sabemos.
+  </p>
+  <p>
+    Em caso de empate, a ordem é sorteada de forma estável. Ordenar por nome ou por
+    número daria vantagem a alguns candidatos, e essa não é uma vantagem que este
+    site tenha o direito de distribuir.
+  </p>
+
+  <h2>4. O mapa de dois eixos</h2>
+  <p>
+    Cada afirmação recebe um peso curado à mão em dois eixos: econômico
+    (estatista ↔ mercado) e social (progressista ↔ conservador). Peso zero é
+    legítimo — nem toda disputa é esquerda contra direita.
+  </p>
+  <p>
+    Não derivamos os eixos estatisticamente das votações. No Congresso brasileiro, o
+    principal fator que separa os votos é governo contra oposição, não ideologia; um
+    mapa gerado assim mudaria de significado a cada troca de governo.
+  </p>
+
+  <h2>5. Privacidade</h2>
+  <p>
+    O cálculo inteiro roda no seu navegador. Suas respostas não são enviadas a
+    servidor nenhum, não há login, não há cookie de rastreamento e não coletamos nem
+    publicamos estatísticas das respostas dos usuários.
+  </p>
+
+  <h2>6. Limites que você deveria conhecer</h2>
+  <ul>
+    <li>Votação em plenário mede o comportamento do parlamentar, não a totalidade das
+      convicções dele. Voto segue acordo de bancada, negociação e conjuntura.</li>
+    <li>Candidato estreante quase sempre só tem a posição do partido dele.</li>
+    <li>A posição do partido é uma aproximação: parlamentares divergem da própria bancada.</li>
+    <li><b>Candidatos do mesmo partido sem voto próprio recebem percentuais idênticos</b>, porque
+      a evidência sobre eles é literalmente a mesma. Nesses casos o ranking está ordenando
+      partidos, não pessoas, e a ordem entre empatados é sorteada. O site avisa isso na lista
+      e marca cada card cuja posição veio do partido.</li>
+    <li><b>Alguns números de urna aparecem em duas candidaturas.</b> Quando um partido
+      substitui um candidato, o substituto herda o número e os dois registros convivem
+      no arquivo do TSE até a Justiça Eleitoral julgar. Não escolhemos qual vale — o
+      site marca esses casos em vermelho, na lista e na colinha, para você conferir no
+      TSE antes de votar.</li>
+    <li>Cobrimos votações da Câmara dos Deputados. Atuação em prefeitura, assembleia
+      estadual ou Senado ainda não entra no cálculo.</li>
+    <li><b>Candidato a cargo estadual é comparado com as mesmas afirmações federais.</b>
+      Isso é deliberado: a evidência disponível sobre ele vem da bancada federal do
+      partido, o que serve como indicador de posição ideológica — não como previsão
+      dos votos que ele dará na assembleia. Leia o percentual dele nessa chave.</li>
+  </ul>
+
+  <h2>7. Correções</h2>
+  <p>
+    Se você é candidato, assessor ou eleitor e identificou um erro, abra uma
+    contestação no repositório do projeto. Correções são aplicadas com o histórico
+    público, para que ninguém precise confiar na nossa palavra.
+  </p>
+
+  <p class="aviso">
+    Este site compara posições declaradas e registradas. Não é recomendação de voto,
+    não tem vínculo com partido, candidatura ou governo, e não substitui a consulta
+    às informações oficiais do Tribunal Superior Eleitoral.
+  </p>
+</main>
+
+</body>
+</html>

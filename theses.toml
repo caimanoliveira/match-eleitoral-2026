@@ -1,0 +1,431 @@
+# Teses do quiz. Este é o coração editorial do projeto — o resto é encanamento.
+#
+# Campos de cada tese:
+#   id        slug estável (entra na URL do resultado; nunca renomear depois do lançamento)
+#   texto     a afirmação que o eleitor concorda/discorda. Primeira pessoa do plural,
+#             afirmativa, uma ideia só. Nada de "não deveria" (dupla negação confunde).
+#   contexto  1-2 frases neutras explicando a disputa, mostradas no "entenda"
+#   esfera    "federal" | "estadual" | "ambas" — define quem responde a tese
+#   eixo      posição no mapa 2D quando o eleitor CONCORDA. -1..+1
+#               economico: -1 estatista/redistributivo .. +1 mercado
+#               social:    -1 progressista              .. +1 conservador
+#             Peso 0.0 é legítimo: nem toda disputa é esquerda-direita (ver blindagem).
+#   votacoes  votações da Câmara que operacionalizam a tese.
+#               direcao = +1  votar "Sim" equivale a CONCORDAR com a tese
+#               direcao = -1  votar "Sim" equivale a DISCORDAR
+#
+#   verificado / verificado_em / verificado_por
+#             O build DESCARTA tese não verificada. A direção não pode ser inferida do
+#             texto do rito: "Mantido o texto" só informa que um destaque caiu, não o que
+#             o texto dizia. Inverter uma tese entrega ao eleitor o candidato oposto ao
+#             que ele quis — é o pior defeito possível aqui. Só marque verificado depois
+#             de abrir a votação no portal da Câmara e confirmar o que "Sim" significou.
+#             Rode `python3 pipeline/verificar.py <id>` para o dossiê da votação.
+
+[[tese]]
+id = "marco-temporal"
+texto = "A demarcação de terras indígenas deve se limitar às áreas já ocupadas em 5 de outubro de 1988."
+contexto = "Conhecida como 'marco temporal'. A Câmara aprovou a tese no PL 490/2007; o STF a havia declarado inconstitucional dias antes."
+esfera = "federal"
+eixo = { economico = 0.3, social = 0.6 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria inicial"
+nota = "Votação de 30/05/2023: destaque da bancada de esquerda para suprimir o marco temporal foi derrotado. 'Sim' = manter o marco temporal no texto."
+votacoes = [{ id = "345311-276", direcao = 1 }]
+
+[[tese]]
+id = "anistia-8-janeiro"
+texto = "Os condenados pelos atos de 8 de janeiro de 2023 devem ter suas penas reduzidas ou perdoadas."
+contexto = "O PL 2162/2023 reduziu penas para os condenados pela tentativa de golpe. Aprovado na Câmara em dezembro de 2025."
+esfera = "federal"
+eixo = { economico = 0.0, social = 0.7 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria inicial"
+nota = "Votação de 09/12/2025 do substitutivo do relator. 'Sim' = aprovar a redução de penas."
+votacoes = [{ id = "2358548-89", direcao = 1 }]
+
+[[tese]]
+id = "compra-alimentos-agricultura-familiar"
+texto = "O governo deve comprar alimentos da agricultura familiar para abastecer escolas e programas sociais."
+contexto = "O Programa de Aquisição de Alimentos (PAA) foi recriado pelo PL 2920/2023 após ser esvaziado no governo anterior."
+esfera = "federal"
+eixo = { economico = -0.6, social = -0.2 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria inicial"
+nota = "Votação de 07/07/2023: destaque para retirar dispositivos do PAA foi derrotado. 'Sim' = manter o programa."
+votacoes = [{ id = "2367064-68", direcao = 1 }]
+
+[[tese]]
+id = "aborto-legal-meninas"
+texto = "Meninas e adolescentes vítimas de estupro devem poder fazer o aborto legal sem exigir boletim de ocorrência, autorização judicial ou aviso aos pais."
+contexto = "Em novembro de 2025 a Câmara derrubou uma resolução do Conanda que dispensava boletim de ocorrência, autorização da Justiça e comunicação aos responsáveis para o aborto previsto em lei em crianças e adolescentes vítimas de violência sexual."
+esfera = "ambas"
+eixo = { economico = 0, social = -0.9 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Sim aprovou o PDL 3/2025 (317 a 111), sustando a Resolução 258/2024 do Conanda — a norma que dispensava boletim de ocorrência, autorização judicial e comunicação aos responsáveis para o aborto legal em crianças e adolescentes vítimas de violência sexual. Sim = derrubar essa dispensa; quem concorda com a tese votou Não."
+votacoes = [{ id = "2482078-57", direcao = -1 }]
+
+[[tese]]
+id = "agro-fora-do-mercado-de-carbono"
+texto = "A produção agropecuária deve ficar de fora do mercado regulado de carbono, sem metas obrigatórias de emissão."
+contexto = "Em dezembro de 2023 a Câmara aprovou a criação do Sistema Brasileiro de Comércio de Emissões (SBCE), o mercado regulado de carbono. O ponto mais disputado foi se a agropecuária entraria no sistema ou seria excluída dele."
+esfera = "federal"
+eixo = { economico = 0.6, social = 0.4 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Votação 1548579-144, PLEN 21/12/2023. descUltimaAberturaVotacao: 'Votação do DTQ 7: Bloco Fdr PSOL-REDE: Destaque para Votação em Separado do §2º do Art. 1º do Substitutivo (art. 161, I)'. Resultado 'Mantido o texto' com Sim 301 x Não 81 — em DVS o Sim é pela manutenção do dispositivo. Baixei e li a Redação Final (codteor 2384981, RDF 1 do PL 2148/2015, apresentada 21/12/2023): o art. 1º, §2º diz literalmente que 'a produção primária agropecuária, bem como os bens, benfeitorias e infraestrutura no interior de imóveis rurais a ela diretamente associados, não são considerados atividades, fontes"
+votacoes = [{ id = "1548579-144", direcao = 1 }]
+
+[[tese]]
+id = "anistia-desaparecimento-forcado"
+texto = "Crimes de desaparecimento forçado cometidos por agentes do Estado durante a ditadura militar devem continuar protegidos pela Lei da Anistia de 1979."
+contexto = "Ao criar o crime de desaparecimento forçado de pessoa no Código Penal, a Câmara precisou decidir se o novo tipo penal excluiria expressamente os casos já alcançados pela Lei da Anistia."
+esfera = "federal"
+eixo = { economico = 0, social = 1 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Sim aprovava a Emenda de Plenário nº 1 (Dep. Coronel Meira, PL-PE, assinada também pelo líder do PL Sóstenes Cavalcante), que acrescentava ao novo tipo de desaparecimento forçado o parágrafo: 'Excetuam-se do disposto neste artigo os delitos alcançados pela Lei nº 6.683, de 28 de agosto de 1979' — a Lei da Anistia. A justificação da própria emenda invoca a ADPF 153 e a validade da 'anistia ampla e geral'. Parecer do relator Orlando Silva (PCdoB-SP) pela rejeição; a emenda caiu por 194 a 207. Logo, Sim = manter os crimes da ditadura fora do alcance do novo tipo penal, isto é, concordar com a tes"
+votacoes = [{ id = "589982-124", direcao = 1 }]
+
+[[tese]]
+id = "anular-demarcacoes-indigenas"
+texto = "O Congresso deve poder derrubar demarcações de terras indígenas já homologadas pelo governo federal."
+contexto = "Em 2024 o governo homologou as terras indígenas Toldo Imbu (SC) e Aldeia Velha (BA). Deputados apresentaram decreto legislativo para anular essas homologações e sustar a regra do decreto que rege o procedimento de demarcação."
+esfera = "federal"
+eixo = { economico = 0.4, social = 0.6 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Votação 2633410-8, PLEN 17/06/2026, aprovacao=1: 'Aprovado o Requerimento de Urgência (Art. 155 do RICD)', Sim 273 x Não 160. O objeto (REQ 3557/2026) pede urgência para o PDL 717/2024, cuja ementa susta o art. 2º do Decreto 1.775/1996 (procedimento administrativo de demarcação de terras indígenas) e os Decretos 12.289 e 12.290, ambos de 04/12/2024, que homologaram as demarcações das TIs Toldo Imbu (Abelardo Luz/SC) e Morro dos Cavalos (Palhoça/SC). Sim = acelerar a anulação de demarcações já homologadas. Aqui o Sim aprova a urgência, então não há inversão de sinal (o alerta sobre 'requeriment"
+votacoes = [{ id = "2633410-8", direcao = 1 }]
+
+[[tese]]
+id = "aumentar-penas-furto-roubo"
+texto = "As penas de prisão para furto e roubo devem ser aumentadas."
+contexto = "A Câmara revisou o Código Penal para elevar as penas dos crimes contra o patrimônio mais comuns no dia a dia das cidades."
+esfera = "federal"
+eixo = { economico = 0, social = 0.8 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Votação em turno único do mérito. Sim aprovou a Subemenda Substitutiva Global ao PL 3780/2023 (relator Alfredo Gaspar, UNIÃO-AL) que majora as penas de furto, roubo e receptação. Conferi a Redação Final (proposição 2401803): furto (art. 155) sobe de 1 a 4 para 'reclusão, de 2 (dois) a 6 (seis) anos'; roubo (art. 157) sobe de 4 a 10 para 'reclusão, de 6 (seis) a 10 (dez) anos'; roubo com lesão grave vai a 16-24 anos e latrocínio a 24-30. Aprovada por 269 a 87."
+votacoes = [{ id = "2376169-62", direcao = 1 }]
+
+[[tese]]
+id = "camara-susta-acao-penal"
+texto = "A Câmara dos Deputados deve poder suspender um processo criminal que o STF já abriu contra um deputado em exercício."
+contexto = "Em outubro de 2025 a Câmara usou o art. 53, §3º da Constituição para travar uma ação penal já instaurada no STF contra um deputado, depois de a Primeira Turma ter recebido a denúncia."
+esfera = "federal"
+eixo = { economico = 0, social = 0.4 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Sim = aprovar o parecer da CCJ à SAP 2/2025 pela sustação do andamento da ação penal contida na Pet 10.972 (AP 2652), em curso no STF contra o dep. Gustavo Gayer (PL-GO), em relação a todos os crimes imputados — isto é, a Câmara usando o art. 53, §3º da CF para travar processo criminal já instaurado pelo STF. Aprovado (aprovacao=1) por 268 a 167, acima da maioria absoluta de 257."
+votacoes = [{ id = "2564763-24", direcao = 1 }]
+
+[[tese]]
+id = "cancelamento-online-contribuicao-sindical"
+texto = "O trabalhador deve poder cancelar pela internet, sem ir ao sindicato, o desconto da contribuição sindical no seu salário."
+contexto = "Hoje o pedido de cancelamento costuma exigir ida presencial ao sindicato. Quem defende a mudança fala em liberdade do trabalhador; quem é contra diz que ela enfraquece o financiamento sindical."
+esfera = "federal"
+eixo = { economico = 0.6, social = 0 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Votação do DTQ 8 (art. 161, II) sobre a Emenda de Plenário nº 1 ao PL 1663/2023, em 10/06/2025. Como é destaque de emenda, o voto foi sobre a própria emenda: a API registra descricao='Aprovada a Emenda de Plenário n° 1. Sim: 318; Não: 116' e aprovacao=1. A emenda (Rodrigo Valadares, UNIÃO-SE) permite ao trabalhador cancelar a contribuição sindical por meio digital — portais do governo, plataformas do sindicato, aplicativos autorizados ou e-mail —, sem ida presencial. Votar Sim foi aprovar o cancelamento digital. PT, PCdoB, PDT, PSOL, PV e Solidariedade votaram Não; os demais, Sim."
+votacoes = [{ id = "2355104-126", direcao = 1 }]
+
+[[tese]]
+id = "candidatura-coletiva"
+texto = "A lei eleitoral deve permitir candidaturas coletivas, em que um grupo de pessoas se apresenta junto e divide o exercício do mandato."
+contexto = "Na minirreforma eleitoral de 2023, o relator incluiu na Lei das Eleições um artigo que admitia expressamente o registro de candidatura coletiva nas eleições proporcionais. O plenário votou uma emenda que substituía esse texto por uma proibição."
+esfera = "federal"
+eixo = { economico = 0, social = -0.4 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Sim = aprovar a Emenda de Plenário nº 30 (autores Junio Amaral, PL-MG, e Elmar Nascimento, confirmado no /autores da EMP 30, id 2387701), que PROÍBE a candidatura coletiva nas eleições proporcionais, substituindo o dispositivo do relator que a admitia. Emenda aprovada por 246 a 172. Portanto votar Sim = DISCORDAR da tese."
+votacoes = [{ id = "2387066-94", direcao = -1 }]
+
+[[tese]]
+id = "castracao-quimica-pedofilia"
+texto = "Condenados por crimes sexuais contra crianças devem sofrer castração química, aplicada junto com a pena de prisão."
+contexto = "Ao votar o projeto que cria o cadastro nacional de pedófilos, em dezembro de 2024, o plenário decidiu se acrescentava ao texto a castração química como punição adicional."
+esfera = "ambas"
+eixo = { economico = 0, social = 0.75 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Sim aprovou (267 a 85) a Emenda de Plenário nº 1 ao PL 3976/2020, destacada pelo PL sob o art. 161, II. Li o inteiro teor da emenda: acrescenta ao art. 227-B do ECA que 'a castração química será aplicada cumulativamente às penas já previstas' para os crimes de pedofilia, mediante medicamentos inibidores da libido regulamentados pelo Ministério da Saúde. Sim = instituir a castração química."
+votacoes = [{ id = "2258828-105", direcao = 1 }]
+
+[[tese]]
+id = "correios-sem-licitacao"
+texto = "Órgãos do governo federal devem contratar os Correios diretamente, sem licitação, em vez de abrir concorrência para empresas privadas de entrega."
+contexto = "Em 2023 a Câmara aprovou projeto que dá preferência legal à estatal dos Correios nas contratações de serviços postais pela administração federal. A oposição de direita defendia licitação aberta às transportadoras privadas."
+esfera = "federal"
+eixo = { economico = -1, social = 0 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Sim aprovou o Substitutivo da CCTCI ao PL 6.385/2016 (PL 2721/2023). Li a redação final (RDF 1, codteor 2276482): o art. 2º diz que órgãos da administração direta e entidades da indireta federal, para serviços postais não exclusivos, 'devem, preferencialmente, nos termos do inciso IX do caput do art. 75 da Lei nº 14.133/2021 (Lei de Licitações), contratar a prestação desses serviços diretamente com a Empresa Brasileira de Correios e Telégrafos' — o art. 75, IX é hipótese de contratação direta (sem licitação). O projeto tem só quatro artigos, todos sobre isso, então não há ambiguidade sobre o q"
+votacoes = [{ id = "2115253-118", direcao = 1 }]
+
+[[tese]]
+id = "crime-preco-abusivo"
+texto = "Aumentar sem justificativa o preço de bens essenciais, como combustíveis, deve ser crime mesmo quando não há prova de cartel."
+contexto = "A Câmara analisou projeto do Executivo que cria o crime de elevação abusiva de preços de bens de utilidade pública. O PL tentou restringir o crime aos casos já condenados pelo Cade como prática anticoncorrencial."
+esfera = "federal"
+eixo = { economico = -0.8, social = 0 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Sim aprovaria a Emenda de Plenário nº 2 ao PL 1625/2026, do Dep. Lafayette de Andrada (vice-líder do PL). Comparei os dois textos. O PL original do Executivo (codteor 3109125) tipifica 'elevar, sem justa causa, o preço dos bens produzidos por atividades de utilidade pública... com o objetivo de obter aumento arbitrário dos lucros', pena de 2 a 5 anos, e define 'sem justa causa' apenas como aumento não fundamentado em fatores econômicos legítimos — sem exigir cartel. A emenda (codteor 3131533) exige que a elevação seja 'mediante conduta anticoncorrencial grave', que decorra de conduta do art. 3"
+votacoes = [{ id = "2613731-47", direcao = -1 }]
+
+[[tese]]
+id = "desconto-antecipacao-bancaria-inss"
+texto = "Os bancos devem poder descontar direto do benefício do INSS as parcelas dos adiantamentos de aposentadoria que concederem."
+contexto = "Depois do escândalo dos descontos indevidos, a Câmara proibiu descontos de mensalidades de associações e sindicatos nos benefícios do INSS, mas manteve descontos ligados a operações de crédito. A disputa foi sobre abrir espaço para a antecipação bancária do benefício."
+esfera = "federal"
+eixo = { economico = 0.5, social = 0 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Votação do DTQ 12 (PSB), 03/09/2025: DVS com finalidade de suprimir o inciso VII do art. 115 da Lei 8.213/1991 na redação do art. 6º do substitutivo ao PL 1546/2024 (art. 161, I). Resultado 'Mantido o texto. Sim: 259; Não: 126'. Li o substitutivo de Danilo Forte (SBT 1, codteor 2992975): o novo inciso VII autoriza desconto no benefício do INSS para 'amortização de operações de antecipação do benefício previdenciário', enquanto o art. 13 revoga o inciso V e o novo § 8º veda descontos de mensalidades de associações e sindicatos. Votar Sim foi manter a autorização de desconto das parcelas de ante"
+votacoes = [{ id = "2430953-270", direcao = 1 }]
+
+[[tese]]
+id = "desoneracao-com-contrapartida-de-emprego"
+texto = "Empresa que recebe desoneração da folha de pagamento deve ficar proibida de demitir sem justa causa ou de reduzir salários enquanto tiver o benefício."
+contexto = "A desoneração troca a contribuição previdenciária sobre os salários por uma alíquota sobre o faturamento em 17 setores. A disputa foi sobre exigir ou não contrapartida de manutenção de empregos."
+esfera = "federal"
+eixo = { economico = -0.8, social = 0 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Votação do DTQ 7 (Bloco PSOL-REDE) sobre a Emenda de Plenário nº 8 ao PL 1016/2023 (art. 161, II), em 30/08/2023. Extraí o inteiro teor da emenda (codteor 2320980, Guilherme Boulos e André Figueiredo): ela acrescenta aos arts. 7º e 8º da Lei 12.546/2011 que as empresas que optarem pela contribuição sobre a receita bruta 'ficam proibidas de rescindir sem justa causa o contrato de trabalho de seus empregados e de promover redução salarial por período de até 6 (seis) meses após o encerramento do prazo previsto no caput'. A justificação fala explicitamente em 'estabilidade no emprego' como contrap"
+votacoes = [{ id = "2350586-73", direcao = 1 }]
+
+[[tese]]
+id = "flexibilizar-acesso-armas"
+texto = "As restrições à compra e ao registro de armas de fogo impostas pelo governo federal em 2023 devem ser derrubadas, facilitando o acesso do cidadão comum às armas."
+contexto = "No primeiro dia de mandato, o governo Lula editou o Decreto 11.366/2023, que limitou o registro e a aquisição de armas de fogo por civis. A bancada armamentista tentou acelerar a votação de um decreto legislativo para anular a medida."
+esfera = "ambas"
+eixo = { economico = 0, social = 1 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Sim aprovava urgência (art. 155 do RICD) para o PDL 3/2023, do Dep. Sanderson (PL-RS), que 'Susta o Decreto nº 11.366, de 1º de janeiro de 2023, que limita o registro e a aquisição de armas de fogo'. A API confirma as duas proposições afetadas: o REQ 1283/2023 e o PDL 3/2023 com essa ementa. Votar Sim = querer pautar e derrubar o decreto restritivo de armas; Não = manter as restrições."
+votacoes = [{ id = "2357898-11", direcao = 1 }]
+
+[[tese]]
+id = "foro-privilegiado-presidentes-partido"
+texto = "Presidentes nacionais de partidos políticos devem ter foro privilegiado, sendo julgados diretamente pelo Supremo Tribunal Federal."
+contexto = "Em setembro de 2025, ao votar a PEC das prerrogativas parlamentares (a chamada PEC da Blindagem), a Câmara decidiu se estendia aos presidentes nacionais de partidos o direito de responder a processos criminais somente no STF."
+esfera = "federal"
+eixo = { economico = 0, social = 0.2 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Sim = MANTER no texto da PEC 3/2021 (PEC da Blindagem, 1º turno) a expressão 'os Presidentes Nacionais de partidos políticos com representação no Congresso Nacional', inserida na alínea b do inciso I do art. 102 da CF — ou seja, dar foro no STF a presidentes de partido. O DTQ 8, do NOVO, era um Destaque para Votação em Separado pedindo a supressão dessa expressão; em DVS o 'Sim' preserva o texto destacado. Texto mantido por 317 a 156 (PEC exige 308 para manter)."
+votacoes = [{ id = "2270800-151", direcao = 1 }]
+
+[[tese]]
+id = "imposto-grandes-fortunas"
+texto = "O Brasil deve criar um imposto anual sobre grandes fortunas, cobrado de quem tem mais de R$ 10 milhões em bens."
+contexto = "Na votação do projeto que regulamenta a reforma tributária, PSOL e Rede tentaram incluir o Imposto sobre Grandes Fortunas, previsto na Constituição de 1988 e nunca criado."
+esfera = "federal"
+eixo = { economico = -1, social = 0 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Sim aprovaria a Emenda de Plenário nº 8 ao PLP 108/2024, da liderança da Federação PSOL-REDE (Dep. Ivan Valente). Li o inteiro teor (codteor 2463354): acrescenta 'Livro X – Do Imposto sobre Grandes Fortunas – IGF', art. A institui o IGF da União (art. 153, VII, CF); art. B faz incidir sobre bens e direitos em 1º de janeiro de cada ano (logo, anual), e o §1º define grande fortuna como 'o conjunto de bens e direitos de qualquer natureza, no Brasil e no exterior, de valor superior a R$10.000.000,00'. Rejeitada 136x262. Concordar com a tese = votar Sim."
+votacoes = [{ id = "2438459-77", direcao = 1 }]
+
+[[tese]]
+id = "licenciamento-ambiental-simplificado"
+texto = "O licenciamento ambiental deve ser simplificado, permitindo que obras e empreendimentos de médio impacto sejam liberados por autodeclaração do empresário."
+contexto = "Em julho de 2025 a Câmara concluiu a votação da nova Lei Geral do Licenciamento Ambiental (PL 2159/2021), apelidada pelos críticos de 'PL da Devastação' e pelos defensores de marco que destrava obras. O texto cria a licença por adesão e compromisso, em que o próprio empreendedor se autodeclara apto."
+esfera = "ambas"
+eixo = { economico = 0.7, social = 0.5 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Votação 257161-454, PLEN 16/07/2025, aprovacao=1. descUltimaAberturaVotacao: 'Votação das Emendas do Senado Federal ao PL 3.729/2004, com parecer pela aprovação... com o restabelecimento dos incisos IX e XIII aprovados na Câmara'. Era a votação decisiva do PL 2159/2021 conforme o parecer do relator Zé Vitor (PL-MG); logo em seguida foi aprovada a Redação Final (231x87) e a matéria foi à sanção (virou a Lei 15.190/2025). Sim = aprovar a nova Lei Geral do Licenciamento na versão do relator. Verifiquei o autógrafo (codteor 2960687): art. 5º, V cria a Licença por Adesão e Compromisso (LAC), defini"
+votacoes = [{ id = "257161-454", direcao = 1 }]
+
+[[tese]]
+id = "limite-gastos-receita-extra"
+texto = "Quando a arrecadação cresce mais que o esperado, o governo deve poder ampliar seu limite de gastos no mesmo ano."
+contexto = "Na votação do novo arcabouço fiscal, em 2023, o PL tentou derrubar o artigo que permite ampliar o limite de despesas do Executivo em 2024 conforme o crescimento real da receita."
+esfera = "federal"
+eixo = { economico = -0.7, social = 0 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Votação do DTQ 7, do PL, destaque para votação em separado do art. 15 do substitutivo ao PLP 93/2023 'para fins de supressão' (art. 161, I). 'Mantido o texto' = Sim manteve o artigo. Li o art. 15 na redação final (RDF 1, codteor 2284827): 'No exercício financeiro de 2024, o limite do Poder Executivo poderá ser ampliado por crédito suplementar, após a segunda avaliação bimestral de receitas e despesas primárias, em montante decorrente da aplicação de índice equivalente à diferença entre 70% do crescimento real da receita para 2024 estimado nessa avaliação... e o índice calculado para fins do cr"
+votacoes = [{ id = "2357053-65", direcao = 1 }]
+
+[[tese]]
+id = "medida-protetiva-mesmo-com-consentimento"
+texto = "O agressor que se aproxima da mulher protegida por medida protetiva deve responder por crime mesmo que ela consinta com a aproximação."
+contexto = "Em julho de 2025 a Câmara aprovou projeto que criminaliza a reaproximação do agressor à vítima, à casa ou ao trabalho dela, ainda que a própria mulher concorde."
+esfera = "ambas"
+eixo = { economico = 0, social = -0.45 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Sim aprovou (302 a 99) o substitutivo da relatora Rogéria Santos (Republicanos-BA) ao PL 6020/2023, que tipifica como descumprimento de medida protetiva a aproximação voluntária do agressor mesmo com o consentimento expresso da vítima, estendendo a proibição à residência e ao local de trabalho. Sim = criminalizar mesmo com consentimento."
+votacoes = [{ id = "2413257-116", direcao = 1 }]
+
+[[tese]]
+id = "multa-cota-jovem-aprendiz"
+texto = "Empresa que não preencher sua cota de jovens aprendizes deve pagar multa."
+contexto = "O Estatuto do Aprendiz mantém a obrigação de contratar entre 5% e 15% de aprendizes e fixa multa por vaga não preenchida. A discussão foi entre punir o descumprimento e deixar a contratação sem sanção."
+esfera = "federal"
+eixo = { economico = -0.5, social = 0 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Votação do DTQ 14 (NOVO), 22/04/2026: DVS do art. 434 da CLT na redação do art. 3º do substitutivo ao PL 6461/2019 (Estatuto do Aprendiz), art. 161, I. Resultado 'Mantido o texto. Sim: 252; Não: 161'. Li o substitutivo (SBT 1 / PRLP 8, codteor 2980235): o art. 434 fixa multas, e o inciso II é exatamente 'R$ 3.000,00 (três mil reais) multiplicado pelo número de aprendizes que deixou de ser contratado para atingimento da cota mínima definida no art. 429', por mês de descumprimento, limitado a 5 meses, dobrável em reincidência. O destaque do NOVO pedia suprimir todo o art. 434, isto é, retirar as"
+votacoes = [{ id = "2234260-164", direcao = 1 }]
+
+[[tese]]
+id = "pena-dura-arma-uso-proibido"
+texto = "Portar arma de fogo de uso proibido deve dar pena de 6 a 12 anos de prisão."
+contexto = "Ao votar o PL 4149/2004, a Câmara derrubou um destaque do NOVO que suprimia a pena de 6 a 12 anos para arma de uso proibido. O mesmo texto define o que é arma proibida, retirando essa classificação do decreto presidencial."
+esfera = "ambas"
+eixo = { economico = 0, social = -0.5 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Texto reescrito na verificação: a versão proposta dizia \"como fuzil ou metralhadora\", mas fuzil é arma de uso RESTRITO, não proibido — o exemplo induziria o eleitor a erro."
+votacoes = [{ id = "264726-157", direcao = 1 }]
+
+[[tese]]
+id = "pre-sal-fora-do-teto-saude-educacao"
+texto = "O dinheiro do pré-sal destinado a saúde e educação deve ficar fora do limite de gastos do governo, mesmo que a despesa total do país aumente."
+contexto = "O PLP 163/2025 retirou do arcabouço fiscal as despesas de saúde e educação bancadas pelo Fundo Social do pré-sal, liberando cerca de R$ 1,5 bilhão por ano por cinco anos."
+esfera = "federal"
+eixo = { economico = -0.7, social = 0 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Aprovar o mérito do PLP 163/2025 em turno único (aprovacao=1), que exclui do cômputo dos limites de despesas primárias e das metas fiscais as despesas temporárias com educação e saúde custeadas pelo Fundo Social do pré-sal (art. 6º da Lei 15.164/2025). Sim = liberar o gasto para fora do arcabouço; Não = manter tudo sob o limite. 296x145."
+votacoes = [{ id = "2541109-38", direcao = 1 }]
+
+[[tese]]
+id = "primeiro-emprego-encargos-reduzidos"
+texto = "Empresas que contratarem jovens no primeiro emprego devem pagar contribuição previdenciária patronal reduzida."
+contexto = "A proposta cria um contrato específico para jovens sem experiência formal, com encargos menores para o empregador. O argumento a favor é gerar vagas; o contra é criar trabalhador de segunda classe."
+esfera = "federal"
+eixo = { economico = 0.8, social = 0 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Votação do DTQ 2 (Bloco PT-PCdoB-PV), 21/11/2023: DVS do art. 441-G do substitutivo ao PL 5496/2013 (art. 161, I), com o objetivo de suprimi-lo. Resultado 'Mantido o texto. Sim: 312; não: 104'. Li o substitutivo (PRLP 6, codteor 2361976): 'Art. 441-G A contribuição social a cargo da empresa, destinada à Seguridade Social é diferenciada para o empregador do contrato de que trata este Capítulo (...) e deve ser equivalente a 10% (dez por cento), nos termos do art. 23-A da Lei nº 8.212/1991', excluídos MEI e Simples. Votar Sim foi manter a alíquota patronal reduzida a 10% no contrato de primeiro e"
+votacoes = [{ id = "575585-99", direcao = 1 }]
+
+[[tese]]
+id = "progressao-80-por-cento-hediondos"
+texto = "Condenados por crimes hediondos e chefes de facção só devem poder progredir de regime depois de cumprir 80% da pena, e sem direito a livramento condicional."
+contexto = "A Câmara reescreveu a regra de progressão de regime da Lei de Execução Penal para os crimes mais graves, substituindo os percentuais hoje em vigor por um patamar único e muito mais alto."
+esfera = "federal"
+eixo = { economico = 0, social = 0.9 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Votação em turno único do mérito. Sim aprovou a Subemenda Substitutiva Global ao PL 1112/2023 (relator Alberto Fraga, PL-DF), que dá nova redação ao art. 112 da LEP exigindo '80% (oitenta por cento) da pena' para progressão, com livramento condicional vedado, para (a) condenado por crime hediondo ou equiparado, (b) condenado pelo exercício do comando de organização criminosa estruturada para crime hediondo e (c) condenado por constituição de milícia privada, revogando os incisos que fixavam percentuais menores. Texto conferido no parecer/subemenda (codteor 2948362) e na Redação Final (codteor"
+votacoes = [{ id = "2351284-38", direcao = 1 }]
+
+[[tese]]
+id = "recursos-esquecidos-tesouro"
+texto = "Dinheiro esquecido em contas bancárias antigas deve ser transferido para o Tesouro Nacional se o dono não reclamar no prazo da lei."
+contexto = "O projeto que compensou a desoneração da folha de pagamentos incluiu um capítulo destinando à União os saldos esquecidos em bancos. O PL pediu a supressão do trecho."
+esfera = "federal"
+eixo = { economico = -0.5, social = 0 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Votação do DTQ 3, do PL, destaque do Capítulo VIII do PL 1847/2024 'para fins de sua supressão' (art. 161, I). 'Mantido o texto' = Sim manteve o capítulo. Li o Capítulo VIII na redação final (RDF 1, codteor 2476468): art. 45 dá 30 dias após a publicação da lei para o titular reclamar recursos em contas de depósito sem cadastro atualizado e, no §2º, 'decorrido o prazo... os saldos não reclamados remanescentes junto às instituições depositárias passarão ao domínio da União e serão apropriados pelo Tesouro Nacional como receita orçamentária primária', contando para a meta de resultado primário. S"
+votacoes = [{ id = "2454704-70", direcao = 1 }]
+
+[[tese]]
+id = "reduzir-areas-de-protecao"
+texto = "Áreas de proteção ambiental já criadas podem ser reduzidas para liberar atividade econômica e ocupação urbana."
+contexto = "A Área de Proteção Ambiental da Baleia Franca, no litoral de Santa Catarina, protege a área de reprodução da espécie. Um projeto propõe reduzir seus limites, atendendo a pressões de expansão imobiliária e produtiva no litoral catarinense."
+esfera = "federal"
+eixo = { economico = 0.6, social = 0.4 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Votação 2606189-10, PLEN 01/07/2026, aprovacao=1: 'Aprovado o Requerimento de Urgência (Art. 155 do RICD)', Sim 279 x Não 162. O REQ 1233/2026 requer urgência para o PL 849/2025, que 'Reduz a Área de Proteção Ambiental da Baleia Franca, no Estado de Santa Catarina' (a API lista as duas proposições afetadas). Sim = destravar a tramitação da redução de uma unidade de conservação federal já existente. Como a Constituição (art. 225, §1º, III) só permite reduzir UC por lei, o projeto é o instrumento típico dessa posição. Sem inversão de sinal: o Sim aprova o requerimento."
+votacoes = [{ id = "2606189-10", direcao = 1 }]
+
+[[tese]]
+id = "regras-publicidade-jogos-criancas"
+texto = "O governo federal deve poder impor regras à publicidade de jogos eletrônicos e aplicativos dirigidos a crianças e adolescentes."
+contexto = "Em maio de 2025, ao votar o projeto sobre uso consciente da tecnologia digital, a liderança do PL pediu a supressão do trecho que autorizava um órgão federal a editar regras de publicidade por faixa etária."
+esfera = "federal"
+eixo = { economico = -0.6, social = -0.1 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Destaque supressivo (art. 161, I) do DTQ 6, de Sóstenes Cavalcante: Sim = manter o texto, Não = suprimir. O trecho era o §3º do art. 38-A do CDC, criado pelo substitutivo de Duda Salabert (PDT-MG) ao PL 3224/2024, que permitia ao órgão federal competente editar normas complementares de publicidade conforme segmento de mercado, faixa etária e tipo de mídia. Foi suprimido, 152 a 220."
+votacoes = [{ id = "2453934-72", direcao = 1 }]
+
+[[tese]]
+id = "regular-redes-sociais"
+texto = "As redes sociais devem ser obrigadas por lei a combater desinformação e responder pelo conteúdo que circula nelas."
+contexto = "Em 2023 a Câmara acelerou a tramitação do chamado PL das Fake News, que criaria deveres e responsabilidades para grandes plataformas digitais. O tema divide quem vê proteção contra desinformação e quem vê censura."
+esfera = "federal"
+eixo = { economico = -0.4, social = -0.5 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Aprovar a urgência (art. 154 RICD) para o PL 2630/2020 — a 'Lei Brasileira de Liberdade, Responsabilidade e Transparência na Internet' (PL das Fake News). A API confirma que o objeto do REQ 2721/2021 é exatamente esse projeto. Sim = empurrar a regulação das plataformas ao plenário; Não = travá-la. 238x192, discriminante 0,74."
+votacoes = [{ id = "2310837-8", direcao = 1 }]
+
+[[tese]]
+id = "silvicultura-atividade-poluidora"
+texto = "Plantios florestais comerciais como eucalipto e pinus não devem ser tratados como atividade poluidora nem pagar taxa de fiscalização ambiental."
+contexto = "A Lei da Política Nacional do Meio Ambiente lista as atividades 'potencialmente poluidoras', que pagam a Taxa de Controle e Fiscalização Ambiental ao Ibama. Em 2024 a Câmara decidiu se a silvicultura (florestas plantadas) continuaria nessa lista."
+esfera = "federal"
+eixo = { economico = 0.7, social = 0.3 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Votação 2324721-94, PLEN 08/05/2024, 'Votação em turno único', aprovacao=1, descrição 'Aprovado o Projeto de Lei nº 1.366, de 2022' (309x131). Não há destaque nem inversão de sinal: é aprovação direta do projeto cuja ementa é autoexplicativa — altera o Código 20 do Anexo VIII da Lei 6.938/1981 'para excluir a silvicultura do rol de atividades potencialmente poluidoras e utilizadoras de recursos ambientais'. Como esse Anexo VIII é justamente a lista que define quem paga a Taxa de Controle e Fiscalização Ambiental (TCFA) ao Ibama, o Sim retirou as florestas plantadas da lista e da taxa. Texto da"
+votacoes = [{ id = "2324721-94", direcao = 1 }]
+
+[[tese]]
+id = "tributar-aplicacoes-financeiras"
+texto = "Aplicações financeiras hoje isentas de imposto de renda devem passar a ser tributadas para o governo equilibrar as contas."
+contexto = "Em outubro de 2025 a Câmara enterrou, sem votar o mérito, a medida provisória do governo que aumentava a tributação sobre aplicações financeiras e ativos virtuais. A MP perdeu a validade no mesmo dia."
+esfera = "federal"
+eixo = { economico = -0.8, social = 0 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Sim aprovou o Requerimento de Retirada de Matéria da Pauta (RPD 34) da MPV 1303/2025 — 'Dispõe sobre a tributação de aplicações financeiras e ativos virtuais no País' — em 08/10/2025, último dia de vigência, fazendo a MP caducar sem votação de mérito. Placar 251x193. As orientações confirmam a direção sem margem: Governo Não, Oposição Sim, Minoria Sim, NOVO Sim; PT-PCdoB-PV Não, PSOL-REDE Não, PSB Não, PDT Não. Logo, Sim = derrubar o aumento de tributos sobre aplicações; quem concorda com a tese votou Não. Direção -1 está certa."
+votacoes = [{ id = "2525180-26", direcao = -1 }]
+
+[[tese]]
+id = "vale-refeicao-entregador-aplicativo"
+texto = "Os aplicativos de entrega devem ser obrigados a pagar vale-refeição aos entregadores."
+contexto = "O projeto obriga as plataformas a creditar ao menos R$ 20 em vale-refeição a cada quatro horas de trabalho do entregador, sem desconto na remuneração. Entregadores de app não têm vínculo formal e hoje não recebem esse benefício."
+esfera = "ambas"
+eixo = { economico = -0.7, social = 0 }
+verificado = true
+verificado_em = "2026-08-26"
+verificado_por = "curadoria assistida + verificação independente"
+nota = "Votação do REQ 3680, requerimento de urgência (art. 155 do RICD) para o PL 1579/2025, em 10/09/2025, aprovado 300 a 99 (aprovacao=1). Li o inteiro teor do PL 1579/2025 (Talíria Petrone, PSOL, codteor 2889191): o art. 3º obriga as empresas de aplicativo de entrega a conceder crédito de no mínimo R$ 20 ao entregador a cada 4 horas ininterruptas ou 6 alternadas, de uso exclusivo para alimentos, vedada a conversão em dinheiro e o desconto da remuneração. Votar Sim foi aprovar a urgência desse projeto, levando a obrigação direto ao plenário. MDB, NOVO e PL votaram Não."
+votacoes = [{ id = "2556109-8", direcao = 1 }]
