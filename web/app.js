@@ -1,5 +1,5 @@
 import { match, bussola, ranquear, PULOU } from "./match.js";
-import { cor, selo, iniciais } from "./partidos.js";
+import { cor, tinta, selo, iniciais } from "./partidos.js";
 import { desenharColinha, compartilhar } from "./colinha.js";
 
 const CARGOS = [
@@ -29,8 +29,10 @@ const estado = {
   teses: [],
   respostas: {},
   indice: 0,
-  candidatos: {},   // cargo -> array
-  falhas: {},       // cargo -> mensagem, quando o shard não carregou
+  // Carregados juntos e trocados de uma vez só: se `uf` e `porCargo` puderem
+  // descolar, a colinha carimba a UF de um estado sobre o número de outro.
+  dados: { uf: null, porCargo: {}, falhas: {} },
+  geracao: 0,       // descarta o resultado de uma carga que foi ultrapassada
   cargoAtivo: null,
   escolhas: {},     // cargo -> id do candidato
   busca: "",
@@ -50,8 +52,13 @@ const rotuloCargo = (c) => (CARGOS.find(([k]) => k === c) || [, c])[1];
 /** "Dep. Federal — RJ". O mesmo número pertence a pessoas diferentes em cada
  *  estado (2288 é Carlos Jordy no RJ e Major Mecca em SP), então a UF precisa
  *  viajar junto de qualquer coisa que mostre um número. Presidente é nacional. */
-const rotuloComUF = (c) =>
-  c === "presidente" ? rotuloCargo(c) : `${rotuloCargo(c)} — ${estado.uf}`;
+const rotuloComUF = (c) => {
+  if (!c) return "";
+  // A UF vem do lote de dados carregado, não de estado.uf: durante uma troca
+  // de estado as duas divergem, e o rótulo mentiria sobre de quem é o número.
+  const uf = estado.dados.uf;
+  return c === "presidente" || !uf ? rotuloCargo(c) : `${rotuloCargo(c)} — ${uf}`;
+};
 
 let soltarTeclado = null;
 
@@ -75,10 +82,14 @@ function mostrar(node, { rolar = true } = {}) {
   else window.scrollTo(0, y);
   // Mandar o foco ao título da tela: sem isso o foco cai no <body> a cada
   // ação e quem navega por teclado ou leitor de tela recomeça do cabeçalho.
-  const titulo = app.querySelector("h1, h2");
-  if (titulo) {
-    titulo.setAttribute("tabindex", "-1");
-    titulo.focus({ preventScroll: !rolar });
+  // Só em troca real de tela: com `rolar: false` a re-renderização é local, e
+  // mandar o foco ao <h1> tirava o eleitor do lugar onde ele estava agindo.
+  if (rolar) {
+    const titulo = app.querySelector("h1, h2");
+    if (titulo) {
+      titulo.setAttribute("tabindex", "-1");
+      titulo.focus({ preventScroll: true });
+    }
   }
 }
 
@@ -202,24 +213,51 @@ function lerDaURL() {
     lidas[tese.id] = { valor, importante };
   });
 
-  estado.uf = uf;
-  estado.respostas = lidas;
-  estado.indice = primeiraSemResposta === null ? estado.teses.length : primeiraSemResposta;
+  // Reconstrói a sessão inteira. Antes só `respostas` era substituído e
+  // `escolhas` era mesclado: abrir um segundo link na mesma aba somava a
+  // colinha antiga à nova, produzindo uma combinação de números que nenhum dos
+  // dois links jamais carregou.
+  const escolhas = {};
   ids.split(".").forEach((id, k) => {
-    if (id) estado.escolhas[CARGOS[k][0]] = id;
+    if (id) escolhas[CARGOS[k][0]] = id;
+  });
+  Object.assign(estado, {
+    uf, escolhas, respostas: lidas,
+    indice: primeiraSemResposta === null ? estado.teses.length : primeiraSemResposta,
+    busca: "", limite: POR_PAGINA, cargoAtivo: null,
   });
   return Object.keys(lidas).length > 0;
 }
 
 // -------------------------------------------------------------------- telas
 
-function telaInicio() {
+/** Volta ao ponto zero. Sem isto, "#/" mostrava a tela inicial mas o estado
+ *  anterior continuava vivo, e o eleitor que "recomeçava" recebia o resultado
+ *  velho. */
+function zerarSessao() {
+  Object.assign(estado, {
+    uf: null, respostas: {}, indice: 0, escolhas: {},
+    dados: { uf: null, porCargo: {}, falhas: {} },
+    cargoAtivo: null, busca: "", limite: POR_PAGINA,
+  });
+  estado.geracao++; // invalida carga em voo
+}
+
+function telaInicio(motivo = "") {
+  zerarSessao();
   const node = tpl("tpl-inicio");
   const sel = node.getElementById("uf");
   sel.append(new Option("Selecione…", ""));
   UFS.forEach((uf) => sel.append(new Option(uf, uf)));
 
   const erro = node.getElementById("erro-uf");
+  // Link recusado (outra versão do questionário, hash corrompida) era
+  // descartado sem uma palavra: o eleitor via a tela inicial sem saber por quê.
+  if (motivo) erro.textContent = motivo;
+  sel.onchange = () => {
+    erro.textContent = "";
+    sel.removeAttribute("aria-invalid");
+  };
   node.getElementById("comecar").onclick = async (ev) => {
     if (!sel.value) {
       // Antes o botão só dava focus() e nada aparecia: o eleitor tocava,
@@ -233,6 +271,15 @@ function telaInicio() {
     ev.target.textContent = "Carregando candidatos…";
     estado.uf = sel.value;
     await carregarCandidatos();
+    // Engolir a falha aqui fazia o eleitor responder 34 afirmações para só
+    // então descobrir que não havia candidato nenhum para comparar.
+    if (!Object.keys(estado.dados.porCargo).length) {
+      erro.textContent =
+        "Não consegui carregar os candidatos. Verifique sua conexão e tente de novo.";
+      ev.target.disabled = false;
+      ev.target.textContent = "Começar";
+      return;
+    }
     estado.indice = 0;
     telaQuiz();
   };
@@ -240,30 +287,40 @@ function telaInicio() {
 }
 
 async function carregarCandidatos() {
+  const geracao = ++estado.geracao;
+  const uf = estado.uf;
   const cargos = CARGOS.filter(([c]) =>
-    c === "presidente" ? true : c === "deputado-distrital" ? estado.uf === "DF" :
-    c === "deputado-estadual" ? estado.uf !== "DF" : true);
+    c === "presidente" ? true : c === "deputado-distrital" ? uf === "DF" :
+    c === "deputado-estadual" ? uf !== "DF" : true);
 
-  estado.falhas = {};
+  // meta.json lista os shards que o build gerou. Ele, e não o status HTTP, é a
+  // fonte da verdade sobre o que existe: tratar 404 como "esta UF não elege o
+  // cargo" fazia um cargo sumir em silêncio quando o arquivo simplesmente não
+  // tinha sido publicado.
+  const existentes = new Set(estado.meta?.shards || []);
+  const falhas = {};
   const pares = await Promise.all(
     cargos.map(async ([cargo]) => {
-      const uf = cargo === "presidente" ? "BR" : estado.uf;
+      const ufShard = cargo === "presidente" ? "BR" : uf;
+      const nome = `${cargo}-${ufShard}`;
+      if (existentes.size && !existentes.has(nome)) return [cargo, []];
       try {
-        return [cargo, await carregarJSON(`data/${cargo}-${uf}.json`)];
+        return [cargo, await carregarJSON(`data/${nome}.json`)];
       } catch (e) {
-        // 404 é resposta legítima: a UF não elege esse cargo. Qualquer outra
-        // coisa é falha, e sumir com o cargo esconderia do eleitor que existem
-        // candidatos que ele não está vendo.
-        if (!(e instanceof HttpErro) || e.status !== 404) {
-          estado.falhas[cargo] = e.message;
-        }
+        falhas[cargo] = e.message;
         return [cargo, []];
       }
     })
   );
-  estado.candidatos = Object.fromEntries(pares.filter(([, v]) => v.length));
-  if (!estado.candidatos[estado.cargoAtivo]) {
-    estado.cargoAtivo = Object.keys(estado.candidatos)[0] || null;
+
+  // Outra carga começou enquanto esta esperava: descartar. Sem isto, a resposta
+  // lenta de uma UF antiga sobrescreve a nova e o rótulo passa a mentir.
+  if (geracao !== estado.geracao) return;
+
+  const porCargo = Object.fromEntries(pares.filter(([, v]) => v.length));
+  estado.dados = { uf, porCargo, falhas };
+  if (!porCargo[estado.cargoAtivo]) {
+    estado.cargoAtivo = Object.keys(porCargo)[0] || null;
   }
 }
 
@@ -386,7 +443,12 @@ function telaResultado({ rolar = true } = {}) {
     continuar.hidden = false;
     continuar.textContent = `Continuar respondendo (faltam ${faltam})`;
     continuar.onclick = () => {
-      const i = teses.findIndex((t) => !estado.respostas[t.id]);
+      // Mesmo critério de `faltam`: uma tese pulada TEM entrada, então o
+      // findIndex antigo devolvia -1 e o botão voltava para a afirmação 1.
+      const i = teses.findIndex((t) => {
+        const r = estado.respostas[t.id];
+        return !r || r.valor == null;
+      });
       estado.indice = i === -1 ? 0 : i;
       telaQuiz();
     };
@@ -395,7 +457,7 @@ function telaResultado({ rolar = true } = {}) {
   const abas = node.getElementById("abas");
   let abaAtiva = null;
   for (const [cargo] of CARGOS) {
-    if (!estado.candidatos[cargo]?.length) continue;
+    if (!estado.dados.porCargo[cargo]?.length) continue;
     const b = document.createElement("button");
     b.textContent = rotuloComUF(cargo);
     b.className = cargo === estado.cargoAtivo ? "aba ativa" : "aba";
@@ -412,7 +474,7 @@ function telaResultado({ rolar = true } = {}) {
 
   // Cargo que não carregou não pode simplesmente sumir: o eleitor não teria
   // como saber que existem candidatos fora da tela.
-  const falhou = Object.keys(estado.falhas);
+  const falhou = Object.keys(estado.dados.falhas);
   if (falhou.length) {
     const aviso = node.getElementById("falha-carga");
     aviso.hidden = false;
@@ -447,7 +509,17 @@ function telaResultado({ rolar = true } = {}) {
   const avisos = node.getElementById("avisos-lista");
 
   function renderLista() {
-    const universo = estado.candidatos[estado.cargoAtivo] || [];
+    if (!estado.cargoAtivo) {
+      // Sem cargo carregado não há o que listar, e montar a frase produzia
+      // "0 candidatos a null — RJ" na cara do eleitor.
+      lista.replaceChildren();
+      avisos.replaceChildren();
+      mais.hidden = true;
+      campo.disabled = true;
+      rodape.textContent = idadeDaFonte();
+      return;
+    }
+    const universo = estado.dados.porCargo[estado.cargoAtivo] || [];
     const completo = ranquear(estado.respostas, teses, universo);
 
     const alvo = normalizar(estado.busca);
@@ -470,7 +542,7 @@ function telaResultado({ rolar = true } = {}) {
     const empatados = completo.filter((r) => r.score === completo[0]?.score).length;
 
     avisos.replaceChildren();
-    if (empatados > 3 && !alvo) {
+    if (empatados > 3) {
       const aviso = document.createElement("p");
       aviso.className = "empate";
       aviso.innerHTML =
@@ -480,13 +552,18 @@ function telaResultado({ rolar = true } = {}) {
         `não é uma recomendação. Abra “por quê” para ver de onde vem cada posição.`;
       avisos.append(aviso);
     }
-    if (alvo && !visiveis.length) {
+    if (!visiveis.length) {
       const vazio = document.createElement("p");
       vazio.className = "aviso";
-      vazio.textContent =
-        `Nenhum candidato a ${rotuloComUF(estado.cargoAtivo)} com “${estado.busca}” ` +
-        `pôde ser comparado com suas respostas. Ele pode estar concorrendo por um ` +
-        `partido sem registro de posição, ou em outro cargo.`;
+      vazio.textContent = respondidas() === 0
+        ? `Você ainda não respondeu nenhuma afirmação, então não há como comparar ` +
+          `você com ninguém. Volte e responda pelo menos algumas.`
+        : alvo
+          ? `Nenhum candidato a ${rotuloComUF(estado.cargoAtivo)} com “${estado.busca}” ` +
+            `pôde ser comparado com suas respostas. Ele pode estar concorrendo por um ` +
+            `partido sem registro de posição, ou em outro cargo.`
+          : `Nenhum candidato a ${rotuloComUF(estado.cargoAtivo)} tem registro de ` +
+            `posição nas afirmações que você respondeu.`;
       avisos.append(vazio);
     }
 
@@ -588,6 +665,7 @@ function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPar
   const avatar = document.createElement("div");
   avatar.className = "avatar";
   avatar.style.background = cor(candidato.p);
+  avatar.style.color = tinta(candidato.p);
   avatar.textContent = iniciais(candidato.n);
   if (candidato.foto) {
     const img = new Image();
@@ -643,16 +721,31 @@ function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPar
   fixar.textContent = jaEscolhido ? "✓ Na minha colinha" : "+ Colocar na colinha";
   fixar.setAttribute("aria-pressed", jaEscolhido ? "true" : "false");
   fixar.onclick = () => {
-    if (jaEscolhido) delete estado.escolhas[estado.cargoAtivo];
-    else estado.escolhas[estado.cargoAtivo] = candidato.id;
+    const agora = estado.escolhas[estado.cargoAtivo] !== candidato.id;
+    // Um cargo tem um slot só: fixar outro troca. Antes de redesenhar nada,
+    // desmarca o botão do candidato que perdeu o lugar.
+    const anterior = estado.escolhas[estado.cargoAtivo];
+    if (agora) estado.escolhas[estado.cargoAtivo] = candidato.id;
+    else delete estado.escolhas[estado.cargoAtivo];
+
+    if (anterior && anterior !== candidato.id) {
+      document.querySelectorAll(".fixar.fixado").forEach((b) => {
+        b.className = "fixar";
+        b.textContent = "+ Colocar na colinha";
+        b.setAttribute("aria-pressed", "false");
+      });
+    }
+    fixar.className = agora ? "fixar fixado" : "fixar";
+    fixar.textContent = agora ? "✓ Na minha colinha" : "+ Colocar na colinha";
+    fixar.setAttribute("aria-pressed", agora ? "true" : "false");
+    salvarNaURL();
     anunciar(
-      jaEscolhido
-        ? `${candidato.n} removido da colinha.`
-        : `${candidato.n}, número ${candidato.num}, na colinha.`
+      agora
+        ? `${candidato.n}, número ${candidato.num}, na colinha.`
+        : `${candidato.n} removido da colinha.`
     );
-    // Sem `rolar: false` o eleitor que fixa o 20º colocado é jogado de volta
-    // ao topo da página e perde o lugar na lista.
-    telaResultado({ rolar: false });
+    // Trocar só o botão, e não a tela inteira: redesenhar fechava os "por quê"
+    // que o eleitor tinha aberto e reordenava a lista sob o dedo dele.
   };
 
   li.append(topo, ...(origem ? [origem] : []), det, fixar);
@@ -713,7 +806,7 @@ function desenharBussola() {
     // Sem nenhuma resposta com peso de eixo, desenhar um ponto no centro
     // declararia centrista quem não disse nada.
     (semLastro
-      ? `<text x="50" y="55" class="b-rot">responda para se posicionar</text>`
+      ? `<text x="50" y="72" class="b-rot">responda para se posicionar</text>`
       : `<circle cx="${x}" cy="${y}" r="4.5" class="b-voce"/>`);
   return svg;
 }
@@ -727,12 +820,14 @@ function telaColinha() {
   // sem nunca saber.
   const escolhidos = [];
   const perdidos = [];
+  const orfas = [];
   for (const [cargo] of CARGOS) {
     const id = estado.escolhas[cargo];
     if (!id) continue;
-    const c = (estado.candidatos[cargo] || []).find((x) => x.id === id);
+    const c = (estado.dados.porCargo[cargo] || []).find((x) => x.id === id);
     if (c) escolhidos.push({ cargo, rotulo: rotuloComUF(cargo), candidato: c });
-    else perdidos.push(cargo);
+    else if (estado.dados.falhas[cargo]) perdidos.push(cargo);
+    else orfas.push(cargo);
   }
 
   const cartao = node.getElementById("cartao");
@@ -751,6 +846,7 @@ function telaColinha() {
       const av = document.createElement("div");
       av.className = "avatar";
       av.style.background = cor(candidato.p);
+      av.style.color = tinta(candidato.p);
       av.textContent = iniciais(candidato.n);
       if (candidato.foto) {
         const img = new Image();
@@ -803,14 +899,23 @@ function telaColinha() {
     };
   }
 
-  if (perdidos.length) {
-    const aviso = node.getElementById("colinha-perdidos");
+  const aviso = node.getElementById("colinha-perdidos");
+  if (perdidos.length || orfas.length) {
     aviso.hidden = false;
-    aviso.textContent =
-      `Você escolheu candidato para ${perdidos.map(rotuloComUF).join(", ")}, mas ` +
-      `não consegui carregar esse cargo agora. Volte ao resultado e tente de novo ` +
-      `antes de usar esta colinha.`;
+    // Duas causas diferentes: mandar "tentar de novo" numa escolha órfã manda
+    // o eleitor repetir uma ação que nunca vai resolver.
+    aviso.textContent = [
+      perdidos.length
+        ? `Não consegui carregar ${perdidos.map(rotuloComUF).join(", ")} agora. ` +
+          `Volte ao resultado e tente de novo antes de usar esta colinha.`
+        : "",
+      orfas.length
+        ? `Uma escolha para ${orfas.map(rotuloCargo).join(", ")} veio de um link de ` +
+          `outro estado ou de uma versão anterior dos dados, e foi descartada.`
+        : "",
+    ].filter(Boolean).join(" ");
   }
+  orfas.forEach((cargo) => delete estado.escolhas[cargo]);
 
   node.getElementById("voltar-resultado").onclick = () => telaResultado();
   mostrar(node);
@@ -829,14 +934,23 @@ async function rotear() {
   if (!location.hash || location.hash === "#/" || location.hash === "#") {
     return telaInicio();
   }
+  const geracao = estado.geracao;
   let ok = false;
+  let motivo = "";
   try {
     ok = lerDaURL();
+    if (!ok) motivo = "Não consegui ler esse link. Refaça o teste.";
   } catch {
-    ok = false; // hash corrompida: recomeça, em vez de mostrar número errado
+    // hash corrompida: recomeça, em vez de mostrar número errado
+    motivo = "Esse link parece estar corrompido. Refaça o teste.";
   }
-  if (!ok) return telaInicio();
+  if (!ok) {
+    history.replaceState(null, "", location.pathname);
+    return telaInicio(motivo);
+  }
   await carregarCandidatos();
+  // Outra rota assumiu enquanto esta carregava.
+  if (geracao !== estado.geracao - 1) return;
   // Link parcial retoma de onde parou em vez de fingir que o teste acabou.
   if (estado.indice < estado.teses.length && respondidas() < 5) return telaQuiz();
   telaResultado();
@@ -846,13 +960,17 @@ async function rotear() {
   try {
     // meta primeiro, sem cache: é ele que define o carimbo de todo o resto.
     estado.meta = await carregarJSON("data/meta.json", true).catch(() => null);
-    const arquivo = await carregarJSON("data/teses.json");
+    // O carimbo TEM de existir antes de buscar as teses. Ao introduzir o
+    // fallback eu inverti esta ordem e teses.json passou a ser o único arquivo
+    // de dados sem carimbo — justamente o que define a ordem posicional de
+    // `pos`/`src`. Teses do cache com shards novos desalinham cada caractere,
+    // sem erro visível, e `versaoTeses` sairia do arquivo velho, desarmando o
+    // guard que deveria barrar isso.
+    carimbo = (estado.meta?.gerado_em || "").replace(/\D/g, "").slice(0, 14);
+    const arquivo = await carregarJSON("data/teses.json", !carimbo);
     estado.teses = arquivo.teses;
     estado.versaoTeses = arquivo.versao;
-    // Se meta.json falhar, o carimbo cai na versão das teses em vez de ficar
-    // vazio — sem ele o navegador poderia servir shards de builds diferentes.
-    carimbo =
-      (estado.meta?.gerado_em || "").replace(/\D/g, "").slice(0, 14) || arquivo.versao;
+    carimbo = carimbo || arquivo.versao;
   } catch (e) {
     app.innerHTML = `<p class="erro">Não consegui carregar as perguntas (${e.message}).
       Recarregue a página; se persistir, os dados do site podem estar sendo publicados.</p>`;
@@ -861,6 +979,9 @@ async function rotear() {
 
   // Sem isto, o link do logo trocava o hash e nada acontecia na tela — o
   // estado sumia da URL sem aviso, e voltar/avançar do navegador eram inertes.
+  // O logo voltou a ser link para "#/" agora que existe roteador e que
+  // telaInicio() zera a sessão: antes ele trocava o hash e nada acontecia,
+  // apagando o estado da URL sem trocar de tela.
   window.addEventListener("hashchange", () => { rotear(); });
   rotear();
 })();

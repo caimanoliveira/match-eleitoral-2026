@@ -45,15 +45,36 @@ export function selo(sigla, numeroPartido, tamanho = 28) {
   el.setAttribute("role", "img");
   el.setAttribute("aria-label", `Partido ${sigla}, número ${numeroPartido || sigla}`);
 
+  aplicarLogo(el, sigla);
+  return el;
+}
+
+// O repositório não distribui logo nenhum (são marcas registradas), então
+// sondar `partidos/{SIGLA}.svg` por selo disparava um 404 para cada candidato
+// da lista — e a lista é redesenhada a cada tecla da busca. O manifesto é lido
+// uma única vez: sem ele, nenhuma requisição acontece.
+let manifesto = null;
+function logosDisponiveis() {
+  if (!manifesto) {
+    manifesto = fetch("partidos/logos.json")
+      .then((r) => (r.ok ? r.json() : []))
+      .catch(() => [])
+      .then((lista) => new Set(lista.map((s) => String(s).toUpperCase())));
+  }
+  return manifesto;
+}
+
+async function aplicarLogo(el, sigla) {
+  const chave = (sigla || "").toUpperCase();
+  if (!(await logosDisponiveis()).has(chave)) return;
   const logo = new Image();
-  logo.src = `partidos/${encodeURIComponent((sigla || "").toUpperCase())}.svg`;
-  logo.alt = sigla;
+  logo.src = `partidos/${encodeURIComponent(chave)}.svg`;
+  logo.alt = "";
   logo.onload = () => {
     el.textContent = "";
     el.style.background = "transparent";
     el.appendChild(logo);
   };
-  return el;
 }
 
 /** Iniciais para o avatar quando não há foto do candidato. */
