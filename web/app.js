@@ -54,6 +54,9 @@ const estado = {
   // nunca entram na URL compartilhada. Chave é o SQ, único no país.
   favoritos: lerFavoritos(),
   soFavoritos: false,
+  // Camadas do mapa. No celular partidos começam desligados: 30 siglas em
+  // 350px é ruído; o eleitor liga se quiser.
+  mapa: { partidos: !matchMedia("(max-width: 480px)").matches, pres: true },
 };
 
 const idsEscolhidos = (cargo) => (estado.escolhas[cargo] || "").split("+").filter(Boolean);
@@ -195,7 +198,26 @@ async function carregarJSON(caminho, semCache = false) {
 // como previsão dos votos que ele dará na assembleia. O campo `esfera` fica em
 // theses.toml para a curadoria, mas não filtra o quiz. Está explicado na
 // metodologia — se um dia deixar de valer, o filtro entra aqui.
-const tesesDoEleitor = () => estado.teses;
+// Rodada rápida: as 10 primeiras são as de maior peso nos eixos (5 puxadas
+// pelo econômico, 5 pelo social), para que quem chegou por link de WhatsApp
+// veja um resultado em dois minutos. A ORDEM de teses.json não muda — a URL é
+// posicional sobre ela; só a sequência de perguntar muda.
+const RAPIDAS = 10;
+let ordemQuiz = null;
+const tesesDoEleitor = () => {
+  if (ordemQuiz && ordemQuiz.length === estado.teses.length) return ordemQuiz;
+  const peso = (t, e) => Math.abs((t.eixo || {})[e] || 0);
+  const porEco = [...estado.teses].sort((a, b) => peso(b, "economico") - peso(a, "economico"));
+  const porSoc = [...estado.teses].sort((a, b) => peso(b, "social") - peso(a, "social"));
+  const rapidas = [];
+  for (let i = 0; rapidas.length < Math.min(RAPIDAS, estado.teses.length); i++) {
+    for (const t of [porEco[i], porSoc[i]]) {
+      if (t && !rapidas.includes(t) && rapidas.length < RAPIDAS) rapidas.push(t);
+    }
+  }
+  ordemQuiz = [...rapidas, ...estado.teses.filter((t) => !rapidas.includes(t))];
+  return ordemQuiz;
+};
 
 const respondidas = () =>
   Object.values(estado.respostas).filter((r) => r && r.valor != null).length;
@@ -262,9 +284,12 @@ function lerDaURL() {
   ids.split(".").forEach((id, k) => {
     if (id) escolhas[CARGOS[k][0]] = id;
   });
+  // O índice é na ORDEM DO QUIZ, não na de teses.json.
+  const semResposta = tesesDoEleitor().findIndex((t) => !lidas[t.id]);
+  void primeiraSemResposta;
   Object.assign(estado, {
     uf, escolhas, respostas: lidas,
-    indice: primeiraSemResposta === null ? estado.teses.length : primeiraSemResposta,
+    indice: semResposta === -1 ? estado.teses.length : semResposta,
     busca: "", limite: POR_PAGINA, cargoAtivo: null,
   });
   return Object.keys(lidas).length > 0;
@@ -375,7 +400,9 @@ function telaQuiz() {
   node.querySelector(".barra").style.transform =
     `scaleX(${estado.indice / teses.length})`;
   node.querySelector(".contador").textContent =
-    `Afirmação ${estado.indice + 1} de ${teses.length}`;
+    estado.indice < RAPIDAS
+      ? `Rodada rápida · ${estado.indice + 1} de ${RAPIDAS}`
+      : `Afirmação ${estado.indice + 1} de ${teses.length} · o resultado já existe, isto afina`;
   node.querySelector(".tese").textContent = tese.texto;
 
   const ctx = node.querySelector(".contexto");
@@ -402,6 +429,7 @@ function telaQuiz() {
     if (escolhida) btn.classList.add("escolhida");
     btn.setAttribute("aria-pressed", escolhida ? "true" : "false");
     btn.onclick = () => {
+      marcarMeu();
       estado.respostas[tese.id] = { valor, importante: check.checked };
       estado.indice++;
       salvarNaURL();
@@ -415,7 +443,11 @@ function telaQuiz() {
   const parcial = node.getElementById("ver-parcial");
   if (n >= 5 && estado.indice < teses.length - 1) {
     parcial.hidden = false;
-    parcial.textContent = `Ver meus candidatos agora (${n} de ${teses.length} respondidas)`;
+    // Fim da rodada rápida: é o momento de oferecer o resultado com força.
+    parcial.classList.toggle("destaque", estado.indice === RAPIDAS);
+    parcial.textContent = estado.indice === RAPIDAS
+      ? `Rodada rápida feita — ver meus candidatos`
+      : `Ver meus candidatos agora (${n} de ${teses.length} respondidas)`;
     parcial.onclick = telaResultado;
   }
 
@@ -673,6 +705,11 @@ function telaResultado({ rolar = true } = {}) {
 
   renderLista();
   node.getElementById("ver-colinha").onclick = telaColinha;
+  const base = `${location.origin}${location.pathname}`;
+  node.getElementById("mandar-quiz").onclick = () =>
+    mandar("Fiz o meu em 2 minutos e descobri em quem votar para deputado. Faz o seu:", `${base}?via=wa#/`);
+  node.getElementById("mandar-resultado").onclick = () =>
+    mandar("Olha o meu resultado no Colinha — e o seu, dá quanto?", `${base}?via=wa${location.hash}`);
   mostrar(node, { rolar });
 
   // A aba selecionada pode estar fora da faixa visível num celular: sem isto o
@@ -965,10 +1002,10 @@ function desenharBussola() {
   const semLastro = !p.pesos.economico && !p.pesos.social;
   const voce = noMapa(p);
 
-  const partidos = Object.entries(estado.partidos)
+  const partidos = !estado.mapa.partidos ? [] : Object.entries(estado.partidos)
     .map(([sigla, bancada]) => ({ sigla, p: pontoDePosicoes((t) => bancada[t.id]?.pos) }))
     .filter((x) => x.p);
-  const presidenciaveis = (estado.dados.porCargo.presidente || [])
+  const presidenciaveis = !estado.mapa.pres ? [] : (estado.dados.porCargo.presidente || [])
     .map((c) => ({ nome: c.n, sigla: c.p, p: pontoDePosicoes((t, i) => c.pos[i]) }))
     .filter((x) => x.p);
 
@@ -1075,7 +1112,17 @@ function desenharBussola() {
 
   const caixa = document.createElement("div");
   caixa.className = "mapa";
-  caixa.append(svg);
+  const camadas = document.createElement("div");
+  camadas.className = "camadas";
+  for (const [chave, rotulo] of [["partidos", "Partidos"], ["pres", "Presidenciáveis"]]) {
+    const b = document.createElement("button");
+    b.className = estado.mapa[chave] ? "filtro ativo" : "filtro";
+    b.setAttribute("aria-pressed", estado.mapa[chave] ? "true" : "false");
+    b.textContent = rotulo;
+    b.onclick = () => { estado.mapa[chave] = !estado.mapa[chave]; caixa.replaceWith(desenharBussola()); };
+    camadas.append(b);
+  }
+  caixa.append(camadas, svg);
 
   const legenda = document.createElement("p");
   legenda.className = "b-legenda";
@@ -1228,6 +1275,40 @@ function alertaInline(depois, texto) {
 
 // -------------------------------------------------------------------- start
 
+// sessionStorage, não URL: a marca "isto é meu" não pode viajar no link.
+const MEU = "colinha:meu";
+const ehMeu = () => { try { return sessionStorage.getItem(MEU) === "1"; } catch { return true; } };
+const marcarMeu = () => { try { sessionStorage.setItem(MEU, "1"); } catch { /* sem storage: tudo é "meu" */ } };
+
+function telaChegada() {
+  const node = tpl("tpl-chegada");
+  const topo = ranquear(estado.respostas, estado.teses,
+    estado.dados.porCargo.presidente || [])[0];
+  if (topo) {
+    node.getElementById("chegada-topo").textContent =
+      `Quem te mandou deu ${pct(topo.score)} com ${topo.candidato.n} para presidente.`;
+  }
+  node.getElementById("chegada-meu").onclick = () => {
+    marcarMeu();
+    // Mesma UF já vem do link; só as respostas são zeradas.
+    const uf = estado.uf;
+    zerarSessao();
+    estado.uf = uf;
+    ordemQuiz = null;
+    carregarCandidatos().then(() => telaQuiz());
+  };
+  node.getElementById("chegada-ver").onclick = () => { marcarMeu(); telaResultado(); };
+  mostrar(node);
+}
+
+/** WhatsApp no celular, Web Share onde houver, clipboard no resto. */
+async function mandar(texto, url) {
+  if (navigator.share) {
+    try { await navigator.share({ text: texto, url }); return; } catch (e) { if (e.name === "AbortError") return; }
+  }
+  window.open(`https://wa.me/?text=${encodeURIComponent(texto + " " + url)}`, "_blank", "noopener");
+}
+
 function telaLanding() {
   zerarSessao();
   const node = tpl("tpl-landing");
@@ -1270,6 +1351,10 @@ async function rotear() {
   if (geracao !== estado.geracao - 1) return;
   // Link parcial retoma de onde parou em vez de fingir que o teste acabou.
   if (estado.indice < estado.teses.length && respondidas() < 5) return telaQuiz();
+  // Resultado que veio de fora (o eleitor nunca respondeu nada nesta aba):
+  // é o link de um amigo. Cair direto no resultado dele confunde — e perde o
+  // convite de fazer o próprio.
+  if (!ehMeu()) return telaChegada();
   telaResultado();
 }
 

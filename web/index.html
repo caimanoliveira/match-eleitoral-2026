@@ -5,6 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Colinha — sua cola para a urna</title>
 <meta name="description" content="Vá votar sabendo. Compare o que você pensa com o que cada candidato votou e leve sua colinha para a urna em 4 de outubro.">
+<!-- Prévia do link no WhatsApp: sem isto o convite chega como texto cinza. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Colinha">
+<meta property="og:title" content="Descubra em quem votar em 2 minutos">
+<meta property="og:description" content="Compare o que você pensa com o que cada candidato votou — presidente a deputado estadual — e leve os números prontos para a urna. Grátis, sem cadastro.">
+<meta property="og:url" content="https://colinha.app.br/">
+<meta property="og:image" content="https://colinha.app.br/previa.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="logo.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -69,8 +79,11 @@
       </div>
     </div>
 
-    <a class="primario cta" href="#/comecar">Montar minha colinha</a>
-    <p class="cta-nota">Uns 5 minutos. Sem cadastro, sem coletar suas respostas.</p>
+    <div class="ctas">
+      <a class="primario cta" href="#/comecar">Descobrir meus candidatos</a>
+      <a class="cta-secundario" href="#/comecar">Montar minha colinha para a urna</a>
+    </div>
+    <p class="cta-nota">2 minutos para o primeiro resultado. Sem cadastro, sem coletar suas respostas.</p>
 
     <ol class="como">
       <li>
@@ -215,6 +228,24 @@
     <button class="secundario mais" id="mais" hidden>Mostrar mais 30</button>
     <p class="aviso" id="rodape-fonte"></p>
     <button class="primario" id="ver-colinha">Ver minha colinha</button>
+    <div class="mandar">
+      <button class="secundario" id="mandar-quiz">Mandar o quiz para amigos</button>
+      <button class="secundario" id="mandar-resultado">Mandar meu resultado</button>
+    </div>
+  </section>
+</template>
+
+<template id="tpl-chegada">
+  <section class="tela chegada">
+    <p class="eyebrow">Alguém te mandou isto</p>
+    <h1>Esse resultado é de quem te mandou. O seu é diferente.</h1>
+    <p class="lead" id="chegada-topo"></p>
+    <p class="lead">Responda 10 afirmações rápidas e veja os seus candidatos — presidente,
+      governador, senado e deputados. Sem cadastro.</p>
+    <div class="navegacao">
+      <button class="primario" id="chegada-meu">Fazer o meu</button>
+      <button class="secundario" id="chegada-ver">Ver o resultado que me mandaram</button>
+    </div>
   </section>
 </template>
 

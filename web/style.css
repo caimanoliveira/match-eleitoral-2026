@@ -194,7 +194,8 @@ select {
 .b-voce-rot { font-size: 3.4px; font-weight: 800; fill: var(--acento); text-anchor: middle; }
 /* No celular a sigla vira ruído de 7px: some, e fica o ponto com o nome no
    toque. Presidenciáveis e "você" continuam rotulados. */
-@media (max-width: 480px) { .b-sigla { display: none; } .b-rot { font-size: 4px; } }
+@media (max-width: 480px) { .b-rot { font-size: 4px; } }
+.camadas { display: flex; gap: .4rem; justify-content: flex-end; margin-bottom: .5rem; }
 .b-legenda { font-size: .82rem; line-height: 1.5; color: var(--suave); margin: .6rem 0 0; }
 .b-legenda b { color: var(--tinta); }
 
@@ -830,3 +831,11 @@ button:disabled { opacity: .55; }
 /* ---- convite à assessoria, discreto: é para quem procura, não para o eleitor ---- */
 .responder { display: block; margin-top: .6rem; font-size: .8rem; color: var(--suave); text-align: center; text-decoration: none; padding: .5rem; }
 .responder:hover { color: var(--acao); }
+
+/* ------------------------------------------------------- compartilhar / cta */
+.ctas { display: grid; gap: .6rem; }
+.cta-secundario { display: block; text-align: center; padding: .8rem; color: var(--acao); font-weight: 700; text-decoration: none; border-radius: var(--raio-pill); background: var(--acao-suave); }
+.mandar { display: grid; gap: .5rem; margin-top: .8rem; }
+@media (min-width: 30rem) { .mandar { grid-template-columns: 1fr 1fr; } }
+.ver-parcial.destaque { background: var(--acao); color: var(--acao-tinta); font-weight: 800; }
+.chegada .navegacao { flex-direction: column; }
