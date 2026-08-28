@@ -95,10 +95,18 @@ certificado leva alguns minutos para emitir após o DNS propagar).
 
 **E-mail do projeto.** `respostas@colinha.app.br` recebe as respostas das
 campanhas (é o destino do formulário `responder.html`). Não precisa de
-provedor de e-mail: no painel do Registro.br, em "Redirecionamento de
-e-mail", criar `respostas` → o Gmail pessoal de quem opera o projeto. É
-gratuito e leva um minuto. O disparo às campanhas sai desse Gmail — ver
-`pipeline/respostas/EMAIL.md`.
+provedor de e-mail, só de encaminhamento: o Registro.br **não** faz isso (só
+redireciona URL), então usa-se o ImprovMX (improvmx.com, grátis para um
+domínio). Lá, alias `respostas` → o Gmail pessoal de quem opera o projeto, e
+na zona DNS do Registro.br:
+
+```
+colinha.app.br.  MX   10 mx1.improvmx.com.
+colinha.app.br.  MX   20 mx2.improvmx.com.
+colinha.app.br.  TXT  "v=spf1 include:spf.improvmx.com ~all"
+```
+
+O disparo às campanhas sai do Gmail — ver `pipeline/respostas/EMAIL.md`.
 
 Publicado pelo próprio rebuild diário (abaixo). As fotos dos candidatos (~70 MB,
 dataset oficial do TSE) não ficam no repositório: só existem no runner que as

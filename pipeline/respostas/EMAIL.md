@@ -74,9 +74,9 @@ Por que este texto e não outro:
 
 1. `colinha.app.br` registrado e o site respondendo nele (senão o link do
    e-mail é um 404, e não há segunda chance de primeira impressão).
-2. `respostas@colinha.app.br` redirecionando para o seu Gmail — o
-   Registro.br faz isso de graça no painel do domínio ("Redirecionamento de
-   e-mail"). O formulário do site manda para esse endereço.
+2. `respostas@colinha.app.br` redirecionando para o seu Gmail — via ImprovMX
+   (grátis; registros MX/TXT no README). O formulário do site manda para
+   esse endereço. Teste mandando um e-mail para ele antes do disparo.
 3. Mandar **um e-mail de teste para você mesmo** pelo merge, abrir no celular,
    clicar no link, e ver a página do candidato carregar com o nome certo.
 4. Lote 1 num dia útil de manhã (terça a quinta, 9h–11h: assessoria lê
