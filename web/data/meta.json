@@ -1,11 +1,11 @@
 {
- "gerado_em": "2026-08-27T21:05:41.324866+00:00",
- "fonte_tse_em": "2026-08-27T20:41:40.220237+00:00",
+ "gerado_em": "2026-08-28T20:56:52.706728+00:00",
+ "fonte_tse_em": "2026-08-28T20:56:21.061117+00:00",
  "eleicao": "2026-10-04",
  "teses": 34,
  "versao_teses": "525294",
  "teses_pendentes": 0,
- "candidatos": 19870,
+ "candidatos": 19872,
  "shards": [
   "deputado-distrital-DF",
   "deputado-estadual-AC",
@@ -118,8 +118,8 @@
   "senador-TO"
  ],
  "cobertura": {
-  "5": 533857,
-  "2": 13234,
-  "0": 128489
+  "0": 128489,
+  "5": 533925,
+  "2": 13234
  }
 }
