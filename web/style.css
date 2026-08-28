@@ -184,11 +184,17 @@ select {
 .b-esq { text-anchor: start; }
 .b-dir { text-anchor: end; }
 .b-partido { stroke: var(--papel); stroke-width: .4; opacity: .85; }
+.b-sigla, .b-nome, .b-voce-rot, .b-destaque { paint-order: stroke; stroke: var(--campo); stroke-width: .9px; stroke-linejoin: round; }
 .b-sigla { font-size: 2.6px; font-weight: 700; fill: var(--suave); }
+.b-item { cursor: pointer; }
+.b-destaque { font-size: 3.6px; font-weight: 800; fill: var(--tinta); text-anchor: middle; pointer-events: none; }
 .b-pres { stroke: var(--tinta); stroke-width: .5; }
 .b-nome { font-size: 2.9px; font-weight: 800; fill: var(--tinta); }
 .b-voce { fill: var(--acento); stroke: var(--papel); stroke-width: 1.6; }
 .b-voce-rot { font-size: 3.4px; font-weight: 800; fill: var(--acento); text-anchor: middle; }
+/* No celular a sigla vira ruído de 7px: some, e fica o ponto com o nome no
+   toque. Presidenciáveis e "você" continuam rotulados. */
+@media (max-width: 480px) { .b-sigla { display: none; } .b-rot { font-size: 4px; } }
 .b-legenda { font-size: .82rem; line-height: 1.5; color: var(--suave); margin: .6rem 0 0; }
 .b-legenda b { color: var(--tinta); }
 

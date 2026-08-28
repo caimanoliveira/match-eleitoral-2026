@@ -972,20 +972,44 @@ function desenharBussola() {
     .map((c) => ({ nome: c.n, sigla: c.p, p: pontoDePosicoes((t, i) => c.pos[i]) }))
     .filter((x) => x.p);
 
-  // Rótulo não pode cair em cima de outro: tenta a direita do ponto e, se já
-  // há um lá, desce ou sobe em degraus. Greedy e suficiente para ~30 siglas.
+  // Partidos com posição idêntica caem no mesmo ponto exato e viram um só.
+  // Quem coincide é aberto num anel pequeno em volta do lugar original.
+  const espalhar = (itens) => {
+    const grupos = new Map();
+    for (const it of itens) {
+      const k = `${it.x.toFixed(1)},${it.y.toFixed(1)}`;
+      (grupos.get(k) || grupos.set(k, []).get(k)).push(it);
+    }
+    for (const g of grupos.values()) {
+      if (g.length < 2) continue;
+      g.forEach((it, i) => {
+        const a = (i / g.length) * 2 * Math.PI;
+        it.x += Math.cos(a) * 2.2;
+        it.y += Math.sin(a) * 2.2;
+      });
+    }
+  };
+
+  // Rótulo não pode cair em cima de outro: tenta à direita do ponto, depois à
+  // esquerda, depois subindo e descendo em degraus. Greedy, e chega para ~30
+  // siglas. Quem não acha lugar fica só com o ponto — e o nome no toque.
   const ocupados = [];
   const lugar = (x, y, larg) => {
-    for (const dy of [0, -3.2, 3.2, -6.4, 6.4, -9.6, 9.6]) {
-      // À direita do ponto; se não cabe, à esquerda — nunca por cima dele.
-      const cx = x + 2.2 + larg <= 97 ? x + 2.2 : x - 2.2 - larg;
-      const cy = Math.min(Math.max(y + dy + 1, 6), 94);
-      if (!ocupados.some((o) => Math.abs(o.x - cx) < (o.w + larg) / 2 + 1 && Math.abs(o.y - cy) < 3)) {
-        ocupados.push({ x: cx + larg / 2, y: cy, w: larg });
-        return { x: cx, y: cy };
+    for (const dy of [0, -3.4, 3.4, -6.8, 6.8]) {
+      for (const lado of [1, -1]) {
+        const cx = Math.min(Math.max(lado > 0 ? x + 2.4 : x - 2.4 - larg, 3), 97 - larg);
+        const cy = Math.min(Math.max(y + dy + 1, 7), 95);
+        const c = cx + larg / 2;
+        const livre = !ocupados.some((o) =>
+          Math.abs(o.c - c) < (o.w + larg) / 2 + 1 && Math.abs(o.y - cy) < 3.2);
+        // e não pode cobrir o próprio ponto
+        if (livre && (cx > x + 1.5 || cx + larg < x - 1.5 || Math.abs(cy - 1 - y) > 3)) {
+          ocupados.push({ c, y: cy, w: larg });
+          return { x: cx, y: cy };
+        }
       }
     }
-    return null; // sem lugar: fica só o ponto, com <title> no toque
+    return null;
   };
 
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -1005,13 +1029,14 @@ function desenharBussola() {
   // depois: rótulo nunca fica debaixo de um ponto.
   const itens = [
     ...presidenciaveis.map((c) => ({ ...c, ...noMapa(c.p), cls: "pres", r: 2.6,
-      texto: c.nome, larg: c.nome.length * 2.1, titulo: `${c.nome} (${c.sigla}), candidato a presidente` })),
+      texto: c.nome, larg: c.nome.length * 1.8, titulo: `${c.nome} (${c.sigla}), candidato a presidente` })),
     ...partidos.map((c) => ({ ...c, ...noMapa(c.p), cls: "partido", r: 1.4,
-      texto: c.sigla, larg: c.sigla.length * 2, titulo: `${c.sigla}: bancada na Câmara` })),
+      texto: c.sigla, larg: c.sigla.length * 1.6, titulo: `${c.sigla}: bancada na Câmara` })),
   ];
+  espalhar(itens);
   itens.forEach((it) => { it.l = lugar(it.x, it.y, it.larg); });
   const pontosSVG = itens.map((it) =>
-    `<g><title>${esc(it.titulo)}</title><circle cx="${it.x}" cy="${it.y}" r="${it.r}" class="b-${it.cls}" style="fill:${cor(it.sigla)}"/></g>`).join("");
+    `<g class="b-item" data-nome="${esc(it.texto)}"><title>${esc(it.titulo)}</title><circle cx="${it.x}" cy="${it.y}" r="${it.r}" class="b-${it.cls}" style="fill:${cor(it.sigla)}"/></g>`).join("");
   const rotulosSVG = itens.filter((it) => it.l).map((it) =>
     `<text x="${it.l.x}" y="${it.l.y}" class="${it.cls === "pres" ? "b-nome" : "b-sigla"}">${esc(it.texto)}</text>`).join("");
 
@@ -1032,6 +1057,22 @@ function desenharBussola() {
       : `<g><title>Você</title><circle cx="${voce.x}" cy="${voce.y}" r="4.5" class="b-voce"/>` +
         `<text x="${voce.x}" y="${voce.y - 6}" class="b-voce-rot">você</text></g>`);
 
+  // Toque num ponto mostra o nome em destaque — é o que salva quem ficou sem
+  // rótulo no aglomerado, e serve a leitor de tela via <title>.
+  svg.addEventListener("click", (ev) => {
+    const g = ev.target.closest(".b-item");
+    svg.querySelector(".b-destaque")?.remove();
+    if (!g) return;
+    const c = g.querySelector("circle");
+    const x = +c.getAttribute("cx"), y = +c.getAttribute("cy");
+    const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    t.setAttribute("class", "b-destaque");
+    t.setAttribute("x", Math.min(Math.max(x, 12), 88));
+    t.setAttribute("y", y < 12 ? y + 6.5 : y - 4);
+    t.textContent = g.dataset.nome;
+    svg.append(t);
+  });
+
   const caixa = document.createElement("div");
   caixa.className = "mapa";
   caixa.append(svg);
@@ -1043,7 +1084,7 @@ function desenharBussola() {
   const pertoPres = semLastro ? [] : [...presidenciaveis].sort((a, b) => dist(a.p) - dist(b.p)).slice(0, 2);
   legenda.innerHTML =
     `Cada sigla é a posição média da bancada do partido na Câmara; os pontos maiores são ` +
-    `os candidatos a presidente, pelas posições registradas no site. ` +
+    `os candidatos a presidente, pelas posições registradas no site. Toque num ponto para ver o nome. ` +
     (perto.length
       ? `<b>Mais perto de você no mapa:</b> ${perto.map((x) => esc(x.sigla)).join(", ")}` +
         (pertoPres.length ? ` e, entre os presidenciáveis, ${pertoPres.map((x) => esc(x.nome)).join(" e ")}.` : ".") +
