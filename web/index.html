@@ -201,11 +201,14 @@
     <div id="bussola"></div>
     <div class="abas-caixa"><nav class="abas" id="abas"></nav></div>
 
-    <label class="busca">
-      <span class="sr">Buscar candidato</span>
-      <input type="search" id="busca" placeholder="Buscar candidato por nome ou número"
-             autocomplete="off" spellcheck="false">
-    </label>
+    <div class="busca-linha">
+      <label class="busca">
+        <span class="sr">Buscar candidato</span>
+        <input type="search" id="busca" placeholder="Buscar candidato por nome ou número"
+               autocomplete="off" spellcheck="false">
+      </label>
+      <button class="filtro" id="so-favoritos" aria-pressed="false">★ Favoritos</button>
+    </div>
 
     <div id="avisos-lista"></div>
     <ol class="lista" id="lista"></ol>

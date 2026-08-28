@@ -22,6 +22,17 @@ const FONTES = {
 
 const POR_PAGINA = 30;
 
+// Quantos o eleitor leva para a urna por cargo. Em 2026 renovam-se dois terços
+// do Senado: cada eleitor digita DOIS números para senador.
+const VAGAS = { senador: 2 };
+const vagas = (cargo) => VAGAS[cargo] || 1;
+
+const CHAVE_FAVORITOS = "colinha:favoritos";
+function lerFavoritos() {
+  try { return new Set(JSON.parse(localStorage.getItem(CHAVE_FAVORITOS) || "[]")); }
+  catch { return new Set(); }
+}
+
 const app = document.getElementById("app");
 const estado = {
   uf: null,
@@ -36,10 +47,38 @@ const estado = {
   dados: { uf: null, porCargo: {}, falhas: {} },
   geracao: 0,       // descarta o resultado de uma carga que foi ultrapassada
   cargoAtivo: null,
-  escolhas: {},     // cargo -> id do candidato
+  escolhas: {},     // cargo -> ids dos candidatos, unidos por "+" (Senado tem 2)
   busca: "",
   limite: POR_PAGINA,
+  // Favoritos são do eleitor, não do link: ficam no aparelho (localStorage) e
+  // nunca entram na URL compartilhada. Chave é o SQ, único no país.
+  favoritos: lerFavoritos(),
+  soFavoritos: false,
 };
+
+const idsEscolhidos = (cargo) => (estado.escolhas[cargo] || "").split("+").filter(Boolean);
+const estaNaColinha = (cargo, id) => idsEscolhidos(cargo).includes(id);
+function gravarEscolha(cargo, ids) {
+  if (ids.length) estado.escolhas[cargo] = ids.join("+");
+  else delete estado.escolhas[cargo];
+}
+/** Põe ou tira da colinha. Cheio, o mais antigo sai. Devolve o id que saiu. */
+function alternarEscolha(cargo, id) {
+  let ids = idsEscolhidos(cargo);
+  let saiu = null;
+  if (ids.includes(id)) ids = ids.filter((x) => x !== id);
+  else {
+    if (ids.length >= vagas(cargo)) saiu = ids.shift();
+    ids.push(id);
+  }
+  gravarEscolha(cargo, ids);
+  return saiu;
+}
+function alternarFavorito(id) {
+  if (!estado.favoritos.delete(id)) estado.favoritos.add(id);
+  try { localStorage.setItem(CHAVE_FAVORITOS, JSON.stringify([...estado.favoritos])); }
+  catch { /* modo privado ou cota: o favorito vale até fechar a aba */ }
+}
 
 // ---------------------------------------------------------------- utilidades
 
@@ -505,6 +544,13 @@ function telaResultado({ rolar = true } = {}) {
     renderLista();
   };
 
+  const filtroFav = node.getElementById("so-favoritos");
+  filtroFav.onclick = () => {
+    estado.soFavoritos = !estado.soFavoritos;
+    estado.limite = POR_PAGINA;
+    renderLista();
+  };
+
   const lista = node.getElementById("lista");
   const mais = node.getElementById("mais");
   const rodape = node.getElementById("rodape-fonte");
@@ -525,11 +571,16 @@ function telaResultado({ rolar = true } = {}) {
     const completo = ranquear(estado.respostas, teses, universo);
 
     const alvo = normalizar(estado.busca);
-    const visiveis = alvo
+    let visiveis = alvo
       ? completo.filter(
           (r) => normalizar(r.candidato.n).includes(alvo) || r.candidato.num.startsWith(alvo)
         )
       : completo;
+    const favoritosAqui = completo.filter((r) => estado.favoritos.has(r.candidato.id)).length;
+    if (estado.soFavoritos) visiveis = visiveis.filter((r) => estado.favoritos.has(r.candidato.id));
+    filtroFav.textContent = favoritosAqui ? `★ Favoritos (${favoritosAqui})` : "★ Favoritos";
+    filtroFav.setAttribute("aria-pressed", estado.soFavoritos ? "true" : "false");
+    filtroFav.classList.toggle("ativo", estado.soFavoritos);
 
     // Contagens SEMPRE sobre o universo do cargo, nunca sobre o filtro da
     // busca. Calculá-las sobre a lista filtrada fazia buscar um candidato
@@ -544,7 +595,21 @@ function telaResultado({ rolar = true } = {}) {
     const empatados = completo.filter((r) => r.score === completo[0]?.score).length;
 
     avisos.replaceChildren();
-    if (empatados > 3) {
+    if (vagas(estado.cargoAtivo) > 1) {
+      const dica = document.createElement("p");
+      dica.className = "aviso dica-vagas";
+      const n = idsEscolhidos(estado.cargoAtivo).length;
+      dica.innerHTML =
+        `Nesta eleição você vota em <b>${vagas(estado.cargoAtivo)} para o Senado</b>. ` +
+        `Coloque até dois na colinha` + (n ? ` — ${n} de 2 escolhidos.` : `.`);
+      avisos.append(dica);
+    }
+    if (estado.soFavoritos && !favoritosAqui) {
+      const p = document.createElement("p");
+      p.className = "aviso";
+      p.textContent = `Nenhum favorito em ${rotuloComUF(estado.cargoAtivo)} ainda. Toque em ☆ nos candidatos que quiser guardar.`;
+      avisos.append(p);
+    } else if (empatados > 3) {
       const aviso = document.createElement("p");
       aviso.className = "empate";
       aviso.innerHTML =
@@ -554,7 +619,7 @@ function telaResultado({ rolar = true } = {}) {
         `não é uma recomendação. Abra “por quê” para ver de onde vem cada posição.`;
       avisos.append(aviso);
     }
-    if (!visiveis.length) {
+    if (!visiveis.length && !(estado.soFavoritos && !favoritosAqui)) {
       const vazio = document.createElement("p");
       vazio.className = "aviso";
       vazio.textContent = respondidas() === 0
@@ -763,29 +828,24 @@ function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPar
   det.innerHTML = `<summary>Por que ${pct(score)}? (${temas} temas)</summary>`;
   det.append(quebraPorTese(detalhe, candidato.p, candidato));
 
+  const marcarFixar = (b, on) => {
+    b.className = on ? "fixar fixado" : "fixar";
+    b.textContent = on ? "✓ Na minha colinha" : "+ Colocar na colinha";
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+  };
   const fixar = document.createElement("button");
-  const jaEscolhido = estado.escolhas[estado.cargoAtivo] === candidato.id;
-  fixar.className = jaEscolhido ? "fixar fixado" : "fixar";
-  fixar.textContent = jaEscolhido ? "✓ Na minha colinha" : "+ Colocar na colinha";
-  fixar.setAttribute("aria-pressed", jaEscolhido ? "true" : "false");
+  fixar.dataset.id = candidato.id;
+  marcarFixar(fixar, estaNaColinha(estado.cargoAtivo, candidato.id));
   fixar.onclick = () => {
-    const agora = estado.escolhas[estado.cargoAtivo] !== candidato.id;
-    // Um cargo tem um slot só: fixar outro troca. Antes de redesenhar nada,
-    // desmarca o botão do candidato que perdeu o lugar.
-    const anterior = estado.escolhas[estado.cargoAtivo];
-    if (agora) estado.escolhas[estado.cargoAtivo] = candidato.id;
-    else delete estado.escolhas[estado.cargoAtivo];
-
-    if (anterior && anterior !== candidato.id) {
-      document.querySelectorAll(".fixar.fixado").forEach((b) => {
-        b.className = "fixar";
-        b.textContent = "+ Colocar na colinha";
-        b.setAttribute("aria-pressed", "false");
-      });
+    // Cargo cheio: quem entrou por último fica, o mais antigo sai. Antes de
+    // redesenhar nada, desmarca só o botão de quem perdeu o lugar.
+    const saiu = alternarEscolha(estado.cargoAtivo, candidato.id);
+    const agora = estaNaColinha(estado.cargoAtivo, candidato.id);
+    if (saiu) {
+      const b = document.querySelector(`.fixar[data-id="${saiu}"]`);
+      if (b) marcarFixar(b, false);
     }
-    fixar.className = agora ? "fixar fixado" : "fixar";
-    fixar.textContent = agora ? "✓ Na minha colinha" : "+ Colocar na colinha";
-    fixar.setAttribute("aria-pressed", agora ? "true" : "false");
+    marcarFixar(fixar, agora);
     salvarNaURL();
     anunciar(
       agora
@@ -805,7 +865,28 @@ function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPar
   responder.textContent = detalhe.some((d) => d.fonte === "1")
     ? "Respostas do candidato · atualizar"
     : "É da campanha? Responda pelo candidato";
-  li.append(topo, ...(origem ? [origem] : []), det, fixar, responder);
+  const estrela = document.createElement("button");
+  const marcarEstrela = (on) => {
+    estrela.className = on ? "estrela marcada" : "estrela";
+    estrela.textContent = on ? "★" : "☆";
+    estrela.setAttribute("aria-pressed", on ? "true" : "false");
+    estrela.setAttribute("aria-label", on ? "Tirar dos favoritos" : "Salvar nos favoritos");
+    estrela.title = on ? "Favorito" : "Salvar nos favoritos";
+  };
+  marcarEstrela(estado.favoritos.has(candidato.id));
+  estrela.onclick = () => {
+    alternarFavorito(candidato.id);
+    marcarEstrela(estado.favoritos.has(candidato.id));
+    anunciar(estado.favoritos.has(candidato.id)
+      ? `${candidato.n} salvo nos favoritos.` : `${candidato.n} tirado dos favoritos.`);
+    // Com o filtro ligado, tirar a estrela some com o card — mas só no
+    // próximo redesenho, para não puxar a lista debaixo do dedo.
+  };
+  const acoes = document.createElement("div");
+  acoes.className = "acoes";
+  acoes.append(fixar, estrela);
+
+  li.append(topo, ...(origem ? [origem] : []), det, acoes, responder);
   return li;
 }
 
@@ -859,36 +940,117 @@ function quebraPorTese(detalhe, sigla, candidato = {}) {
   return ul;
 }
 
+// 42, não 45: com poucas teses o eleitor satura em ±1 com facilidade, e um
+// raio maior joga o marcador para cima da borda do quadro.
+const RAIO_MAPA = 42;
+const noMapa = (p) => ({ x: 50 + p.economico * RAIO_MAPA, y: 50 - p.social * RAIO_MAPA });
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+/** Posição de uma bancada ou de um candidato no mapa, pela MESMA conta do
+ *  eleitor: as posições viram "respostas" (peso 1) e passam pela bússola.
+ *  Nada de novo entra aqui — é a aritmética já publicada na metodologia. */
+function pontoDePosicoes(posicaoDaTese) {
+  const respostas = {};
+  estado.teses.forEach((t, i) => {
+    const ch = posicaoDaTese(t, i);
+    const valor = { "+": 1, "-": -1, "0": 0 }[ch];
+    if (valor !== undefined) respostas[t.id] = { valor, importante: false };
+  });
+  const p = bussola(respostas, estado.teses);
+  return p.pesos.economico && p.pesos.social ? p : null;
+}
+
 function desenharBussola() {
   const p = bussola(estado.respostas, tesesDoEleitor());
   const semLastro = !p.pesos.economico && !p.pesos.social;
-  // 42, não 45: com poucas teses o eleitor satura em ±1 com facilidade, e um
-  // raio maior joga o marcador para cima da borda do quadro.
-  const x = 50 + p.economico * 42;
-  const y = 50 - p.social * 42;
+  const voce = noMapa(p);
+
+  const partidos = Object.entries(estado.partidos)
+    .map(([sigla, bancada]) => ({ sigla, p: pontoDePosicoes((t) => bancada[t.id]?.pos) }))
+    .filter((x) => x.p);
+  const presidenciaveis = (estado.dados.porCargo.presidente || [])
+    .map((c) => ({ nome: c.n, sigla: c.p, p: pontoDePosicoes((t, i) => c.pos[i]) }))
+    .filter((x) => x.p);
+
+  // Rótulo não pode cair em cima de outro: tenta a direita do ponto e, se já
+  // há um lá, desce ou sobe em degraus. Greedy e suficiente para ~30 siglas.
+  const ocupados = [];
+  const lugar = (x, y, larg) => {
+    for (const dy of [0, -3.2, 3.2, -6.4, 6.4, -9.6, 9.6]) {
+      // À direita do ponto; se não cabe, à esquerda — nunca por cima dele.
+      const cx = x + 2.2 + larg <= 97 ? x + 2.2 : x - 2.2 - larg;
+      const cy = Math.min(Math.max(y + dy + 1, 6), 94);
+      if (!ocupados.some((o) => Math.abs(o.x - cx) < (o.w + larg) / 2 + 1 && Math.abs(o.y - cy) < 3)) {
+        ocupados.push({ x: cx + larg / 2, y: cy, w: larg });
+        return { x: cx, y: cy };
+      }
+    }
+    return null; // sem lugar: fica só o ponto, com <title> no toque
+  };
+
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("viewBox", "0 0 100 100");
   svg.setAttribute("class", "bussola");
   svg.setAttribute("role", "img");
-  svg.setAttribute("aria-label", semLastro
+  svg.setAttribute("aria-label", (semLastro
     ? "Mapa de posições, ainda sem respostas suficientes para posicionar você."
     : `Sua posição: eixo econômico ${p.economico.toFixed(2)} de -1 (estatista) a ` +
       `+1 (mercado); eixo social ${p.social.toFixed(2)} de -1 (progressista) a ` +
-      `+1 (conservador).`);
+      `+1 (conservador).`) +
+    ` O mapa também mostra ${partidos.length} bancadas de partido e ` +
+    `${presidenciaveis.length} candidatos a presidente.`);
+
+  // Presidenciáveis escolhem lugar primeiro (são poucos e importam mais);
+  // siglas se encaixam no que sobrou. Bolinhas todas antes, textos todos
+  // depois: rótulo nunca fica debaixo de um ponto.
+  const itens = [
+    ...presidenciaveis.map((c) => ({ ...c, ...noMapa(c.p), cls: "pres", r: 2.6,
+      texto: c.nome, larg: c.nome.length * 2.1, titulo: `${c.nome} (${c.sigla}), candidato a presidente` })),
+    ...partidos.map((c) => ({ ...c, ...noMapa(c.p), cls: "partido", r: 1.4,
+      texto: c.sigla, larg: c.sigla.length * 2, titulo: `${c.sigla}: bancada na Câmara` })),
+  ];
+  itens.forEach((it) => { it.l = lugar(it.x, it.y, it.larg); });
+  const pontosSVG = itens.map((it) =>
+    `<g><title>${esc(it.titulo)}</title><circle cx="${it.x}" cy="${it.y}" r="${it.r}" class="b-${it.cls}" style="fill:${cor(it.sigla)}"/></g>`).join("");
+  const rotulosSVG = itens.filter((it) => it.l).map((it) =>
+    `<text x="${it.l.x}" y="${it.l.y}" class="${it.cls === "pres" ? "b-nome" : "b-sigla"}">${esc(it.texto)}</text>`).join("");
+
   svg.innerHTML = `
     <rect x="2" y="2" width="96" height="96" rx="4" class="b-fundo"/>
     <line x1="50" y1="4" x2="50" y2="96" class="b-eixo"/>
     <line x1="4" y1="50" x2="96" y2="50" class="b-eixo"/>
-    <text x="50" y="10" class="b-rot">conservador</text>
-    <text x="50" y="95" class="b-rot">progressista</text>
-    <text x="7"  y="52" class="b-rot b-esq">estatista</text>
-    <text x="93" y="52" class="b-rot b-dir">mercado</text>` +
+    <text x="50" y="6.5" class="b-rot">conservador</text>
+    <text x="50" y="97" class="b-rot">progressista</text>
+    <text x="4"  y="48" class="b-rot b-esq">estatista</text>
+    <text x="96" y="48" class="b-rot b-dir">mercado</text>` +
+    pontosSVG + rotulosSVG +
     // Sem nenhuma resposta com peso de eixo, desenhar um ponto no centro
-    // declararia centrista quem não disse nada.
+    // declararia centrista quem não disse nada. O eleitor é desenhado por
+    // último para ficar por cima de tudo.
     (semLastro
       ? `<text x="50" y="72" class="b-rot">responda para se posicionar</text>`
-      : `<circle cx="${x}" cy="${y}" r="4.5" class="b-voce"/>`);
-  return svg;
+      : `<g><title>Você</title><circle cx="${voce.x}" cy="${voce.y}" r="4.5" class="b-voce"/>` +
+        `<text x="${voce.x}" y="${voce.y - 6}" class="b-voce-rot">você</text></g>`);
+
+  const caixa = document.createElement("div");
+  caixa.className = "mapa";
+  caixa.append(svg);
+
+  const legenda = document.createElement("p");
+  legenda.className = "b-legenda";
+  const dist = (q) => Math.hypot(q.economico - p.economico, q.social - p.social);
+  const perto = semLastro ? [] : [...partidos].sort((a, b) => dist(a.p) - dist(b.p)).slice(0, 3);
+  const pertoPres = semLastro ? [] : [...presidenciaveis].sort((a, b) => dist(a.p) - dist(b.p)).slice(0, 2);
+  legenda.innerHTML =
+    `Cada sigla é a posição média da bancada do partido na Câmara; os pontos maiores são ` +
+    `os candidatos a presidente, pelas posições registradas no site. ` +
+    (perto.length
+      ? `<b>Mais perto de você no mapa:</b> ${perto.map((x) => esc(x.sigla)).join(", ")}` +
+        (pertoPres.length ? ` e, entre os presidenciáveis, ${pertoPres.map((x) => esc(x.nome)).join(" e ")}.` : ".") +
+        ` É proximidade em dois eixos, não o percentual de match — a lista abaixo é que compara tema a tema.`
+      : "");
+  caixa.append(legenda);
+  return caixa;
 }
 
 function telaColinha() {
@@ -901,13 +1063,20 @@ function telaColinha() {
   const escolhidos = [];
   const perdidos = [];
   const orfas = [];
+  const incompletos = [];
   for (const [cargo] of CARGOS) {
-    const id = estado.escolhas[cargo];
-    if (!id) continue;
-    const c = (estado.dados.porCargo[cargo] || []).find((x) => x.id === id);
-    if (c) escolhidos.push({ cargo, rotulo: rotuloComUF(cargo), candidato: c });
-    else if (estado.dados.falhas[cargo]) perdidos.push(cargo);
-    else orfas.push(cargo);
+    const ids = idsEscolhidos(cargo);
+    if (ids.length && ids.length < vagas(cargo)) incompletos.push(cargo);
+    ids.forEach((id, k) => {
+      const c = (estado.dados.porCargo[cargo] || []).find((x) => x.id === id);
+      // A urna pede "Senador 1º voto" e "Senador 2º voto": a colinha usa o
+      // mesmo rótulo que o eleitor vai ler na tela.
+      const rotulo = vagas(cargo) > 1
+        ? `${rotuloComUF(cargo)} · ${k + 1}º voto` : rotuloComUF(cargo);
+      if (c) escolhidos.push({ cargo, rotulo, candidato: c });
+      else if (estado.dados.falhas[cargo]) perdidos.push(cargo);
+      else orfas.push({ cargo, id });
+    });
   }
 
   const cartao = node.getElementById("cartao");
@@ -990,12 +1159,20 @@ function telaColinha() {
           `Volte ao resultado e tente de novo antes de usar esta colinha.`
         : "",
       orfas.length
-        ? `Uma escolha para ${orfas.map(rotuloCargo).join(", ")} veio de um link de ` +
+        ? `Uma escolha para ${orfas.map((o) => rotuloCargo(o.cargo)).join(", ")} veio de um link de ` +
           `outro estado ou de uma versão anterior dos dados, e foi descartada.`
         : "",
     ].filter(Boolean).join(" ");
   }
-  orfas.forEach((cargo) => delete estado.escolhas[cargo]);
+  orfas.forEach(({ cargo, id }) =>
+    gravarEscolha(cargo, idsEscolhidos(cargo).filter((x) => x !== id)));
+
+  if (incompletos.length && escolhidos.length) {
+    const p = document.createElement("p");
+    p.className = "aviso dica-vagas";
+    p.innerHTML = `Para o Senado você tem <b>dois votos</b> — só um está na colinha.`;
+    cartao.after(p);
+  }
 
   node.getElementById("voltar-resultado").onclick = () => telaResultado();
   mostrar(node);

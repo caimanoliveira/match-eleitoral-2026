@@ -7,7 +7,7 @@ import { cor, tinta, iniciais } from "./partidos.js";
 
 const L = 820;                 // largura do cartão
 const TOPO = 132;
-const LINHA = 136;
+const LINHA = 160;
 const RODAPE = 100;
 const ESCALA = 2;              // exporta em 2x para não borrar em tela retina
 
@@ -59,49 +59,50 @@ export async function desenharColinha(escolhidos, uf = "") {
     const foto = fotos[i];
     ctx.save();
     ctx.beginPath();
-    ctx.arc(84, y + 46, 36, 0, Math.PI * 2);
+    ctx.arc(84, y + 72, 36, 0, Math.PI * 2);
     ctx.clip();
     if (foto) {
-      ctx.drawImage(foto, 48, y + 10, 72, 72);
+      ctx.drawImage(foto, 48, y + 36, 72, 72);
     } else {
       ctx.fillStyle = cor(candidato.p);
-      ctx.fillRect(48, y + 10, 72, 72);
+      ctx.fillRect(48, y + 36, 72, 72);
       ctx.fillStyle = tinta(candidato.p);
       ctx.font = "700 28px system-ui, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText(iniciais(candidato.n), 84, y + 56);
+      ctx.fillText(iniciais(candidato.n), 84, y + 82);
       ctx.textAlign = "left";
     }
     ctx.restore();
 
-    ctx.fillStyle = SUAVE;
-    ctx.font = "600 20px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
-    ctx.fillText(rotulo.toUpperCase(), 142, y + 28);
+    // Três andares, um texto por andar: cargo, nome, número. Nome e número na
+    // mesma linha empilhavam texto em cima do selo quando o nome era longo.
+    const X = 142;
+    const LARG_TEXTO = L - 116 - 20 - X; // até a borda do selo
 
-    // Rotular o número: a linha tem dois (o da urna e o do partido) e nada
-    // dizia qual era qual. Vai entre o cargo e o número, não abaixo dele, para
-    // não encostar no separador da linha seguinte.
-    ctx.font = "500 15px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
-    ctx.fillText("Nº NA URNA", 142, y + 50);
+    ctx.fillStyle = SUAVE;
+    ctx.font = "600 18px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+    ctx.fillText(cortar(ctx, rotulo.toUpperCase(), LARG_TEXTO), X, y + 26);
+
+    ctx.fillStyle = TINTA;
+    ctx.font = "600 28px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+    ctx.fillText(cortar(ctx, candidato.n, LARG_TEXTO), X, y + 60);
 
     // O número é o que se digita na urna — é o maior elemento da linha.
+    ctx.fillStyle = SUAVE;
+    ctx.font = "500 14px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+    ctx.fillText("Nº NA URNA", X, y + 84);
     ctx.fillStyle = TINTA;
-    ctx.font = "800 54px ui-monospace, SFMono-Regular, Menlo, monospace";
-    ctx.fillText(candidato.num, 142, y + 92);
+    ctx.font = "800 56px ui-monospace, SFMono-Regular, Menlo, monospace";
+    ctx.fillText(candidato.num, X, y + 136);
 
-    const larguraNumero = ctx.measureText(candidato.num).width;
-    ctx.font = "600 30px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
-    ctx.fillText(cortar(ctx, candidato.n, L - 260 - larguraNumero),
-                 142 + larguraNumero + 22, y + 90);
-
-    // selo do partido
+    // selo do partido, centrado na altura da linha
     ctx.fillStyle = cor(candidato.p);
-    arredondado(ctx, L - 116, y + 26, 68, 40, 8);
+    arredondado(ctx, L - 116, y + 52, 68, 40, 8);
     ctx.fill();
     ctx.fillStyle = tinta(candidato.p);
     ctx.font = "700 22px system-ui, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(candidato.pn || candidato.p.slice(0, 3), L - 82, y + 53);
+    ctx.fillText(candidato.pn || candidato.p.slice(0, 3), L - 82, y + 79);
     ctx.textAlign = "left";
   });
 
