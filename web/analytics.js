@@ -21,5 +21,6 @@
   window.medir = function (nome, dados) {
     try { d8a("event", nome, Object.assign({ via: via }, dados || {})); } catch (e) { /* medição nunca quebra o site */ }
   };
-  window.medir("page_view", { page_path: location.pathname + (location.hash.split("/")[1] ? "#/" + location.hash.split("/")[1] : "") });
+  // Páginas avulsas contam aqui; na SPA cada tela conta ao ser mostrada.
+  if (!document.getElementById("app")) window.medir("page_view", { page_path: location.pathname });
 })();
