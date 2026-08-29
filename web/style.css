@@ -851,3 +851,5 @@ main:has(.landing) { max-width: none; padding: 0; }
 .linha-colinha .cargo { font-size: .68rem; letter-spacing: .1em; }
 .linha-colinha .num { font: 800 1.7rem/1.1 var(--mono); letter-spacing: -.02em; }
 .linha-colinha .num .rot { display: none; }
+#comecar-rapido { width: 100%; margin-top: .6rem; }
+#comecar { width: 100%; }

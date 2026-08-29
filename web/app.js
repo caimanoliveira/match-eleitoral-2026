@@ -345,6 +345,15 @@ function telaInicio(motivo = "", modo = "completo") {
     erro.textContent = "";
     sel.removeAttribute("aria-invalid");
   };
+  // O rápido é a opção B, oferecida aqui — não um CTA próprio na landing.
+  const rapidoBtn = node.getElementById("comecar-rapido");
+  if (modo === "completo") {
+    rapidoBtn.hidden = false;
+    rapidoBtn.onclick = () => {
+      estado.modo = "rapido";
+      document.getElementById("comecar").click();
+    };
+  }
   node.getElementById("comecar").onclick = async (ev) => {
     if (!sel.value) {
       // Antes o botão só dava focus() e nada aparecia: o eleitor tocava,
