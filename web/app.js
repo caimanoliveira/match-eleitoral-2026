@@ -151,7 +151,10 @@ function mostrar(node, { rolar = true } = {}) {
   // restaurar é o que de fato preserva a posição — só omitir o scrollTo não
   // basta.
   const y = window.scrollY;
+  // Nome da tela antes de esvaziar o fragmento (depois do append ele fica vazio).
+  const telaNome = ((node.firstElementChild || {}).className || "").replace("tela ", "").split(" ")[0];
   app.replaceChildren(node);
+  if (rolar && telaNome) medir("page_view", { page_path: "/#" + telaNome });
   // `rolar: false` nas re-renderizações que não trocam de tela. Fixar um
   // candidato no 20º lugar não pode jogar o eleitor de volta ao topo.
   if (rolar) window.scrollTo(0, 0);
@@ -414,6 +417,7 @@ function telaInicio(motivo = "", modo = "completo") {
       return;
     }
     estado.indice = 0;
+    medir("quiz_inicio", { modo: estado.modo });
     if (estado.modo === "colinha") telaResultado(); else telaQuiz();
   };
   mostrar(node);
@@ -565,6 +569,7 @@ function telaResultado({ rolar = true } = {}) {
   const montando = estado.modo === "colinha";
   node.querySelector(".resultado").classList.toggle("modo-colinha", montando);
   if (!montando) node.getElementById("bussola").append(painelVisoes());
+  if (!estado.mediuResultado) { estado.mediuResultado = true; medir("quiz_resultado", { modo: estado.modo, respondidas: respondidas() }); }
 
   const teses = tesesDoEleitor();
   const faltam = teses.length - respondidas();
@@ -837,9 +842,9 @@ function telaResultado({ rolar = true } = {}) {
   atualizarBotaoColinha(node);
   const base = `${location.origin}${location.pathname}`;
   node.getElementById("mandar-quiz").onclick = () =>
-    mandar("Comparei o que penso com o voto real dos candidatos, em 2 minutos. Faz o seu:", `${base}?via=wa#/rapido`);
+    medir("share_quiz") || mandar("Comparei o que penso com o voto real dos candidatos, em 2 minutos. Faz o seu:", `${base}?via=wa#/rapido`);
   node.getElementById("mandar-resultado").onclick = () =>
-    mandar("Olha o meu resultado no Colinha — e o seu, dá quanto?", `${base}?via=wa${location.hash}`);
+    medir("share_resultado") || mandar("Olha o meu resultado no Colinha — e o seu, dá quanto?", `${base}?via=wa${location.hash}`);
   mostrar(node, { rolar });
 
   // A aba selecionada pode estar fora da faixa visível num celular: sem isto o
@@ -1575,6 +1580,7 @@ function telaColinha() {
       // eleitor toca de novo achando que não funcionou.
       btn.textContent = "Gerando imagem…";
       try {
+        medir("colinha_gerada", { cargos: escolhidos.length });
         await compartilhar(await desenharColinha(escolhidos, estado.uf));
       } catch (e) {
         anunciar("Não consegui gerar a imagem.");

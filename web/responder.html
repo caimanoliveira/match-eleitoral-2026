@@ -7,6 +7,7 @@
 <meta name="robots" content="noindex">
 <link rel="icon" href="logo.svg" type="image/svg+xml">
 <link rel="stylesheet" href="style.css">
+<script src="analytics.js"></script>
 <style>
   .form { max-width: 640px; }
   .cand { display: flex; align-items: center; gap: .9rem; padding: 1rem; background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio); margin: 1rem 0 1.6rem; }
@@ -163,6 +164,7 @@ async function carregar() {
     ].join("\n");
     const assunto = `[Colinha] Respostas — ${cand.n} (${cand.p}) SQ ${cand.id}`;
     const mailto = `mailto:${DESTINO}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`;
+    window.medir && medir("responder_enviado");
     location.href = mailto;
     // Sem programa de e-mail configurado o mailto morre em silêncio: o texto
     // fica visível para copiar, com o destino escrito.
