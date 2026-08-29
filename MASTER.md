@@ -5,68 +5,54 @@ Fonte única de verdade para cor, tipo, espaço e movimento. Todo valor em
 
 ## Teses
 
-**Visual.** Fundo branco quente com um véu de verde-água muito dessaturado no
-hero; sans geométrica (Manrope) em pesos fortes com contraste de tamanho
-agressivo; espaçamento arejado em base 8; componentes pill e cartões sem borda,
-com sombra suave e uma única cor de ação — verde-cívico — reservada ao CTA e
-aos acertos. (`#087A54` e não um verde mais vivo: precisa de 4,5:1 sobre o papel para texto pequeno.)
+**Mundo: "Painel de voto"** (29/08/2026; substitui o fresco-cívico e a rodada
+Nexo). Referências: NYT Upshot / FT (data desk) + Linear / Stripe (app).
+Preto, branco e **um** acento. O **dado é a imagem**: o mapa das bancadas,
+sobre preto, é o hero da landing e o topo do resultado — não há ilustração.
+Uma família (Inter) com contraste de peso agressivo; números sempre
+tabulares; mono só para número de urna. Raio 6px em tudo; nada de pílula.
+Sombra zero em repouso; hover é borda preta, não elevação. Resultado é
+painel denso: uma linha por candidato com foto 32px, nome, nº, partido,
+barra fina + %, e dois botões quadrados (＋ colinha, ☆ favorito).
 
-**Interação.** Rápido e seco (150–250 ms, `cubic-bezier(0.2, 0, 0, 1)`); hover
-só em `pointer: fine`, com elevação de 2 px; um único movimento ambiente — a
-urna flutuando em 6 s — e revelação por scroll no "como funciona"; sem bounce,
-sem parallax, e tudo congela sob `prefers-reduced-motion`.
+**Interação.** 120–220 ms, `cubic-bezier(0.2,0,0,1)`. Uma animação autoral:
+os pontos do mapa se assentam ao entrar (escalonado 28 ms, ease-out
+exponencial). Sem parallax, sem flutuação, sem revelação por scroll além do
+"como funciona"; tudo congela sob `prefers-reduced-motion`.
 
 ## Cor
 
-| Token | Claro | Escuro | Uso |
-|---|---|---|---|
-| `--papel` | `#FBFBF9` | `#0F1412` | fundo da página (branco quente, não puro) |
-| `--veu` | `#E6F4EE` | `#12201A` | véu do hero, fundo de chips |
-| `--superficie` | `#FFFFFF` | `#161D1A` | cartões |
-| `--tinta` | `#14201B` | `#EAF1ED` | texto principal |
-| `--suave` | `#5C6B64` | `#9AAAA2` | texto secundário |
-| `--linha` | `#E3EAE6` | `#26302B` | divisores |
-| `--acao` | `#087A54` | `#3DCB95` | CTA, ✓ concorda, foco |
-| `--acao-tinta` | `#FFFFFF` | `#0F1412` | texto sobre `--acao` |
-| `--acao-suave` | `#DCF2E8` | `#173A2C` | fundo de destaque leve |
-| `--contra` | `#B4452C` | `#F0836A` | ✕ discorda, alerta de urna |
-| `--contra-suave` | `#F8E7E2` | `#3A1E17` | fundo de alerta |
+| Token | Valor | Uso |
+|---|---|---|
+| `--papel` | `#FFFFFF` | fundo |
+| `--veu` | `#F4F4F5` | fundo de chip/ícone, barra vazia |
+| `--tinta` | `#0A0A0A` | texto, botão primário padrão, barra cheia |
+| `--suave` | `#6B6B70` | texto secundário (4.9:1 sobre branco) |
+| `--linha` | `#E4E4E7` | bordas de 1px (a única "sombra") |
+| `--acao` | `#0E9F5B` | CTA principal, ✓ concorda, foco (3.2:1 — só em texto grande/branco sobre ele) |
+| `--acao-escuro` | `#3DDC84` | acento sobre preto (hero, "você" no mapa) |
+| `--contra` | `#C2410C` | ✕ discorda, alerta |
+| `--preto` / `--preto-tinta` / `--preto-suave` / `--preto-linha` | `#0A0A0A` / `#FFF` / `#A1A1AA` / `#27272A` | faixas escuras: hero, faixa de fatos, mapa |
 
-Regras:
-- `--acao` é a **única** cor saturada da paleta. Aparece no CTA, no ✓ e no foco.
-  Nunca em fundo de seção inteira.
-- Verde e vermelho significam só uma coisa: concorda/discorda com o eleitor.
-  Divergência da bancada, fonte inferida e afins usam peso de tinta, nunca cor.
-- Cores de partido (`partidos.js`) são as dos partidos e ficam fora desta
-  paleta — são dado, não design.
+Regras: verde só significa "concorda / sua posição / ação principal";
+vermelho só "discorda / alerta". Cores de partido são dado, não design.
+Nenhuma outra cor saturada existe.
 
 ## Tipografia
 
-**Rodada editorial (29/08/2026, referência Nexo Jornal).** Títulos passam a
-**Zilla Slab 700** (`--display`): h1, h2, `.display`, a afirmação do quiz
-(`.tese`), títulos dos jogos e os números de `.fatos`. Manrope continua no
-corpo, botões e rótulos. Todo h1 leva a barra de 4px `--acao` à esquerda —
-assinatura do Nexo, pedida no briefing. Cartões trocam sombra por regra de
-1px `--linha`; `--raio` cai para 8px (pílula só em botão e campo). Blocos
-ilustrativos chapados (`--bloco-1/2/3`: verde-escuro, roxo, petróleo) sob
-pictogramas SVG — são ilustração, ficam fora da regra "uma cor saturada".
-
-
-Manrope (Google Fonts), pesos 500/700/800. Fallback: `system-ui, sans-serif`.
-Números tabulares em qualquer coluna de dígitos (`font-variant-numeric`).
-Mono para número de urna e ids: `ui-monospace, SFMono-Regular, Menlo`.
+**Inter** (400/600/700/800) com `font-feature-settings: "cv11","ss01","tnum"`.
+Fallback `system-ui`. Mono: JetBrains Mono 700/800 para número de urna.
 
 | Papel | Tamanho | Peso | Tracking |
 |---|---|---|---|
-| display (hero) | `clamp(2.2rem, 7vw, 3.4rem)` | 800 | −0.03em |
-| h1 | `clamp(1.7rem, 5vw, 2.2rem)` | 800 | −0.025em |
-| h2 | `1.25rem` | 700 | −0.01em |
-| corpo | `1.0625rem` (17px) / 1.6 | 500 | 0 |
-| lead | `1.15rem` / 1.55 | 500 | 0 |
-| rótulo | `0.75rem` | 700 | +0.08em, caixa alta |
-| número de urna | `1.5rem` mono | 800 | −0.02em |
-
-Largura de leitura: 62ch.
+| display (hero) | `clamp(2.4rem, 6.5vw, 4rem)` / 1.0 | 800 | −0.04em |
+| h1 | `clamp(1.7rem, 4.6vw, 2.2rem)` / 1.1 | 800 | −0.03em |
+| h2 | `1.25rem` | 800 | −0.02em |
+| afirmação do quiz | `clamp(1.4rem, 4.4vw, 1.75rem)` / 1.25 | 700 | −0.025em |
+| corpo | `1rem` (16px) / 1.55 | 400 | 0 |
+| rótulo | `0.7rem` | 600 | +0.12em, caixa alta, `--suave` |
+| número grande (faixa) | `2.4rem` | 800 | −0.04em, tabular |
+| número de urna | `1.7rem` mono | 800 | −0.02em |
 
 ## Espaço
 

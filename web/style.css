@@ -1,41 +1,41 @@
 :root {
-  /* Tokens de MASTER.md. Os nomes antigos (--acento, --ok, --nao, --campo)
-     viram aliases dos novos, para nenhuma regra existente quebrar. */
-  --papel: #FBFBF9;
-  --veu: #E6F4EE;
+  /* Painel de voto (29/08/2026): preto, branco, um acento. Nomes antigos
+     (--acento, --ok, --nao, --campo, --papel...) viram aliases para nenhuma
+     regra existente quebrar. Ver MASTER.md. */
+  --papel: #FFFFFF;
+  --veu: #F4F4F5;
   --superficie: #FFFFFF;
-  --tinta: #14201B;
-  --suave: #5C6B64;
-  --linha: #E3EAE6;
-  --acao: #087A54;
+  --tinta: #0A0A0A;
+  --suave: #6B6B70;
+  --linha: #E4E4E7;
+  --acao: #0E9F5B;
   --acao-tinta: #FFFFFF;
-  --acao-suave: #DCF2E8;
-  --contra: #B4452C;
-  --contra-suave: #F8E7E2;
+  --acao-suave: #E6F7EE;
+  --contra: #C2410C;
+  --contra-suave: #FEF0E7;
+  --preto: #0A0A0A;
+  --preto-tinta: #FFFFFF;
+  --preto-suave: #A1A1AA;
+  --preto-linha: #27272A;
+  --acao-escuro: #3DDC84;
 
   --acento: var(--acao);
   --ok: var(--acao);
   --nao: var(--contra);
   --campo: var(--veu);
 
-  /* Editorial (rodada Nexo, 29/08): cantos quase retos, regra fina no lugar
-     de sombra, e a slab nos títulos. Pílula fica só em botão e campo. */
-  --raio: 8px;
+  --raio: 6px;
   --raio-sm: 4px;
-  --display: "Zilla Slab", "Roboto Slab", Georgia, serif;
-  /* Blocos ilustrativos chapados: cor sólida sob pictograma. São ilustração,
-     não interface — por isso vivem fora da regra "uma cor saturada". */
-  --bloco-1: #0B4A36;
-  --bloco-2: #5E4B8B;
-  --bloco-3: #2A7F84;
-  --raio-pill: 999px;
-  --sombra-1: 0 1px 2px rgb(20 32 27 / .06), 0 4px 12px rgb(20 32 27 / .05);
-  --sombra-2: 0 2px 4px rgb(20 32 27 / .08), 0 12px 32px rgb(20 32 27 / .10);
-  --sombra-cta: 0 8px 24px rgb(8 122 84 / .28);
-  --rapido: 150ms;
-  --normal: 250ms;
+  --raio-pill: 6px;
+  --display: "Inter", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sombra-1: none;
+  --sombra-2: 0 1px 2px rgb(0 0 0 / .06), 0 8px 24px rgb(0 0 0 / .08);
+  --sombra-cta: none;
+  --rapido: 120ms;
+  --normal: 220ms;
   --ease: cubic-bezier(0.2, 0, 0, 1);
-  --ease-sai: ease-in;
+  --ease-sai: cubic-bezier(0.16, 1, 0.3, 1);
   color-scheme: light;
 }
 
@@ -55,7 +55,8 @@ body {
   margin: 0;
   background: var(--papel);
   color: var(--tinta);
-  font: 500 17px/1.6 Manrope, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 400 16px/1.55 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-feature-settings: "cv11", "ss01", "tnum";
   -webkit-text-size-adjust: 100%;
 }
 
@@ -78,10 +79,8 @@ header {
 
 main { max-width: 680px; margin: 0 auto; padding: 1.4rem 1.1rem 4rem; }
 
-h1 { font: 700 clamp(1.8rem, 5vw, 2.3rem)/1.15 var(--display); letter-spacing: -.01em; margin: .2rem 0 .8rem; text-wrap: balance; }
-h2 { font: 700 1.35rem/1.2 var(--display); letter-spacing: -.005em; }
-/* A barra à esquerda do título é a assinatura do Nexo — pedida pelo briefing. */
-h1 { border-left: 4px solid var(--acao); padding-left: .7rem; }
+h1 { font-weight: 800; font-size: clamp(1.7rem, 4.6vw, 2.2rem); line-height: 1.1; letter-spacing: -.03em; margin: .2rem 0 .8rem; text-wrap: balance; }
+h2 { font-weight: 800; font-size: 1.25rem; line-height: 1.2; letter-spacing: -.02em; }
 h1 em { color: var(--acento); font-style: normal; }
 .lead { color: var(--suave); margin: 0 0 1.6rem; }
 
@@ -150,7 +149,7 @@ select {
 }
 .contador { font-size: .82rem; color: var(--suave); margin: .6rem 0 1.6rem; }
 
-.tese { font: 700 clamp(1.5rem, 4.6vw, 1.85rem)/1.25 var(--display); letter-spacing: -.005em; margin: 0 0 1rem; text-wrap: balance; }
+.tese { font-weight: 700; font-size: clamp(1.4rem, 4.4vw, 1.75rem); line-height: 1.25; letter-spacing: -.025em; margin: 0 0 1rem; text-wrap: balance; }
 
 .contexto { margin-bottom: 1.8rem; }
 .contexto summary { font-size: .88rem; color: var(--acento); cursor: pointer; }
@@ -612,156 +611,9 @@ header {
 .marca-icone { color: var(--tinta); flex: none; }
 .link-metodo { font-weight: 700; }
 
-/* ---- hero ---- */
-.landing { position: relative; }
-/* O véu vive num pseudo-elemento de tela cheia preso ao <main>, não a um
-   filho: assim nada extrapola a largura do documento e não há scroll
-   horizontal. O radial fica centrado no conteúdo. */
-main:has(.landing) { position: relative; isolation: isolate; }
-main:has(.landing)::before {
-  content: "";
-  position: fixed;
-  inset: 0 0 auto;
-  height: 36rem;
-  background: radial-gradient(90% 60% at 50% 0%, var(--veu) 0%, transparent 70%);
-  z-index: -1;
-  pointer-events: none;
-}
-.landing::before {
-  content: none;
-  position: absolute;
-  inset: 0;
-  height: 0;
-  background: radial-gradient(120% 70% at 50% 0%, var(--veu) 0%, transparent 70%);
-  z-index: -1;
-  pointer-events: none;
-}
-.hero {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-  align-items: center;
-  margin-bottom: .6rem;
-}
-@media (min-width: 40rem) { .hero { grid-template-columns: 1.3fr 1fr; gap: 2rem; } }
 
-.display {
-  font: 700 clamp(2.3rem, 7vw, 3.6rem)/1.05 var(--display);
-  letter-spacing: -.015em;
-  text-wrap: balance;
-  margin: 0 0 1rem;
-}
-.display em { color: var(--acao); font-style: normal; }
-.landing .lead { font-weight: 500; }
 
-/* ---- A urna eletrônica brasileira, em CSS. Terminal cinza inclinado para
-   o eleitor, tela à esquerda, teclado 3x4 à direita com BRANCO, CORRIGE e
-   CONFIRMA. É o objeto em que ele digita o número da colinha — a ilustração
-   ensina o produto. Só transform anima; nada de layout. ---- */
-.hero-bloco { background: var(--bloco-1); border-radius: var(--raio-sm); padding: 1.2rem 0 .2rem; display: grid; place-items: center; overflow: hidden; }
-/* A urna em 3D é mais larga que sua caixa; encolhe e desloca para caber no
-   bloco em vez de vazar pela direita. */
-.hero-bloco .urna { transform: translateX(-12px) scale(.82); transform-origin: center; }
-.urna {
-  --ue-cinza: #D9DCD6;
-  --ue-cinza-escuro: #B9BEB6;
-  --ue-tecla: #F3F4F1;
-  --ue-tecla-tinta: #2B3330;
-  --ue-tela: #0E2B22;
-  --ue-tela-tinta: #DFF5EA;
-  --ue-laranja: #E8862B;
-  position: relative;
-  width: 280px;
-  height: 250px;
-  margin: 0 auto;
-  perspective: 1100px;
-}
-@media (max-width: 24rem) { .urna { transform: scale(.86); transform-origin: top center; height: 220px; } }
-/* Dimensões fixas em px: o terminal é um objeto, não um layout fluido. Com
-   percentuais o teclado vazava para fora do corpo e criava scroll horizontal. */
-.ue {
-  position: absolute;
-  left: 10px; top: 20px;
-  width: 260px; height: 168px;
-  transform-style: preserve-3d;
-  transform: rotateX(28deg) rotateY(-18deg) rotateZ(4deg);
-  animation: flutua 6s ease-in-out infinite alternate;
-}
-.ue-corpo {
-  position: absolute; inset: 0;
-  display: grid;
-  grid-template-columns: 118px 1fr;
-  gap: 12px;
-  padding: 14px;
-  border-radius: 14px;
-  background: linear-gradient(160deg, var(--ue-cinza) 0%, var(--ue-cinza-escuro) 100%);
-  box-shadow: var(--sombra-2), inset 0 1px 0 rgb(255 255 255 / .6);
-  transform: translateZ(14px);
-}
-.ue-lado {
-  position: absolute; inset: 8px -4px -10px 4px;
-  border-radius: 16px;
-  background: var(--ue-cinza-escuro);
-  transform: translateZ(-4px);
-  filter: brightness(.82);
-}
-.ue-tela {
-  height: 140px;
-  border-radius: 6px;
-  background: var(--ue-tela);
-  color: var(--ue-tela-tinta);
-  padding: 10px 11px;
-  display: flex; flex-direction: column; gap: 3px;
-  box-shadow: inset 0 0 0 2px rgb(0 0 0 / .35), inset 0 0 18px rgb(0 0 0 / .4);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-}
-.ue-tela-rot { font-size: 7px; letter-spacing: .1em; opacity: .75; }
-.ue-tela-cargo { font-size: 9px; font-weight: 700; }
-.ue-tela-num { display: flex; gap: 6px; margin-top: auto; }
-.ue-tela-num i {
-  font-style: normal; font-weight: 800; font-size: 20px; line-height: 1;
-  width: 16px; text-align: center; padding-bottom: 2px;
-  border-bottom: 2px solid var(--ue-tela-tinta);
-  opacity: 0;
-  animation: digita 6s steps(1) infinite;
-}
-.ue-tela-num i:nth-child(1) { animation-delay: 0s; }
-.ue-tela-num i:nth-child(2) { animation-delay: .5s; }
-.ue-tela-num i:nth-child(3) { animation-delay: 1s; }
-.ue-tela-num i:nth-child(4) { animation-delay: 1.5s; }
-.ue-teclado {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-auto-rows: 22px;
-  gap: 5px;
-  align-content: start;
-}
-.ue-teclado span {
-  border-radius: 4px;
-  background: var(--ue-tecla);
-  color: var(--ue-tecla-tinta);
-  font: 700 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
-  display: grid; place-items: center;
-  box-shadow: 0 1px 0 rgb(0 0 0 / .18), inset 0 1px 0 rgb(255 255 255 / .8);
-}
-.ue-teclado .vazio { background: transparent; box-shadow: none; }
-.ue-teclado .branco, .ue-teclado .corrige, .ue-teclado .confirma {
-  font-size: 5.5px; letter-spacing: .02em; color: #fff;
-}
-.ue-teclado .branco   { background: #FFFFFF; color: var(--ue-tecla-tinta); }
-.ue-teclado .corrige  { background: var(--ue-laranja); }
-.ue-teclado .confirma { background: var(--acao); }
-.urna-sombra {
-  position: absolute;
-  left: 30px; right: 30px; bottom: 6px;
-  height: 18px;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, rgb(20 32 27 / .22), transparent);
-  animation: sombra-respira 6s ease-in-out infinite alternate;
-}
-@keyframes flutua { from { transform: rotateX(28deg) rotateY(-18deg) rotateZ(4deg) translateY(0); } to { transform: rotateX(25deg) rotateY(-15deg) rotateZ(3deg) translateY(-8px); } }
-@keyframes digita { 0%, 33% { opacity: 0; } 34%, 100% { opacity: 1; } }
-@keyframes sombra-respira { from { transform: scaleX(1); opacity: 1; } to { transform: scaleX(.9); opacity: .7; } }
+
 
 /* ---- CTA e botões: pill, uma cor de ação ---- */
 .primario, a.cta {
@@ -790,7 +642,6 @@ main:has(.landing)::before {
 .candidato, #cartao { background: var(--superficie); border: 1px solid var(--linha); transition: border-color var(--rapido) var(--ease); }
 .linha-colinha { border-bottom-color: var(--linha); }
 .como li::before { background: var(--acao-suave); color: var(--acao); border-color: transparent; font-weight: 800; }
-.fatos dt { color: var(--tinta); font-family: var(--display); font-weight: 700; }
 
 /* ---- hover só onde existe ponteiro fino ---- */
 @media (hover: hover) and (pointer: fine) {
@@ -803,7 +654,7 @@ button:active:not(:disabled), a.cta:active { transform: scale(.98); }
 
 /* ---- revelação por scroll no "como funciona" ---- */
 @supports (animation-timeline: view()) {
-  .como li, .fatos div, .honesto {
+  .como li, .honesto {
     animation: revela linear both;
     animation-timeline: view();
     animation-range: entry 0% entry 40%;
@@ -816,9 +667,7 @@ button:active:not(:disabled), a.cta:active { transform: scale(.98); }
 /* ---- reduced motion: tudo congela ---- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
-  .ue, .ue-tela-num i, .urna-sombra { animation: none !important; }
-  .ue-tela-num i { opacity: 1 !important; }
-  .como li, .fatos div, .honesto { animation: none !important; opacity: 1 !important; transform: none !important; }
+  .como li, .honesto { animation: none !important; opacity: 1 !important; transform: none !important; }
 }
 
 /* ---- quiz: o checkbox deixa de ser nu; o desabilitado continua legível ---- */
@@ -829,17 +678,7 @@ button:disabled { opacity: .55; }
 /* ---- marca Colinha ---- */
 .marca i { font-style: italic; font-weight: 500; color: var(--acao); }
 
-/* ---- bloco cívico: chamada para votar, sem virar cartaz ---- */
-.civico { margin: 0 0 2.2rem; padding: 1.2rem 0 0; border-top: 4px solid var(--acao); }
-.civico h2 { margin: 0 0 .6rem; }
-.civico p { margin: 0 0 1rem; font-size: .98rem; }
-.civico-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: .7rem; }
-.civico-lista li { font-size: .92rem; line-height: 1.5; color: var(--suave); padding-left: 1.1rem; position: relative; }
-.civico-lista li::before { content: ""; position: absolute; left: 0; top: .55em; width: 6px; height: 6px; border-radius: 50%; background: var(--acao); }
-.civico-lista b { color: var(--tinta); }
-.civico a { color: var(--acao); font-weight: 700; }
-@supports (animation-timeline: view()) { .civico { animation: revela linear both; animation-timeline: view(); animation-range: entry 0% entry 40%; } }
-@media (prefers-reduced-motion: reduce) { .civico { animation: none !important; opacity: 1 !important; transform: none !important; } }
+
 
 /* ---- convite à assessoria, discreto: é para quem procura, não para o eleitor ---- */
 .responder { display: block; margin-top: .6rem; font-size: .8rem; color: var(--suave); text-align: center; text-decoration: none; padding: .5rem; }
@@ -858,20 +697,157 @@ button:disabled { opacity: .55; }
 
 /* ------------------------------------------------------------------- jogos */
 .jogos { margin: 2.4rem 0 1.6rem; }
-.jogos h2 { margin: 0 0 .2rem; }
 .jogos .lead { margin-bottom: 1rem; }
 .jogos-lista { display: grid; gap: .6rem; }
 @media (min-width: 40rem) { .jogos-lista { grid-template-columns: repeat(3, 1fr); } }
-/* Card de jogo = bloco chapado com pictograma em cima, texto embaixo, como
-   a capa de matéria do Nexo. O bloco é a ilustração. */
-.jogo { display: block; color: inherit; text-decoration: none; border-top: 1px solid var(--linha); padding-top: .9rem; }
-.jogo .bloco { display: grid; place-items: center; aspect-ratio: 16 / 10; border-radius: var(--raio-sm); margin-bottom: .8rem; color: #fff; overflow: hidden; transition: transform var(--normal) var(--ease); }
-.jogo .bloco svg { width: 56%; height: auto; }
-.jogo:hover .bloco svg { transform: translateY(-3px); }
-.jogo .bloco svg { transition: transform var(--normal) var(--ease); }
-.jogo:nth-child(1) .bloco { background: var(--bloco-1); }
-.jogo:nth-child(2) .bloco { background: var(--bloco-2); }
-.jogo:nth-child(3) .bloco { background: var(--bloco-3); }
-.jogo b { display: block; font: 700 1.2rem/1.2 var(--display); margin-bottom: .3rem; }
-.jogo span { font-size: .9rem; color: var(--suave); line-height: 1.45; }
-.jogos h2 { border-left: 4px solid var(--acao); padding-left: .7rem; }
+
+
+/* ==================================================== Painel de voto (29/08) */
+/* Uma família (Inter), preto e branco, um acento. Raio 6 em tudo. Nada de
+   sombra em repouso; hover eleva 1px e escurece. Números sempre tabulares. */
+
+header { padding: .8rem 1.1rem; border-bottom: 1px solid var(--linha); background: var(--papel); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.marca { gap: .5rem; font-size: 1.05rem; }
+.marca b { font-weight: 800; letter-spacing: -.03em; }
+.marca i { color: var(--suave); font-style: normal; font-weight: 500; }
+.link-metodo { font-weight: 600; font-size: .85rem; color: var(--tinta); }
+
+.rotulo { margin: 0 0 .8rem; font-size: .7rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--suave); }
+.eyebrow { font-size: .7rem; letter-spacing: .12em; color: var(--suave); font-weight: 600; }
+
+/* ---- botões: quadrados, densos, nunca de largura total no desktop ---- */
+.primario, a.cta, .secundario, .aba, .filtro, .fixar, .ver-parcial, .continuar, .mais, .estrela, .cta-secundario, .resp, .busca input, select {
+  border-radius: var(--raio);
+}
+.primario, a.cta { min-height: 48px; padding: .8rem 1.3rem; font-size: 1rem; font-weight: 600; background: var(--tinta); color: var(--papel); box-shadow: none; }
+.primario.cta { background: var(--acao); color: var(--acao-tinta); }
+.secundario { background: var(--papel); color: var(--tinta); border: 1px solid var(--linha); box-shadow: none; font-weight: 600; padding: .75rem 1.1rem; }
+.cta-secundario { background: var(--papel); color: var(--tinta); border: 1px solid var(--linha); font-weight: 600; padding: .8rem 1.3rem; }
+.aba { background: transparent; color: var(--suave); border: 1px solid transparent; font-weight: 600; padding: .45rem .8rem; }
+.aba.ativa { background: var(--tinta); color: var(--papel); }
+.filtro { background: var(--papel); border: 1px solid var(--linha); color: var(--tinta); font-weight: 600; }
+.filtro.ativo { background: var(--tinta); color: var(--papel); border-color: var(--tinta); }
+.busca input, select { background: var(--papel); border: 1px solid var(--linha); box-shadow: none; }
+.busca input:focus, select:focus { border-color: var(--tinta); outline: none; }
+.resp { background: var(--papel); border: 1px solid var(--linha); box-shadow: none; font-weight: 600; font-size: 1rem; }
+.resp:hover { border-color: var(--tinta); }
+.resp.escolhida { background: var(--tinta); color: var(--papel); border-color: var(--tinta); }
+.importante { border: 1px solid var(--linha); box-shadow: none; border-radius: var(--raio); }
+:focus-visible { outline: 2px solid var(--acao); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) {
+  .primario:hover:not(:disabled), a.cta:hover { transform: none; filter: brightness(1.08); box-shadow: none; }
+  .secundario:hover, .fixar:hover, .filtro:hover { transform: none; box-shadow: none; border-color: var(--tinta); }
+  .candidato:hover { box-shadow: none; border-color: var(--tinta); }
+}
+
+/* ---- landing ---- */
+main:has(.landing) { max-width: none; padding: 0; }
+.landing > * { max-width: 1040px; margin-left: auto; margin-right: auto; padding-left: 1.1rem; padding-right: 1.1rem; }
+.hero-caixa { background: var(--preto); color: var(--preto-tinta); max-width: none; padding: 0; }
+.hero { max-width: 1040px; margin: 0 auto; padding: 2.5rem 1.1rem 2.2rem; display: grid; gap: 2rem; align-items: center; grid-template-columns: 1fr; }
+@media (min-width: 48rem) { .hero { grid-template-columns: 1.05fr 1fr; gap: 3rem; padding: 3.5rem 1.1rem 3rem; } }
+.hero .rotulo { color: var(--preto-suave); }
+.display { font-weight: 800; font-size: clamp(2.4rem, 6.5vw, 4rem); line-height: 1.0; letter-spacing: -.04em; text-wrap: balance; margin: 0 0 1rem; }
+.display em { color: var(--acao-escuro); font-style: normal; }
+.hero .lead { color: var(--preto-suave); font-size: 1.08rem; max-width: 34rem; margin-bottom: 1.4rem; }
+.hero .ctas { display: flex; flex-wrap: wrap; gap: .6rem; }
+.hero .ctas a { flex: 1 1 14rem; text-align: center; }
+.hero .cta-secundario { background: transparent; color: var(--preto-tinta); border-color: var(--preto-linha); }
+.hero .cta-nota { text-align: left; color: var(--preto-suave); margin: .8rem 0 0; font-size: .8rem; }
+.hero-mapa { order: -1; }
+@media (min-width: 48rem) { .hero-mapa { order: 0; } }
+/* O mapa é um objeto só, sempre sobre preto: no hero e no resultado. Os
+   pontos se assentam uma vez (a única animação da página). */
+.hero-mapa .mapa { max-width: none; margin: 0; }
+.mapa { background: var(--preto); border-radius: var(--raio); padding: .6rem; }
+.b-fundo { fill: #111114; stroke: var(--preto-linha); }
+.b-eixo { stroke: var(--preto-linha); }
+.b-rot { fill: var(--preto-suave); }
+.b-sigla { fill: #D4D4D8; stroke: #111114; }
+.b-nome { fill: #FFFFFF; stroke: #111114; }
+.b-destaque { fill: #FFFFFF; stroke: #111114; }
+.b-partido { stroke: #111114; opacity: 1; }
+.b-pres { stroke: #FFFFFF; }
+.b-voce { fill: var(--acao-escuro); stroke: #111114; }
+.b-voce-rot { fill: var(--acao-escuro); stroke: #111114; }
+.camadas { padding: 0 0 .5rem; }
+.camadas .filtro { background: transparent; color: var(--preto-suave); border-color: var(--preto-linha); }
+.camadas .filtro.ativo { background: var(--preto-tinta); color: var(--preto); border-color: var(--preto-tinta); }
+.mapa circle, .mapa text { animation: assenta .9s var(--ease-sai) both; animation-delay: calc(var(--i, 0) * 28ms); transform-box: fill-box; transform-origin: center; }
+@keyframes assenta { from { opacity: 0; transform: scale(.4) translateY(6px); } to { opacity: 1; transform: none; } }
+
+.como { list-style: none; margin: 0 auto; padding: 2.6rem 1.1rem 1rem; display: grid; gap: 1.4rem; counter-reset: none; }
+@media (min-width: 40rem) { .como { grid-template-columns: repeat(3, 1fr); gap: 2rem; } }
+.como li { display: block; border-top: 1px solid var(--tinta); padding-top: .9rem; }
+.como li::before { content: none; }
+.como .n { display: block; font-size: .72rem; font-weight: 600; letter-spacing: .1em; color: var(--suave); margin-bottom: 1.2rem; font-variant-numeric: tabular-nums; }
+.como strong { display: block; font-size: 1.15rem; font-weight: 800; letter-spacing: -.02em; margin-bottom: .35rem; }
+.como span { color: var(--suave); font-size: .95rem; line-height: 1.5; }
+
+.jogos { padding-top: 2.4rem; padding-bottom: .4rem; }
+.jogos h2 { margin: 0 0 .2rem; }
+.jogos .lead { margin-bottom: 1.2rem; }
+.jogos-lista { gap: .8rem; }
+.jogo { display: grid; grid-template-columns: 40px 1fr; gap: .9rem; align-items: start; padding: 1rem; border: 1px solid var(--linha); border-radius: var(--raio); color: inherit; text-decoration: none; transition: border-color var(--rapido) var(--ease); }
+.jogo:hover { border-color: var(--tinta); }
+.jogo .bloco { display: grid; place-items: center; width: 40px; height: 40px; border-radius: var(--raio); background: var(--veu); color: var(--tinta); }
+.jogo .bloco svg { width: 22px; height: 22px; }
+.jogo .bloco svg rect[fill] { fill: var(--veu); }
+.jogo b { display: block; font-weight: 800; letter-spacing: -.02em; font-size: 1rem; margin-bottom: .15rem; }
+.jogo .txt { display: block; min-width: 0; }
+.jogo .txt span { display: block; font-size: .88rem; color: var(--suave); line-height: 1.45; }
+
+.faixa { background: var(--preto); color: var(--preto-tinta); max-width: none; padding: 0; margin-top: 2.6rem; }
+.faixa-in { max-width: 1040px; margin: 0 auto; padding: 2.2rem 1.1rem; display: grid; gap: 1.6rem; }
+@media (min-width: 40rem) { .faixa-in { grid-template-columns: repeat(3, 1fr); } }
+.faixa b { display: block; font-size: 2.4rem; font-weight: 800; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+.faixa span { display: block; margin-top: .4rem; font-size: .85rem; color: var(--preto-suave); line-height: 1.4; }
+
+.honesto { padding-top: 2.4rem; padding-bottom: 3rem; display: grid; gap: 1.6rem; }
+@media (min-width: 40rem) { .honesto { grid-template-columns: 1fr 1fr; gap: 3rem; } }
+.honesto h2 { font-size: 1.05rem; margin: 0 0 .5rem; }
+.honesto p { color: var(--suave); font-size: .92rem; margin: 0 0 .6rem; }
+.honesto a { color: var(--tinta); font-weight: 600; }
+.honesto ul { margin: 0; padding-left: 1.1rem; color: var(--suave); font-size: .92rem; line-height: 1.5; }
+.honesto li { margin-bottom: .4rem; }
+.honesto li b { color: var(--tinta); }
+
+/* ---- resultado: painel ---- */
+.mapa { max-width: 100%; }
+.candidato, #cartao { border: 1px solid var(--linha); border-radius: var(--raio); background: var(--papel); }
+.lista { gap: .5rem; }
+.candidato { padding: .6rem .7rem; }
+.topo { grid-template-columns: 32px minmax(0, 1fr) auto auto auto; gap: .6rem; }
+.avatar { width: 32px; height: 32px; font-size: .7rem; border-radius: var(--raio); }
+.nome b { font-size: .95rem; font-weight: 700; letter-spacing: -.015em; }
+.nome small { font-size: .78rem; }
+.nome .numero { font: 700 .82rem/1 var(--mono); color: var(--tinta); }
+.numero .rot { display: none; }
+.selo { border-radius: var(--raio-sm); }
+.score { grid-column: auto; margin: 0; gap: .5rem; width: 130px; }
+.score-barra { height: 4px; border-radius: 2px; background: var(--veu); }
+.score-barra i { background: var(--tinta); }
+.score b { font-size: .9rem; font-weight: 700; min-width: 3.2ch; }
+.acoes { gap: .3rem; }
+.acoes .fixar, .estrela { margin: 0; width: 34px; height: 34px; padding: 0; display: grid; place-items: center; font-size: 1rem; flex: none; border: 1px solid var(--linha); background: var(--papel); color: var(--tinta); }
+.fixar.fixado { background: var(--acao); color: var(--acao-tinta); border-color: var(--acao); }
+.estrela.marcada { color: #B7791F; background: #FFF6E0; border-color: #F3D9A0; }
+.origem-partido, .divergiu, .num-disputado { grid-column: 1 / -1; }
+.origem-partido { margin: .25rem 0 0; font-size: .76rem; }
+.quebra { margin-top: .4rem; }
+.quebra summary { font-size: .8rem; }
+.responder { margin-top: .2rem; font-size: .74rem; padding: .3rem; text-align: left; }
+@media (max-width: 30rem) {
+  .topo { grid-template-columns: 32px minmax(0, 1fr) auto auto; }
+  .score { grid-column: 1 / -1; grid-row: 2; width: auto; margin-top: .4rem; }
+}
+#ver-colinha, #completar { width: auto; min-width: 14rem; }
+.mandar { grid-template-columns: 1fr 1fr; }
+.resultado > h1 { margin-top: .6rem; }
+.abas { border-bottom: 1px solid var(--linha); gap: .1rem; padding-bottom: .4rem; }
+
+/* ---- colinha: papel, tabela, número enorme ---- */
+.linha-colinha { padding: .9rem .8rem; }
+.linha-colinha .cargo { font-size: .68rem; letter-spacing: .1em; }
+.linha-colinha .num { font: 800 1.7rem/1.1 var(--mono); letter-spacing: -.02em; }
+.linha-colinha .num .rot { display: none; }

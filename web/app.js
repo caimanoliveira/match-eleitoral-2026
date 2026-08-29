@@ -915,7 +915,9 @@ function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPar
 
   const marcarFixar = (b, on) => {
     b.className = on ? "fixar fixado" : "fixar";
-    b.textContent = on ? "✓ Na minha colinha" : "+ Colocar na colinha";
+    b.textContent = on ? "✓" : "+";
+    b.title = on ? "Na sua colinha" : "Colocar na colinha";
+    b.setAttribute("aria-label", on ? "Tirar da colinha" : "Colocar na colinha");
     b.setAttribute("aria-pressed", on ? "true" : "false");
   };
   const fixar = document.createElement("button");
@@ -970,8 +972,9 @@ function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPar
   const acoes = document.createElement("div");
   acoes.className = "acoes";
   acoes.append(fixar, estrela);
+  topo.append(acoes);
 
-  li.append(topo, ...(origem ? [origem] : []), ...(score === null ? [] : [det]), acoes, responder);
+  li.append(topo, ...(origem ? [origem] : []), ...(score === null ? [] : [det]), responder);
   return li;
 }
 
@@ -1045,15 +1048,15 @@ function pontoDePosicoes(posicaoDaTese) {
   return p.pesos.economico && p.pesos.social ? p : null;
 }
 
-function desenharBussola() {
+function desenharBussola({ hero = false } = {}) {
   const p = bussola(estado.respostas, tesesDoEleitor());
   const semLastro = !p.pesos.economico && !p.pesos.social;
   const voce = noMapa(p);
 
-  const partidos = !estado.mapa.partidos ? [] : Object.entries(estado.partidos)
+  const partidos = !hero && !estado.mapa.partidos ? [] : Object.entries(estado.partidos)
     .map(([sigla, bancada]) => ({ sigla, p: pontoDePosicoes((t) => bancada[t.id]?.pos) }))
     .filter((x) => x.p);
-  const presidenciaveis = !estado.mapa.pres ? [] : (estado.dados.porCargo.presidente || [])
+  const presidenciaveis = !hero && !estado.mapa.pres ? [] : (estado.dados.porCargo.presidente || [])
     .map((c) => ({ nome: c.n, sigla: c.p, p: pontoDePosicoes((t, i) => c.pos[i]) }))
     .filter((x) => x.p);
 
@@ -1120,10 +1123,11 @@ function desenharBussola() {
   ];
   espalhar(itens);
   itens.forEach((it) => { it.l = lugar(it.x, it.y, it.larg); });
-  const pontosSVG = itens.map((it) =>
-    `<g class="b-item" data-nome="${esc(it.texto)}"><title>${esc(it.titulo)}</title><circle cx="${it.x}" cy="${it.y}" r="${it.r}" class="b-${it.cls}" style="fill:${cor(it.sigla)}"/></g>`).join("");
-  const rotulosSVG = itens.filter((it) => it.l).map((it) =>
-    `<text x="${it.l.x}" y="${it.l.y}" class="${it.cls === "pres" ? "b-nome" : "b-sigla"}">${esc(it.texto)}</text>`).join("");
+  // --i escalona a animação de entrada no hero (CSS); no resultado é inerte.
+  const pontosSVG = itens.map((it, i) =>
+    `<g class="b-item" data-nome="${esc(it.texto)}"><title>${esc(it.titulo)}</title><circle cx="${it.x}" cy="${it.y}" r="${it.r}" class="b-${it.cls}" style="fill:${cor(it.sigla)};--i:${i}"/></g>`).join("");
+  const rotulosSVG = itens.filter((it) => it.l).map((it, i) =>
+    `<text x="${it.l.x}" y="${it.l.y}" class="${it.cls === "pres" ? "b-nome" : "b-sigla"}" style="--i:${i + 8}">${esc(it.texto)}</text>`).join("");
 
   svg.innerHTML = `
     <rect x="2" y="2" width="96" height="96" rx="4" class="b-fundo"/>
@@ -1137,7 +1141,7 @@ function desenharBussola() {
     // Sem nenhuma resposta com peso de eixo, desenhar um ponto no centro
     // declararia centrista quem não disse nada. O eleitor é desenhado por
     // último para ficar por cima de tudo.
-    (semLastro
+    (hero ? "" : semLastro
       ? `<text x="50" y="72" class="b-rot">responda para se posicionar</text>`
       : `<g><title>Você</title><circle cx="${voce.x}" cy="${voce.y}" r="4.5" class="b-voce"/>` +
         `<text x="${voce.x}" y="${voce.y - 6}" class="b-voce-rot">você</text></g>`);
@@ -1160,6 +1164,7 @@ function desenharBussola() {
 
   const caixa = document.createElement("div");
   caixa.className = "mapa";
+  if (hero) { caixa.append(svg); return caixa; }
   const camadas = document.createElement("div");
   camadas.className = "camadas";
   for (const [chave, rotulo] of [["partidos", "Partidos"], ["pres", "Presidenciáveis"]]) {
@@ -1367,7 +1372,16 @@ function telaLanding() {
       estado.meta.candidatos.toLocaleString("pt-BR");
     node.getElementById("fato-teses").textContent = estado.meta.teses;
   }
+  // O mapa das bancadas é a imagem do hero: dado real, sem ilustração. Os
+  // presidenciáveis entram quando o shard nacional chega (é pequeno).
+  const alvo = node.getElementById("hero-mapa");
+  alvo.append(desenharBussola({ hero: true }));
   mostrar(node);
+  carregarJSON("data/presidente-BR.json").then((lista) => {
+    if (!document.getElementById("hero-mapa")) return;
+    estado.dados = { ...estado.dados, porCargo: { ...estado.dados.porCargo, presidente: lista } };
+    document.getElementById("hero-mapa").replaceChildren(desenharBussola({ hero: true }));
+  }).catch(() => {});
 }
 
 async function rotear() {
