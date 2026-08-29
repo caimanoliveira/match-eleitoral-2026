@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adivinha como votou — Colinha</title>
+<meta name="description" content="Jogo de 10 rodadas: veja uma votação real da Câmara e chute como um partido ou deputado votou. Dados públicos, sem recomendação de voto.">
+<meta property="og:title" content="Adivinha como votou — Colinha">
+<meta property="og:description" content="10 votações reais da Câmara. Você sabe como seu partido vota?">
+<meta property="og:url" content="https://colinha.app.br/adivinha.html">
+<meta property="og:image" content="https://colinha.app.br/previa.png">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+  main { max-width: 640px; }
+  .placar { display: flex; justify-content: space-between; align-items: baseline; color: var(--suave); font-size: .9rem; margin: 0 0 1rem; }
+  .placar b { font: 800 1.1rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--tinta); }
+  .cartao { background: var(--superficie); border-radius: var(--raio); box-shadow: var(--sombra-1); padding: 1.1rem; margin: 0 0 1rem; }
+  .cartao .tese { font-weight: 700; font-size: 1.12rem; line-height: 1.4; margin: 0 0 .6rem; }
+  .cartao .contexto { color: var(--suave); font-size: .92rem; margin: 0 0 .5rem; }
+  .cartao a { color: var(--acao); font-weight: 700; font-size: .9rem; }
+  .alvo { display: flex; align-items: center; gap: .8rem; margin: 1rem 0; }
+  .alvo .avatar, .alvo .selo { width: 48px; height: 48px; }
+  .alvo b { display: block; font-size: 1.1rem; letter-spacing: -.01em; }
+  .alvo small { color: var(--suave); }
+  .chutes { display: grid; gap: .5rem; }
+  .chutes button { width: 100%; }
+  .chutes button.ativo { opacity: 1; border-color: var(--tinta); box-shadow: inset 0 0 0 1px var(--tinta); }
+  .revela { padding: 1rem; border-radius: var(--raio); margin: 1rem 0; font-weight: 700; }
+  .revela.ok { background: var(--acao-suave); color: var(--acao); }
+  .revela.erro { background: var(--contra-suave); color: var(--contra); }
+  .revela small { display: block; font-weight: 500; color: var(--tinta); margin-top: .35rem; }
+  .fim h2 { font-size: 1.6rem; margin: 0 0 .4rem; }
+  .fim .primario { display: block; text-align: center; margin: 1rem 0 .6rem; }
+  footer { max-width: 640px; margin: 0 auto; padding: 0 1.1rem 2rem; color: var(--suave); font-size: .84rem; }
+  footer a { color: var(--acao); }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="marca" href="./"><b>Colinha</b><i>.app.br</i></a>
+  <a class="link-metodo" href="metodologia.html">Metodologia</a>
+</header>
+
+<main>
+  <p class="eyebrow">Jogo</p>
+  <h1>Adivinha como votou</h1>
+  <p class="lead">Cada rodada mostra uma afirmação e uma votação real da Câmara. Chute se o alvo concordou ou discordou da afirmação. São 10 rodadas.</p>
+
+  <div class="placar"><span id="rodada"></span><span aria-live="polite">Acertos: <b id="acertos">0</b></span></div>
+  <div id="jogo"><p class="aviso">Carregando votações…</p></div>
+</main>
+
+<footer>
+  <p>Projeto independente, sem relação com o TSE ou a Justiça Eleitoral. Compara posições registradas; não é recomendação de voto. <a href="metodologia.html">Como calculamos</a>.</p>
+</footer>
+
+<script type="module">
+import { cor, tinta, selo, iniciais } from "./partidos.js";
+
+const RODADAS = 10;
+const UFS = ["SP", "RJ", "MG", "BA", "RS"];
+const ROTULO = { "+": "Concordou", "-": "Discordou", "0": "Ficou no meio" };
+const URL_JOGO = "https://colinha.app.br/adivinha.html?via=wa";
+const jogo = document.getElementById("jogo");
+const elRodada = document.getElementById("rodada");
+const elAcertos = document.getElementById("acertos");
+const sorteio = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+let teses, partidos, deputados;
+
+async function carregar() {
+  const meta = await (await fetch("data/meta.json", { cache: "no-store" })).json();
+  const carimbo = (meta.gerado_em || "").replace(/\D/g, "").slice(0, 14);
+  const json = (nome) => fetch(`data/${nome}.json?v=${carimbo}`).then((r) => (r.ok ? r.json() : null));
+  const shards = UFS.map((uf) => `deputado-federal-${uf}`).filter((s) => meta.shards.includes(s));
+  const [t, p, ...listas] = await Promise.all([json("teses"), json("partidos"), ...shards.map(json)]);
+  if (!t) throw new Error("teses");
+  teses = t.teses;
+  partidos = p || {};
+  deputados = listas.filter(Boolean).flat().filter((c) => c.dep);
+  jogar();
+}
+
+// Alvos possíveis por tese. Prefere "+"/"-"; "0" só se não houver outro.
+function alvosPartido(id) {
+  const lista = Object.entries(partidos)
+    .filter(([, v]) => v[id] && v[id].n >= 10)
+    .map(([sigla, v]) => ({ tipo: "partido", sigla, pos: v[id].pos, coesao: v[id].coesao, n: v[id].n }));
+  const fortes = lista.filter((a) => a.pos !== "0");
+  return fortes.length ? fortes : lista;
+}
+function alvosDeputado(i) {
+  const lista = deputados
+    .filter((c) => c.src[i] === "2" && ROTULO[c.pos[i]])
+    .map((c) => ({ tipo: "deputado", cand: c, pos: c.pos[i] }));
+  const fortes = lista.filter((a) => a.pos !== "0");
+  return fortes.length ? fortes : lista;
+}
+
+function montarRodadas() {
+  const idx = teses.map((_, i) => i).sort(() => Math.random() - 0.5);
+  const rodadas = [];
+  for (const i of idx) {
+    if (rodadas.length === RODADAS) break;
+    const querPartido = rodadas.length % 2 === 0;
+    let alvos = querPartido ? alvosPartido(teses[i].id) : alvosDeputado(i);
+    if (!alvos.length) alvos = querPartido ? alvosDeputado(i) : alvosPartido(teses[i].id);
+    if (alvos.length) rodadas.push({ tese: teses[i], alvo: sorteio(alvos) });
+  }
+  return rodadas;
+}
+
+let rodadas, atual, acertos;
+
+function jogar() {
+  rodadas = montarRodadas();
+  atual = 0; acertos = 0;
+  elAcertos.textContent = "0";
+  mostrar();
+}
+
+function mostrar() {
+  if (atual >= rodadas.length) return fim();
+  const { tese, alvo } = rodadas[atual];
+  elRodada.textContent = `Rodada ${atual + 1} de ${rodadas.length}`;
+  jogo.innerHTML = `
+    <div class="cartao">
+      <p class="tese">${esc(tese.texto)}</p>
+      <p class="contexto">${esc(tese.contexto)}</p>
+      <a href="${esc(tese.fontes[0].url)}" target="_blank" rel="noopener">Ver a votação</a>
+    </div>
+    <div class="alvo" id="alvo"><div><b id="alvo-nome"></b><small id="alvo-meta"></small></div></div>
+    <p class="contexto">Como votou sobre a afirmação acima?</p>
+    <div class="chutes">
+      <button class="secundario" data-pos="+">Concordou</button>
+      <button class="secundario" data-pos="-">Discordou</button>
+      <button class="secundario" data-pos="0">Ficou no meio (abstenção/obstrução)</button>
+    </div>
+    <div id="revela"></div>`;
+  const box = document.getElementById("alvo");
+  const nome = document.getElementById("alvo-nome");
+  const meta = document.getElementById("alvo-meta");
+  if (alvo.tipo === "partido") {
+    box.prepend(selo(alvo.sigla, null, 48));
+    nome.textContent = `Bancada do ${alvo.sigla}`;
+    meta.textContent = `${alvo.n} deputados votaram`;
+  } else {
+    const c = alvo.cand;
+    const av = document.createElement("div");
+    av.className = "avatar";
+    av.style.background = cor(c.p); av.style.color = tinta(c.p); av.textContent = iniciais(c.n);
+    if (c.foto) { const img = new Image(); img.src = c.foto; img.alt = ""; img.onload = () => av.replaceChildren(img); }
+    box.prepend(av);
+    nome.textContent = c.n;
+    meta.textContent = `${c.p} · deputado federal em exercício`;
+  }
+  jogo.querySelectorAll(".chutes button").forEach((b) => (b.onclick = () => responder(b.dataset.pos)));
+}
+
+function responder(chute) {
+  const { alvo } = rodadas[atual];
+  const ok = chute === alvo.pos;
+  if (ok) acertos++;
+  elAcertos.textContent = String(acertos);
+  jogo.querySelectorAll(".chutes button").forEach((b) => { b.disabled = true; b.classList.toggle("ativo", b.dataset.pos === alvo.pos); });
+  let detalhe = alvo.tipo === "partido"
+    ? (alvo.coesao < 0.7 ? "Bancada dividida: " : "") + `${Math.round(alvo.coesao * 100)}% da bancada votou assim.`
+    : "Voto registrado no painel da Câmara.";
+  const revela = document.getElementById("revela");
+  revela.innerHTML = `<div class="revela ${ok ? "ok" : "erro"}" role="status">${ok ? "Acertou." : "Errou."} De fato: ${ROTULO[alvo.pos]}.<small>${esc(detalhe)}</small></div>
+    <button class="primario" id="proxima">${atual + 1 < rodadas.length ? "Próxima" : "Ver resultado"}</button>`;
+  document.getElementById("proxima").onclick = () => { atual++; mostrar(); };
+  document.getElementById("proxima").focus();
+}
+
+function frase(n) {
+  if (n <= 3) return "O Congresso vota diferente do que parece. Vale conferir.";
+  if (n <= 6) return "Metade do caminho. Algumas votações surpreendem mesmo.";
+  if (n <= 8) return "Você acompanha bem o que acontece na Câmara.";
+  return "Quase gabarito. Você conhece o placar de perto.";
+}
+
+function fim() {
+  elRodada.textContent = "Fim";
+  const n = rodadas.length;
+  const texto = `Acertei ${acertos}/${n} no Adivinha como votou. Você sabe como seu partido vota?`;
+  jogo.innerHTML = `
+    <div class="cartao fim">
+      <h2>Você acertou ${acertos} de ${n}</h2>
+      <p class="contexto">${frase(acertos)}</p>
+      <a class="primario" href="./#/comecar">Descobrir meus candidatos</a>
+      <div class="navegacao">
+        <button class="secundario" id="compartilhar">Compartilhar</button>
+        <button class="secundario" id="denovo">Jogar de novo</button>
+      </div>
+    </div>`;
+  document.getElementById("compartilhar").onclick = async () => {
+    if (navigator.share) { try { await navigator.share({ text: texto, url: URL_JOGO }); return; } catch {} }
+    window.open(`https://wa.me/?text=${encodeURIComponent(`${texto} ${URL_JOGO}`)}`, "_blank", "noopener");
+  };
+  document.getElementById("denovo").onclick = jogar;
+}
+
+carregar().catch(() => { jogo.innerHTML = `<p class="aviso">Não consegui carregar as votações. Tente recarregar a página.</p>`; });
+</script>
+</body>
+</html>

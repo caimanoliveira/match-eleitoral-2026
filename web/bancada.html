@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monte sua bancada — Colinha</title>
+<meta name="description" content="Escolha 5 pautas e veja se passariam na Câmara com o voto real das bancadas. Simulação, não recomendação de voto.">
+<meta property="og:title" content="Monte sua bancada — Colinha">
+<meta property="og:description" content="Escolha 5 pautas e veja se passariam na Câmara com o voto real das bancadas.">
+<meta property="og:url" content="https://colinha.app.br/bancada.html">
+<meta property="og:image" content="https://colinha.app.br/previa.png">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+  main { max-width: 640px; }
+  .cartoes { display: grid; gap: .6rem; margin: 1rem 0; }
+  .cartao { display: flex; gap: .8rem; align-items: flex-start; padding: .9rem 1rem; background: var(--superficie); border: 2px solid transparent; border-radius: var(--raio); box-shadow: var(--sombra-1); }
+  .cartao.marcado { border-color: var(--acao); background: var(--acao-suave); }
+  .cartao button { flex: 1; text-align: left; background: none; border: 0; padding: 0; font: inherit; color: var(--tinta); cursor: pointer; line-height: 1.4; }
+  .cartao button b { display: block; }
+  .cartao button small { display: block; color: var(--suave); margin-top: .3rem; font-size: .85rem; }
+  .cartao .idx { font: 800 .82rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--acao); margin-right: .45rem; }
+  .cartao a { font-size: .8rem; color: var(--acao); white-space: nowrap; }
+  .contagem { position: sticky; bottom: 0; background: var(--papel); padding: .8rem 0 1rem; margin-top: 1rem; }
+  .contagem .primario { width: 100%; }
+  .contagem small { display: block; text-align: center; color: var(--suave); margin-top: .5rem; font-size: .82rem; }
+  .pauta { padding: .9rem 0; border-bottom: 1px solid var(--linha); }
+  .pauta p { margin: 0 0 .5rem; font-weight: 700; line-height: 1.4; }
+  .barra { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--veu); }
+  .barra i { display: block; }
+  .barra .sim { background: var(--acao); } .barra .nao { background: var(--contra); }
+  .rotulo { display: flex; justify-content: space-between; font-size: .85rem; color: var(--suave); margin-top: .4rem; }
+  .rotulo b.passa { color: var(--acao); } .rotulo b.nao-passa { color: var(--contra); }
+  .coalizao { display: grid; gap: .4rem; margin: 1rem 0; }
+  .partido { display: flex; align-items: center; gap: .7rem; padding: .5rem .7rem; border-radius: var(--raio); background: var(--superficie); }
+  .partido.total { background: var(--acao-suave); font-weight: 700; }
+  .partido span.n { margin-left: auto; font: 800 .9rem ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .sintese { padding: 1rem; background: var(--superficie); border-radius: var(--raio); box-shadow: var(--sombra-1); margin: 1.4rem 0; }
+  .sintese p { margin: 0; }
+  .fim { display: grid; gap: .6rem; margin-top: 1.6rem; }
+  .fim .primario, .fim .secundario { width: 100%; text-align: center; }
+  footer { max-width: 640px; margin: 2rem auto 0; padding: 1rem 1.1rem 3rem; color: var(--suave); font-size: .82rem; border-top: 1px solid var(--linha); }
+  footer a { color: var(--acao); }
+  h2 { margin: 1.6rem 0 .4rem; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="marca" href="./"><b>Colinha</b><i>.app.br</i></a>
+  <a class="link-metodo" href="metodologia.html">Metodologia</a>
+</header>
+
+<main>
+  <section id="escolha">
+    <p class="eyebrow">Jogo</p>
+    <h1>Monte sua bancada</h1>
+    <p class="lead">Escolha 5 pautas que você aprovaria. A gente confere, com o voto real das bancadas na Câmara, se elas passariam e quem estaria do seu lado.</p>
+    <p class="aviso">Simulação com o voto real das bancadas na Câmara. Não é recomendação de voto.</p>
+    <div class="cartoes" id="cartoes"></div>
+    <div class="contagem">
+      <button class="primario" id="confirmar" disabled>Votar minha pauta</button>
+      <small id="contador" aria-live="polite">0 de 5</small>
+    </div>
+  </section>
+
+  <section id="resultado" hidden aria-live="polite">
+    <p class="eyebrow">Resultado</p>
+    <h1 id="placar"></h1>
+    <p class="lead">Simulação com o voto real das bancadas na Câmara. Não é recomendação de voto.</p>
+
+    <h2>Sua pauta passaria?</h2>
+    <div id="pautas"></div>
+    <p class="honesto" style="font-size:.85rem;color:var(--suave)">Tamanho aproximado pela quantidade de votos registrados da bancada em cada votação. Partido sem voto registrado na tese não conta.</p>
+
+    <h2>Sua coalizão</h2>
+    <div class="coalizao" id="coalizao"></div>
+
+    <div class="sintese"><p id="sintese"></p></div>
+
+    <div class="fim">
+      <a class="primario" href="./#/comecar">Descobrir meus candidatos</a>
+      <button class="secundario" id="compartilhar">Compartilhar</button>
+      <button class="secundario" id="denovo">Jogar de novo</button>
+    </div>
+  </section>
+</main>
+
+<footer>
+  Projeto independente, sem relação com o TSE ou a Justiça Eleitoral. Compara posições registradas; não é recomendação de voto.
+  <a href="metodologia.html">Metodologia</a>
+</footer>
+
+<script type="module">
+import { selo } from "./partidos.js";
+
+const LIMITE = 5;
+const URL_PAGINA = "https://colinha.app.br/bancada.html";
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+const meta = await (await fetch("data/meta.json", { cache: "no-store" })).json();
+const carimbo = (meta.gerado_em || "").replace(/\D/g, "").slice(0, 14);
+const [teses, partidos] = await Promise.all([
+  fetch(`data/teses.json?v=${carimbo}`).then((r) => r.json()).then((j) => j.teses),
+  fetch(`data/partidos.json?v=${carimbo}`).then((r) => r.json()),
+]);
+
+const escolhidas = new Set();
+
+function desenharCartoes() {
+  $("cartoes").innerHTML = teses.map((t, i) => `
+    <div class="cartao${escolhidas.has(t.id) ? " marcado" : ""}" data-id="${t.id}">
+      <button type="button" aria-pressed="${escolhidas.has(t.id)}">
+        <b><span class="idx">${String(i + 1).padStart(2, "0")}</span>${esc(t.texto)}</b>
+        <small>${esc(t.contexto)}</small>
+      </button>
+      <a href="${esc(t.fontes[0].url)}" target="_blank" rel="noopener">votação</a>
+    </div>`).join("");
+}
+
+function atualizarContador() {
+  $("contador").textContent = `${escolhidas.size} de ${LIMITE}`;
+  $("confirmar").disabled = escolhidas.size !== LIMITE;
+}
+
+$("cartoes").addEventListener("click", (ev) => {
+  const btn = ev.target.closest("button");
+  if (!btn) return;
+  const card = btn.closest(".cartao");
+  const id = card.dataset.id;
+  if (escolhidas.has(id)) escolhidas.delete(id);
+  else if (escolhidas.size < LIMITE) escolhidas.add(id);
+  else return;
+  card.classList.toggle("marcado", escolhidas.has(id));
+  btn.setAttribute("aria-pressed", escolhidas.has(id));
+  atualizarContador();
+});
+
+// Votos de cada partido numa tese: {sim, nao} em número de votos registrados.
+function votos(teseId) {
+  const sim = {}, nao = {};
+  let total = 0;
+  for (const [sigla, ts] of Object.entries(partidos)) {
+    const c = ts[teseId];
+    if (!c) continue;
+    total += c.n;
+    if (c.pos === "+") sim[sigla] = c.n;
+    else if (c.pos === "-") nao[sigla] = c.n;
+  }
+  return { sim, nao, total };
+}
+
+const soma = (o) => Object.values(o).reduce((a, b) => a + b, 0);
+
+function calcular() {
+  const ids = [...escolhidas];
+  const porTese = ids.map((id) => {
+    const v = votos(id);
+    const s = soma(v.sim), n = soma(v.nao);
+    const status = Math.abs(s - n) < 0.1 * v.total ? "apertado" : s > n ? "passa" : "nao";
+    return { tese: teses.find((t) => t.id === id), ...v, s, n, status };
+  });
+
+  // Coalizão: quantas das 5 cada partido apoia.
+  const apoio = {};
+  for (const sigla of Object.keys(partidos)) apoio[sigla] = porTese.filter((p) => p.sim[sigla]).length;
+  const ordem = Object.entries(apoio).filter(([, k]) => k > 0).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+
+  // Menor coalizão gulosa: entra partido por partido (mais apoiador primeiro)
+  // até ter maioria dos votos registrados em todas as 5.
+  // ponytail: guloso não acha o mínimo exato; serve para uma síntese.
+  const coalizao = [];
+  let fecha = false;
+  for (const [sigla] of ordem) {
+    coalizao.push(sigla);
+    fecha = porTese.every((p) => coalizao.reduce((a, s) => a + (p.sim[s] || 0), 0) > p.total / 2);
+    if (fecha) break;
+  }
+  const totalVotos = porTese.reduce((a, p) => a + p.total, 0);
+  const votosCoalizao = porTese.reduce((a, p) => a + coalizao.reduce((b, s) => b + (p.sim[s] || 0), 0), 0);
+  return { porTese, ordem, coalizao: fecha ? coalizao : null, totalVotos, votosCoalizao };
+}
+
+const ROTULO = { passa: ["Passa", "passa"], nao: ["Não passa", "nao-passa"], apertado: ["Apertado", ""] };
+
+function mostrar() {
+  const r = calcular();
+  const passam = r.porTese.filter((p) => p.status === "passa").length;
+  $("placar").textContent = `${passam} de ${LIMITE} pautas passariam`;
+
+  $("pautas").innerHTML = r.porTese.map((p) => {
+    const ps = p.total ? (100 * p.s / p.total).toFixed(0) : 0;
+    const pn = p.total ? (100 * p.n / p.total).toFixed(0) : 0;
+    const [txt, cls] = ROTULO[p.status];
+    return `<div class="pauta">
+      <p>${esc(p.tese.texto)} <a href="${esc(p.tese.fontes[0].url)}" target="_blank" rel="noopener" style="font-size:.8rem;color:var(--acao)">votação</a></p>
+      <div class="barra" role="img" aria-label="${p.s} a favor, ${p.n} contra"><i class="sim" style="width:${ps}%"></i><i class="nao" style="width:${pn}%"></i></div>
+      <div class="rotulo"><span>${p.s} a favor · ${p.n} contra</span><b class="${cls}">${txt}</b></div>
+    </div>`;
+  }).join("");
+
+  const col = $("coalizao");
+  col.replaceChildren();
+  for (const [sigla, k] of r.ordem) {
+    const div = document.createElement("div");
+    div.className = "partido" + (k === LIMITE ? " total" : "");
+    div.append(selo(sigla, "", 28), document.createTextNode(sigla));
+    const n = document.createElement("span");
+    n.className = "n"; n.textContent = `${k}/${LIMITE}`;
+    div.append(n);
+    col.append(div);
+  }
+
+  $("sintese").textContent = r.coalizao
+    ? `Para aprovar as ${LIMITE}, você precisaria de ${r.coalizao.length} partido${r.coalizao.length > 1 ? "s" : ""} (${r.coalizao.join(", ")}) que juntos somam ${r.votosCoalizao} dos ${r.totalVotos} votos registrados.`
+    : `Nenhuma coalizão aprova as ${LIMITE} de uma vez: escolha 5 que caibam juntas.`;
+
+  $("escolha").hidden = true;
+  $("resultado").hidden = false;
+  window.scrollTo(0, 0);
+  try { sessionStorage.setItem("bancada", JSON.stringify({ passam, ids: [...escolhidas] })); } catch {}
+
+  $("compartilhar").onclick = () => {
+    const text = `Montei minha bancada no Colinha: ${passam} de ${LIMITE} pautas passariam. E a sua? ${URL_PAGINA}?via=wa`;
+    if (navigator.share) navigator.share({ text, url: `${URL_PAGINA}?via=wa` }).catch(() => {});
+    else window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+  };
+}
+
+$("confirmar").onclick = mostrar;
+$("denovo").onclick = () => {
+  escolhidas.clear();
+  desenharCartoes();
+  atualizarContador();
+  $("resultado").hidden = true;
+  $("escolha").hidden = false;
+  window.scrollTo(0, 0);
+};
+
+desenharCartoes();
+atualizarContador();
+</script>
+</body>
+</html>
