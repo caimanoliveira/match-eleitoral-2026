@@ -57,6 +57,10 @@ const estado = {
   // Camadas do mapa. No celular partidos começam desligados: 30 siglas em
   // 350px é ruído; o eleitor liga se quiser.
   mapa: { partidos: !matchMedia("(max-width: 480px)").matches, pres: true },
+  // "completo" (34 afirmações → colinha) ou "rapido" (10, só resultado).
+  // São dois produtos: o rápido nunca mostra colinha, o completo nunca fala
+  // em rodada rápida.
+  modo: "completo",
 };
 
 const idsEscolhidos = (cargo) => (estado.escolhas[cargo] || "").split("+").filter(Boolean);
@@ -198,25 +202,37 @@ async function carregarJSON(caminho, semCache = false) {
 // como previsão dos votos que ele dará na assembleia. O campo `esfera` fica em
 // theses.toml para a curadoria, mas não filtra o quiz. Está explicado na
 // metodologia — se um dia deixar de valer, o filtro entra aqui.
-// Rodada rápida: as 10 primeiras são as de maior peso nos eixos (5 puxadas
-// pelo econômico, 5 pelo social), para que quem chegou por link de WhatsApp
-// veja um resultado em dois minutos. A ORDEM de teses.json não muda — a URL é
-// posicional sobre ela; só a sequência de perguntar muda.
+// Quiz rápido: as 10 afirmações de maior peso nos eixos (5 puxadas pelo
+// econômico, 5 pelo social), para quem chegou por link de WhatsApp. A ORDEM
+// de teses.json não muda — a URL é posicional sobre ela; o rápido é um
+// subconjunto, o completo é a lista inteira na ordem original.
 const RAPIDAS = 10;
-let ordemQuiz = null;
-const tesesDoEleitor = () => {
-  if (ordemQuiz && ordemQuiz.length === estado.teses.length) return ordemQuiz;
+let rapidas = null;
+const tesesRapidas = () => {
+  if (rapidas && rapidas.length && estado.teses.length) return rapidas;
   const peso = (t, e) => Math.abs((t.eixo || {})[e] || 0);
   const porEco = [...estado.teses].sort((a, b) => peso(b, "economico") - peso(a, "economico"));
   const porSoc = [...estado.teses].sort((a, b) => peso(b, "social") - peso(a, "social"));
-  const rapidas = [];
-  for (let i = 0; rapidas.length < Math.min(RAPIDAS, estado.teses.length); i++) {
+  const sel = [];
+  for (let i = 0; sel.length < Math.min(RAPIDAS, estado.teses.length); i++) {
     for (const t of [porEco[i], porSoc[i]]) {
-      if (t && !rapidas.includes(t) && rapidas.length < RAPIDAS) rapidas.push(t);
+      if (t && !sel.includes(t) && sel.length < RAPIDAS) sel.push(t);
     }
   }
-  ordemQuiz = [...rapidas, ...estado.teses.filter((t) => !rapidas.includes(t))];
-  return ordemQuiz;
+  // Na ordem de teses.json, para o quiz não parecer embaralhado.
+  rapidas = estado.teses.filter((t) => sel.includes(t));
+  return rapidas;
+};
+// Quem completa a partir do rápido continua com as 10 na frente (começa na
+// 11ª); quem começou pelo completo vê a ordem do arquivo. Só em memória: ao
+// reabrir o link, a ordem do arquivo vale e o índice cai na primeira sem
+// resposta.
+let continuouDoRapido = false;
+const tesesDoEleitor = () => {
+  if (estado.modo === "rapido") return tesesRapidas();
+  if (!continuouDoRapido) return estado.teses;
+  const r = tesesRapidas();
+  return [...r, ...estado.teses.filter((t) => !r.includes(t))];
 };
 
 const respondidas = () =>
@@ -237,13 +253,14 @@ function salvarNaURL() {
     })
     .join("");
   history.replaceState(
-    null, "", `#/r/${estado.versaoTeses}/${estado.uf}/${respostas}/${ids}`);
+    null, "", `#/${estado.modo === "rapido" ? "q" : "r"}/${estado.versaoTeses}/${estado.uf}/${respostas}/${ids}`);
 }
 
 function lerDaURL() {
-  const m = location.hash.match(/^#\/r\/([a-f0-9]{6})\/([A-Z]{2})\/([cndxp!]*)\/(.*)$/);
+  const m = location.hash.match(/^#\/(r|q)\/([a-f0-9]{6})\/([A-Z]{2})\/([cndxp!]*)\/(.*)$/);
   if (!m) return false;
-  const [, versao, uf, respostas, ids] = m;
+  const [, modoChar, versao, uf, respostas, ids] = m;
+  const modo = modoChar === "q" ? "rapido" : "completo";
 
   // As respostas são posicionais. Um link gerado com outro conjunto de teses
   // seria decodificado contra as perguntas erradas — e o eleitor veria um
@@ -285,6 +302,7 @@ function lerDaURL() {
     if (id) escolhas[CARGOS[k][0]] = id;
   });
   // O índice é na ORDEM DO QUIZ, não na de teses.json.
+  estado.modo = modo;
   const semResposta = tesesDoEleitor().findIndex((t) => !lidas[t.id]);
   void primeiraSemResposta;
   Object.assign(estado, {
@@ -307,10 +325,12 @@ function zerarSessao() {
     cargoAtivo: null, busca: "", limite: POR_PAGINA,
   });
   estado.geracao++; // invalida carga em voo
+  continuouDoRapido = false;
 }
 
-function telaInicio(motivo = "") {
+function telaInicio(motivo = "", modo = "completo") {
   zerarSessao();
+  estado.modo = modo;
   const node = tpl("tpl-inicio");
   const sel = node.getElementById("uf");
   sel.append(new Option("Selecione…", ""));
@@ -400,9 +420,7 @@ function telaQuiz() {
   node.querySelector(".barra").style.transform =
     `scaleX(${estado.indice / teses.length})`;
   node.querySelector(".contador").textContent =
-    estado.indice < RAPIDAS
-      ? `Rodada rápida · ${estado.indice + 1} de ${RAPIDAS}`
-      : `Afirmação ${estado.indice + 1} de ${teses.length} · o resultado já existe, isto afina`;
+    `Afirmação ${estado.indice + 1} de ${teses.length}`;
   node.querySelector(".tese").textContent = tese.texto;
 
   const ctx = node.querySelector(".contexto");
@@ -443,11 +461,7 @@ function telaQuiz() {
   const parcial = node.getElementById("ver-parcial");
   if (n >= 5 && estado.indice < teses.length - 1) {
     parcial.hidden = false;
-    // Fim da rodada rápida: é o momento de oferecer o resultado com força.
-    parcial.classList.toggle("destaque", estado.indice === RAPIDAS);
-    parcial.textContent = estado.indice === RAPIDAS
-      ? `Rodada rápida feita — ver meus candidatos`
-      : `Ver meus candidatos agora (${n} de ${teses.length} respondidas)`;
+    parcial.textContent = `Ver meus candidatos agora (${n} de ${teses.length} respondidas)`;
     parcial.onclick = telaResultado;
   }
 
@@ -505,7 +519,25 @@ function telaResultado({ rolar = true } = {}) {
   const teses = tesesDoEleitor();
   const faltam = teses.length - respondidas();
   const cabecalho = node.querySelector("h1");
-  if (faltam > 0) {
+  const rapido = estado.modo === "rapido";
+  node.querySelector(".resultado").classList.toggle("modo-rapido", rapido);
+  if (rapido) {
+    cabecalho.textContent = "Seus candidatos — quiz rápido";
+    // O rápido não monta colinha: o convite é completar as 34 e montar.
+    const completar = node.getElementById("completar");
+    completar.hidden = false;
+    completar.textContent = `Responder as outras ${estado.teses.length - teses.length} e montar minha colinha`;
+    completar.onclick = () => {
+      estado.modo = "completo";
+      continuouDoRapido = true;
+      const todas = tesesDoEleitor();
+      const i = todas.findIndex((t) => { const r = estado.respostas[t.id]; return !r || r.valor == null; });
+      estado.indice = i === -1 ? 0 : i;
+      salvarNaURL();
+      telaQuiz();
+    };
+  }
+  if (faltam > 0 && !rapido) {
     cabecalho.textContent = "Seus candidatos — resultado parcial";
     const nota = node.getElementById("nota-parcial");
     nota.hidden = false;
@@ -707,7 +739,7 @@ function telaResultado({ rolar = true } = {}) {
   node.getElementById("ver-colinha").onclick = telaColinha;
   const base = `${location.origin}${location.pathname}`;
   node.getElementById("mandar-quiz").onclick = () =>
-    mandar("Fiz o meu em 2 minutos e descobri em quem votar para deputado. Faz o seu:", `${base}?via=wa#/`);
+    mandar("Fiz o meu em 2 minutos e descobri em quem votar para deputado. Faz o seu:", `${base}?via=wa#/rapido`);
   node.getElementById("mandar-resultado").onclick = () =>
     mandar("Olha o meu resultado no Colinha — e o seu, dá quanto?", `${base}?via=wa${location.hash}`);
   mostrar(node, { rolar });
@@ -1291,10 +1323,10 @@ function telaChegada() {
   node.getElementById("chegada-meu").onclick = () => {
     marcarMeu();
     // Mesma UF já vem do link; só as respostas são zeradas.
-    const uf = estado.uf;
+    const uf = estado.uf, modo = estado.modo;
     zerarSessao();
     estado.uf = uf;
-    ordemQuiz = null;
+    estado.modo = modo;
     carregarCandidatos().then(() => telaQuiz());
   };
   node.getElementById("chegada-ver").onclick = () => { marcarMeu(); telaResultado(); };
@@ -1331,6 +1363,9 @@ async function rotear() {
   }
   if (location.hash === "#/comecar") {
     return telaInicio();
+  }
+  if (location.hash === "#/rapido") {
+    return telaInicio("", "rapido");
   }
   const geracao = estado.geracao;
   let ok = false;
