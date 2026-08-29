@@ -58,7 +58,7 @@ export function selo(sigla, numeroPartido, tamanho = 28) {
 // o arquivo: marca é do partido, e quem serve é o Estado. Cobre 12 dos 22
 // partidos com bancada; para os demais fica o selo com o número de urna.
 let manifesto = null;
-function logosDisponiveis() {
+export function logosDisponiveis() {
   if (!manifesto) {
     manifesto = fetch("partidos/logos.json")
       .then((r) => (r.ok ? r.json() : {}))

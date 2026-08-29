@@ -1,5 +1,5 @@
 import { match, bussola, ranquear, PULOU } from "./match.js";
-import { cor, tinta, selo, iniciais } from "./partidos.js";
+import { cor, tinta, selo, iniciais, logosDisponiveis } from "./partidos.js";
 import { desenharColinha, compartilhar } from "./colinha.js";
 
 const CARGOS = [
@@ -1327,6 +1327,15 @@ function desenharBussola({ hero = false } = {}) {
         (it.foto ? `<image href="${esc(it.foto)}" x="${it.x - it.r}" y="${it.y - it.r}" width="${it.r * 2}" height="${it.r * 2}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${clip})"/>` : "") +
         `</g>`;
     }
+    // Com logo (manifesto da Câmara): cartão branco com o logo dentro. Sem:
+    // selo na cor do partido com a sigla.
+    const logo = (estado.logos || {})[it.sigla];
+    if (logo) {
+      const lw = hero ? 7.5 : 6, lh = hero ? 4.6 : 3.7;
+      return `<g ${attrs}><title>${esc(it.titulo)}</title>` +
+        `<rect x="${it.x - lw / 2}" y="${it.y - lh / 2}" width="${lw}" height="${lh}" rx=".7" class="b-logo-caixa"/>` +
+        `<image href="${esc(logo)}" x="${it.x - lw / 2 + 0.4}" y="${it.y - lh / 2 + 0.4}" width="${lw - 0.8}" height="${lh - 0.8}" preserveAspectRatio="xMidYMid meet"/></g>`;
+    }
     const w = it.sigla.length * (hero ? 1.55 : 1.3) + 1.4, h = hero ? 3.2 : 2.7;
     return `<g ${attrs}><title>${esc(it.titulo)}</title>` +
       `<rect x="${it.x - w / 2}" y="${it.y - h / 2}" width="${w}" height="${h}" rx=".7" class="b-selo" style="fill:${cor(it.sigla)}"/>` +
@@ -1770,6 +1779,7 @@ async function rotear() {
     // votou diferente do próprio partido. Já era gerado pelo build e ninguém
     // lia. 23 KB.
     estado.partidos = await carregarJSON("data/partidos.json").catch(() => ({}));
+    estado.logos = await logosDisponiveis();
   } catch (e) {
     app.innerHTML = `<p class="erro">Não consegui carregar as perguntas (${esc(e.message)}).
       Recarregue a página; se persistir, os dados do site podem estar sendo publicados.</p>`;
