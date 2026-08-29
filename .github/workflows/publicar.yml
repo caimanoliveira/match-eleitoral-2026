@@ -45,6 +45,14 @@ jobs:
           restore-keys: pipeline-cache-
       - name: fotos
         run: python3 -c "import sys; sys.path.insert(0,'pipeline'); import fotos; fotos.baixar()"
+      # Cache do Pages é max-age=600: sem versão na URL, o eleitor recebe o
+      # index.html novo com o app.js de 10 minutos atrás. Carimba o SHA em
+      # todo script/css e em todo import relativo, só no artefato publicado.
+      - name: versionar assets
+        run: |
+          V=${GITHUB_SHA::8}
+          perl -pi -e "s#(src=\"|href=\")([a-z-]+\.(?:js|css))\"#\$1\$2?v=$V\"#g" web/*.html
+          perl -pi -e "s#from \"\./([a-z-]+\.js)\"#from \"./\$1?v=$V\"#g" web/*.js web/*.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
