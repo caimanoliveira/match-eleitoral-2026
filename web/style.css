@@ -963,3 +963,5 @@ main:has(.landing) { max-width: none; padding: 0; }
 .radar-legenda select { width: auto; padding: .45rem .7rem; font-size: .85rem; }
 .b-logo-caixa { fill: #fff; stroke: rgb(0 0 0 / .12); stroke-width: .3; }
 .bussola-hero .b-logo-caixa { stroke: none; }
+.voltar-topo { display: inline-block; margin: 0 0 .6rem; font-size: .9rem; font-weight: 600; color: var(--suave); text-decoration: none; min-height: 44px; line-height: 44px; }
+.voltar-topo:hover { color: var(--tinta); }

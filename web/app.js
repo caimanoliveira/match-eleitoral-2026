@@ -1474,6 +1474,10 @@ function atualizarBotaoColinha(raiz = document) {
 function telaColinha() {
   const node = tpl("tpl-colinha");
   salvarNaURL();
+  // O voltar do navegador tem de sair da colinha: a URL não muda entre
+  // resultado e colinha, então empurra uma entrada no histórico.
+  if (!history.state?.colinha) history.pushState({ colinha: true }, "", location.href);
+  node.getElementById("voltar-topo").onclick = (ev) => { ev.preventDefault(); history.back(); };
 
   // Escolha que aponta para um cargo que não carregou não pode sumir em
   // silêncio: o eleitor levaria para a urna uma colinha com uma linha a menos
@@ -1624,7 +1628,7 @@ function telaColinha() {
     catch { copiar.textContent = "Não deu para copiar"; }
     setTimeout(() => { copiar.textContent = "Copiar números"; }, 2000);
   };
-  node.getElementById("voltar-resultado").onclick = () => telaResultado();
+  node.getElementById("voltar-resultado").onclick = () => history.back();
   mostrar(node);
 }
 
@@ -1802,5 +1806,9 @@ async function rotear() {
   // telaInicio() zera a sessão: antes ele trocava o hash e nada acontecia,
   // apagando o estado da URL sem trocar de tela.
   window.addEventListener("hashchange", () => { rotear(); });
+  window.addEventListener("popstate", (ev) => {
+    // Saiu da entrada "colinha" com o voltar: volta ao resultado, sem rolar.
+    if (!ev.state?.colinha && document.querySelector(".tela.colinha")) telaResultado({ rolar: false });
+  });
   rotear();
 })();
