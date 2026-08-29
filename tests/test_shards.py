@@ -94,6 +94,36 @@ def main() -> None:
     esperado = len(tse.candidatos(offline=True))
     assert total == esperado, f"{total} candidatos nos shards, {esperado} no TSE"
 
+    # Coerência mapa × ranking: quem responde exatamente como a bancada tem
+    # de ver o candidato dessa bancada em 100%. Pegou um bug real (29/08):
+    # o quiz rápido passava um subconjunto de teses e o match lia posições
+    # desalinhadas. Aqui a conta é a mesma do web/match.js.
+    bancadas = json.loads((DATA / "partidos.json").read_text(encoding="utf-8"))
+    valor = {"+": 1, "-": -1, "0": 0}
+    presidentes = json.loads((DATA / "presidente-BR.json").read_text(encoding="utf-8"))
+    conferidos = 0
+    for c in presidentes:
+        if set(c["src"]) - {"5", "?"}:
+            continue  # tem voto próprio: a bancada não é a referência
+        bancada = bancadas.get(c["p"], {})
+        respostas = {t["id"]: valor[bancada[t["id"]]["pos"]] for t in teses if t["id"] in bancada}
+        if not respostas:
+            continue
+        dist = maximo = 0
+        for i, t in enumerate(teses):
+            if t["id"] not in respostas or c["pos"][i] == "?":
+                continue
+            assert c["src"][i] == "5", f"{c['n']}: src {c['src'][i]} onde a bancada tem posição"
+            assert c["pos"][i] == bancada[t["id"]]["pos"], (
+                f"{c['n']} ({c['p']}): pos '{c['pos'][i]}' em {t['id']}, bancada '{bancada[t['id']]['pos']}'"
+            )
+            dist += abs(respostas[t["id"]] - valor[c["pos"][i]])
+            maximo += 2
+        assert maximo and 1 - dist / maximo == 1.0, f"{c['n']}: eleitor igual à bancada não deu 100%"
+        conferidos += 1
+    assert conferidos, "nenhum presidenciável herdando bancada para conferir"
+    print(f"ok — {conferidos} presidenciáveis com match 100% contra a própria bancada")
+
     print(f"ok — {len(shards)} shards, {total} candidatos, {n} teses")
     print(f"     {com_evidencia} candidatos com evidência ({100 * com_evidencia / total:.1f}%)")
 
