@@ -1164,7 +1164,7 @@ function desenharBussola({ hero = false } = {}) {
 
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("viewBox", "0 0 100 100");
-  svg.setAttribute("class", "bussola");
+  svg.setAttribute("class", hero ? "bussola bussola-hero" : "bussola");
   svg.setAttribute("role", hero ? "img" : "group");
   svg.setAttribute("aria-label", (semLastro
     ? "Mapa de posições, ainda sem respostas suficientes para posicionar você."
@@ -1184,7 +1184,9 @@ function desenharBussola({ hero = false } = {}) {
       texto: c.sigla, larg: c.sigla.length * 1.6, titulo: `${c.sigla}: bancada na Câmara` })),
   ];
   espalhar(itens);
-  itens.forEach((it) => { it.l = lugar(it.x, it.y, it.larg); });
+  // No hero o mapa é ilustração: siglas de partido saem (30 rótulos são
+  // ruído ali), ficam só os presidenciáveis e os eixos.
+  itens.forEach((it) => { it.l = hero && it.cls === "partido" ? null : lugar(it.x, it.y, it.larg); });
   // --i escalona a animação de entrada no hero (CSS); no resultado é inerte.
   const pontosSVG = itens.map((it, i) =>
     `<g class="b-item" data-nome="${esc(it.texto)}"${hero ? "" : ` tabindex="0" role="button" aria-label="${esc(it.titulo)}"`}><title>${esc(it.titulo)}</title><circle cx="${it.x}" cy="${it.y}" r="${it.r}" class="b-${it.cls}" style="fill:${cor(it.sigla)};--i:${i}"/></g>`).join("");
@@ -1192,7 +1194,10 @@ function desenharBussola({ hero = false } = {}) {
     `<text x="${it.l.x}" y="${it.l.y}" class="${it.cls === "pres" ? "b-nome" : "b-sigla"}" style="--i:${i + 8}">${esc(it.texto)}</text>`).join("");
 
   svg.innerHTML = `
-    <rect x="2" y="2" width="96" height="96" rx="4" class="b-fundo"/>
+    <rect x="2" y="2" width="96" height="96" rx="4" class="b-fundo"/>` +
+    // Grade sutil no hero: dá plano ao mapa sem competir com os pontos.
+    (hero ? [10, 20, 30, 40, 60, 70, 80, 90].map((v) =>
+      `<line x1="${v}" y1="3" x2="${v}" y2="97" class="b-grade"/><line x1="3" y1="${v}" x2="97" y2="${v}" class="b-grade"/>`).join("") : "") + `
     <line x1="50" y1="4" x2="50" y2="96" class="b-eixo"/>
     <line x1="4" y1="50" x2="96" y2="50" class="b-eixo"/>
     <text x="50" y="6.5" class="b-rot">conservador</text>
@@ -1516,6 +1521,19 @@ function telaLanding() {
   // presidenciáveis entram quando o shard nacional chega (é pequeno).
   const alvo = node.getElementById("hero-mapa");
   alvo.append(desenharBussola({ hero: true }));
+  // Parallax leve com o ponteiro: só onde há ponteiro fino e sem
+  // reduced-motion. Move o plano, não os pontos.
+  if (matchMedia("(pointer: fine)").matches && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    const hero = node.querySelector(".hero");
+    hero.addEventListener("pointermove", (ev) => {
+      const r = hero.getBoundingClientRect();
+      const px = (ev.clientX - r.left) / r.width - 0.5;
+      const py = (ev.clientY - r.top) / r.height - 0.5;
+      alvo.style.setProperty("--rx", `${(-py * 6).toFixed(2)}deg`);
+      alvo.style.setProperty("--ry", `${(px * 8).toFixed(2)}deg`);
+    });
+    hero.addEventListener("pointerleave", () => { alvo.style.removeProperty("--rx"); alvo.style.removeProperty("--ry"); });
+  }
   mostrar(node);
   carregarJSON("data/presidente-BR.json").then((lista) => {
     if (!document.getElementById("hero-mapa")) return;

@@ -766,7 +766,32 @@ main:has(.landing) { max-width: none; padding: 0; }
 
 /* O mapa é um objeto só, sempre sobre preto: no hero e no resultado. Os
    pontos se assentam uma vez (a única animação da página). */
-.hero-mapa .mapa { max-width: none; margin: 0; }
+.hero-mapa { perspective: 1200px; --rx: 0deg; --ry: 0deg; }
+.hero-mapa .mapa {
+  max-width: none; margin: 0;
+  transform: rotateX(calc(9deg + var(--rx))) rotateY(calc(-7deg + var(--ry))) translateZ(0);
+  transform-style: preserve-3d;
+  transition: transform .6s var(--ease);
+  background: radial-gradient(120% 100% at 30% 0%, #17171b 0%, #0e0e11 60%, #0a0a0a 100%);
+  border: 1px solid var(--preto-linha);
+  box-shadow: 0 30px 60px -20px rgb(0 0 0 / .8), 0 0 0 1px rgb(255 255 255 / .04) inset;
+  animation: flutua-mapa 9s ease-in-out infinite alternate;
+}
+@keyframes flutua-mapa { from { translate: 0 0; } to { translate: 0 -8px; } }
+.b-grade { stroke: rgb(255 255 255 / .05); stroke-width: .3; }
+.bussola-hero .b-fundo { fill: transparent; stroke: rgb(255 255 255 / .12); }
+.bussola-hero .b-eixo { stroke: rgb(255 255 255 / .22); stroke-width: .5; }
+.bussola-hero .b-partido { opacity: .9; stroke: none; filter: drop-shadow(0 0 1.2px rgb(255 255 255 / .55)); }
+.bussola-hero .b-pres { stroke: #fff; stroke-width: .6; filter: drop-shadow(0 0 2.5px rgb(255 255 255 / .6)); }
+.bussola-hero .b-nome { font-size: 2.7px; }
+.bussola-hero .b-rot { fill: rgb(255 255 255 / .5); }
+/* Pontos respiram, cada um em fase própria: dá vida sem virar chuva. */
+.hero-mapa .mapa circle {
+  animation: assenta .9s var(--ease-sai) both, respira 5s ease-in-out calc(var(--i, 0) * -400ms) infinite alternate;
+  animation-delay: calc(var(--i, 0) * 28ms), calc(var(--i, 0) * -400ms);
+}
+@keyframes respira { from { transform: translateY(0) scale(1); } to { transform: translateY(-1.2px) scale(1.12); } }
+@media (prefers-reduced-motion: reduce) { .hero-mapa .mapa { animation: none !important; transform: none !important; } .hero-mapa .mapa circle { animation: none !important; } }
 .mapa { background: var(--preto); border-radius: var(--raio); padding: .6rem; }
 .b-fundo { fill: #111114; stroke: var(--preto-linha); }
 .b-eixo { stroke: var(--preto-linha); }
