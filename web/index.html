@@ -16,9 +16,8 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="logo.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@600;700&display=swap">
+<link rel="preload" href="fonts/IBMPlexSans-Bold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/IBMPlexSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -156,16 +155,16 @@
       <p></p>
     </details>
 
-    <label class="importante">
-      <input type="checkbox"> Este tema é <b>muito importante</b> para mim
-      <small>conta em dobro</small>
-    </label>
-
     <div class="respostas">
       <button data-valor="1"  class="resp concordo">Concordo</button>
       <button data-valor="0"  class="resp neutro">Nem um nem outro</button>
       <button data-valor="-1" class="resp discordo">Discordo</button>
     </div>
+
+    <label class="importante">
+      <input type="checkbox"> Este tema é <b>muito importante</b> para mim
+      <small>conta em dobro</small>
+    </label>
 
     <div class="navegacao">
       <button class="secundario" id="voltar">Voltar</button>
@@ -175,8 +174,8 @@
     <button class="ver-parcial" id="ver-parcial" hidden></button>
 
     <p class="dica-teclado" aria-hidden="true">
-      No teclado: <kbd>1</kbd> concordo · <kbd>2</kbd> tanto faz · <kbd>3</kbd> discordo
-      · <kbd>←</kbd> voltar
+      No teclado: <kbd>1</kbd> concordo · <kbd>2</kbd> nem um nem outro · <kbd>3</kbd> discordo
+      · <kbd>←</kbd> voltar · <kbd>→</kbd> pular
     </p>
   </section>
 </template>
@@ -200,6 +199,7 @@
     </div>
 
     <div id="avisos-lista"></div>
+    <p class="legenda-herdada" id="legenda-herdada" hidden>≈ = posição herdada da bancada do partido</p>
     <ol class="lista" id="lista"></ol>
     <button class="secundario mais" id="mais" hidden>Mostrar mais 30</button>
     <p class="aviso" id="rodape-fonte"></p>
@@ -209,6 +209,7 @@
       <button class="secundario" id="mandar-quiz">Mandar o quiz para amigos</button>
       <button class="secundario" id="mandar-resultado">Mandar meu resultado</button>
     </div>
+    <button class="barra-colinha" id="barra-colinha" hidden>Colinha</button>
   </section>
 </template>
 

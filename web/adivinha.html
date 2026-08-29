@@ -10,32 +10,35 @@
 <meta property="og:url" content="https://colinha.app.br/adivinha.html">
 <meta property="og:image" content="https://colinha.app.br/previa.png">
 <link rel="icon" href="logo.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@600;700&display=swap">
 <link rel="stylesheet" href="style.css">
 <style>
   main { max-width: 640px; }
-  .placar { display: flex; justify-content: space-between; align-items: baseline; color: var(--suave); font-size: .2rem; margin: 0 0 1rem; }
-  .placar b { font: 800 1rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--tinta); }
-  .cartao { background: var(--superficie); border-radius: var(--raio); box-shadow: var(--sombra-1); padding: 1.1rem; margin: 0 0 1rem; }
-  .cartao .tese { font-weight: 700; font-size: 1rem; line-height: 1.4; margin: 0 0 .2rem; }
-  .cartao .contexto { color: var(--suave); font-size: .2rem; margin: 0 0 .2rem; }
-  .cartao a { color: var(--acao); font-weight: 700; font-size: .2rem; }
+  .placar { display: flex; justify-content: space-between; align-items: baseline; color: var(--suave); font-size: .875rem; margin: 0 0 1rem; }
+  .placar b { font: 700 1rem/1 var(--mono); color: var(--tinta); }
+  .cartao { background: var(--papel); border: 1px solid var(--linha); border-radius: var(--raio); padding: 1.1rem; margin: 0 0 1rem; }
+  .cartao .tese { font-weight: 700; font-size: 1.25rem; line-height: 1.3; letter-spacing: -.02em; margin: 0 0 .4rem; }
+  .contexto { color: var(--suave); font-size: .875rem; margin: 0 0 .4rem; }
+  .cartao a:not(.primario) { color: var(--acao); font-weight: 600; font-size: .875rem; }
   .alvo { display: flex; align-items: center; gap: .8rem; margin: 1rem 0; }
   .alvo .avatar, .alvo .selo { width: 48px; height: 48px; }
   .alvo b { display: block; font-size: 1rem; letter-spacing: -.01em; }
-  .alvo small { color: var(--suave); }
+  .alvo small { color: var(--suave); font-size: .875rem; }
   .chutes { display: grid; gap: .5rem; }
-  .chutes button { width: 100%; }
-  .chutes button.ativo { opacity: 1; border-color: var(--tinta); box-shadow: inset 0 0 0 1px var(--tinta); }
+  .chutes button { width: 100%; min-height: 44px; }
+  .chutes button.ativo { opacity: 1; border-color: var(--tinta); color: var(--tinta); }
+  .chutes button.chutado { opacity: 1; border-color: var(--contra); color: var(--contra); }
   .revela { padding: 1rem; border-radius: var(--raio); margin: 1rem 0; font-weight: 700; }
   .revela.ok { background: var(--acao-suave); color: var(--acao); }
   .revela.erro { background: var(--contra-suave); color: var(--contra); }
-  .revela small { display: block; font-weight: 500; color: var(--tinta); margin-top: .2rem; }
-  .fim h2 { font-size: 1.6rem; margin: 0 0 .2rem; }
+  .revela small { display: block; font-weight: 500; font-size: .875rem; color: var(--tinta); margin-top: .2rem; }
+  .fim h2 { font-size: 1.25rem; margin: 0 0 .2rem; }
   .fim .primario { display: block; text-align: center; margin: 1rem 0 .6rem; }
-  footer { max-width: 640px; margin: 0 auto; padding: 0 1.1rem 2rem; color: var(--suave); font-size: .2rem; }
+  .uf label { display: block; font-weight: 600; margin: 0 0 .5rem; }
+  .uf select { min-height: 44px; margin: 0 0 .6rem; }
+  .uf button { width: 100%; min-height: 44px; }
+  .uf .primario { margin: 0 0 .5rem; }
+  #nota:empty { display: none; }
+  footer { max-width: 640px; margin: 0 auto; padding: 0 1.1rem 2rem; color: var(--suave); font-size: .875rem; }
   footer a { color: var(--acao); }
 </style>
 </head>
@@ -53,6 +56,7 @@
 
   <div class="placar"><span id="rodada"></span><span aria-live="polite">Acertos: <b id="acertos">0</b></span></div>
   <div id="jogo"><p class="aviso">Carregando votações…</p></div>
+  <p id="nota" class="aviso" aria-live="polite"></p>
 </main>
 
 <footer>
@@ -63,72 +67,105 @@
 import { cor, tinta, selo, iniciais } from "./partidos.js";
 
 const RODADAS = 10;
-const UFS = ["SP", "RJ", "MG", "BA", "RS"];
+const UFS = "AC AL AM AP BA CE DF ES GO MA MG MS MT PA PB PE PI PR RJ RN RO RR RS SC SE SP TO".split(" ");
+const CHAVE_UF = "colinha:uf";
 const ROTULO = { "+": "Concordou", "-": "Discordou", "0": "Ficou no meio" };
 const URL_JOGO = "https://colinha.app.br/adivinha.html?via=wa";
 const jogo = document.getElementById("jogo");
+const nota = document.getElementById("nota");
 const elRodada = document.getElementById("rodada");
 const elAcertos = document.getElementById("acertos");
 const sorteio = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const lerUF = () => { try { return localStorage.getItem(CHAVE_UF); } catch { return null; } };
+const gravarUF = (uf) => { try { localStorage.setItem(CHAVE_UF, uf); } catch {} };
 
-let teses, partidos, deputados;
+let teses, partidos, deputados = [], meta, json;
 
 async function carregar() {
-  const meta = await (await fetch("data/meta.json", { cache: "no-store" })).json();
+  jogo.innerHTML = `<p class="aviso">Carregando votações…</p>`;
+  nota.textContent = "";
+  meta = await (await fetch("data/meta.json", { cache: "no-store" })).json();
   const carimbo = (meta.gerado_em || "").replace(/\D/g, "").slice(0, 14);
-  const json = (nome) => fetch(`data/${nome}.json?v=${carimbo}`).then((r) => (r.ok ? r.json() : null));
-  const shards = UFS.map((uf) => `deputado-federal-${uf}`).filter((s) => meta.shards.includes(s));
-  const [t, p, ...listas] = await Promise.all([json("teses"), json("partidos"), ...shards.map(json)]);
+  json = (nome) => fetch(`data/${nome}.json?v=${carimbo}`).then((r) => (r.ok ? r.json() : null));
+  const [t, p] = await Promise.all([json("teses"), json("partidos")]);
   if (!t) throw new Error("teses");
   teses = t.teses;
   partidos = p || {};
-  deputados = listas.filter(Boolean).flat().filter((c) => c.dep);
-  jogar();
+  const uf = lerUF();
+  if (uf && UFS.includes(uf)) { carregarUF(uf); jogar(); } else pedirUF();
 }
 
-// Alvos possíveis por tese. Prefere "+"/"-"; "0" só se não houver outro.
+// Um shard só, da UF do eleitor, em paralelo: as rodadas de partido começam antes.
+function carregarUF(uf) {
+  const shard = `deputado-federal-${uf}`;
+  if (!meta.shards.includes(shard)) { nota.textContent = `Sem deputados de ${uf} na base; jogo só com partidos.`; return; }
+  json(shard).then((lista) => {
+    if (!lista) throw new Error(shard);
+    deputados = lista.filter((c) => c.dep);
+  }).catch(() => { nota.textContent = `Não consegui carregar os deputados de ${uf}; jogo só com partidos.`; });
+}
+
+function pedirUF() {
+  elRodada.textContent = "";
+  jogo.innerHTML = `
+    <div class="cartao uf">
+      <label for="uf">Seu estado, para incluir deputados de lá</label>
+      <select id="uf"><option value="">Escolher…</option>${UFS.map((u) => `<option>${u}</option>`).join("")}</select>
+      <button class="primario" id="comecar" disabled>Começar</button>
+      <button class="secundario" id="pular">Pular: só partidos</button>
+    </div>`;
+  // Começar só no botão (WCAG 3.2.2): a seta do teclado no select não pode iniciar o jogo.
+  const sel = document.getElementById("uf"), comecar = document.getElementById("comecar");
+  sel.onchange = () => { comecar.disabled = !sel.value; };
+  comecar.onclick = () => { const uf = sel.value; if (!uf) return; gravarUF(uf); carregarUF(uf); jogar(); };
+  document.getElementById("pular").onclick = () => { nota.textContent = "Jogo só com partidos."; jogar(); };
+}
+
 function alvosPartido(id) {
-  const lista = Object.entries(partidos)
-    .filter(([, v]) => v[id] && v[id].n >= 10)
+  return Object.entries(partidos)
+    .filter(([, v]) => v[id] && v[id].n >= 10 && ROTULO[v[id].pos])
     .map(([sigla, v]) => ({ tipo: "partido", sigla, pos: v[id].pos, coesao: v[id].coesao, n: v[id].n }));
-  const fortes = lista.filter((a) => a.pos !== "0");
-  return fortes.length ? fortes : lista;
 }
 function alvosDeputado(i) {
-  const lista = deputados
+  return deputados
     .filter((c) => c.src[i] === "2" && ROTULO[c.pos[i]])
     .map((c) => ({ tipo: "deputado", cand: c, pos: c.pos[i] }));
-  const fortes = lista.filter((a) => a.pos !== "0");
-  return fortes.length ? fortes : lista;
+}
+// Cota real para "0": ~1 em 5 rodadas quando existir alvo no meio.
+function sortearAlvo(alvos) {
+  const meio = alvos.filter((a) => a.pos === "0");
+  const fortes = alvos.filter((a) => a.pos !== "0");
+  if (!fortes.length) return sorteio(meio);
+  return meio.length && Math.random() < 0.2 ? sorteio(meio) : sorteio(fortes);
 }
 
-function montarRodadas() {
-  const idx = teses.map((_, i) => i).sort(() => Math.random() - 0.5);
-  const rodadas = [];
-  for (const i of idx) {
-    if (rodadas.length === RODADAS) break;
-    const querPartido = rodadas.length % 2 === 0;
+let fila, rodadas, atual, acertos;
+
+// Rodadas nascem uma a uma: deputados podem chegar no meio da partida.
+function proximaRodada() {
+  while (fila.length) {
+    const i = fila.pop();
+    const querPartido = !deputados.length || rodadas.length % 2 === 0;
     let alvos = querPartido ? alvosPartido(teses[i].id) : alvosDeputado(i);
     if (!alvos.length) alvos = querPartido ? alvosDeputado(i) : alvosPartido(teses[i].id);
-    if (alvos.length) rodadas.push({ tese: teses[i], alvo: sorteio(alvos) });
+    if (alvos.length) return { tese: teses[i], alvo: sortearAlvo(alvos) };
   }
-  return rodadas;
+  return null;
 }
 
-let rodadas, atual, acertos;
-
 function jogar() {
-  rodadas = montarRodadas();
-  atual = 0; acertos = 0;
+  fila = teses.map((_, i) => i).sort(() => Math.random() - 0.5);
+  rodadas = []; atual = 0; acertos = 0;
   elAcertos.textContent = "0";
   mostrar();
 }
 
 function mostrar() {
-  if (atual >= rodadas.length) return fim();
+  if (atual >= RODADAS) return fim();
+  if (!rodadas[atual]) { const r = proximaRodada(); if (!r) return fim(); rodadas.push(r); }
   const { tese, alvo } = rodadas[atual];
-  elRodada.textContent = `Rodada ${atual + 1} de ${rodadas.length}`;
+  elRodada.textContent = `Rodada ${atual + 1} de ${RODADAS}`;
   jogo.innerHTML = `
     <div class="cartao">
       <p class="tese">${esc(tese.texto)}</p>
@@ -145,11 +182,11 @@ function mostrar() {
     <div id="revela"></div>`;
   const box = document.getElementById("alvo");
   const nome = document.getElementById("alvo-nome");
-  const meta = document.getElementById("alvo-meta");
+  const elMeta = document.getElementById("alvo-meta");
   if (alvo.tipo === "partido") {
     box.prepend(selo(alvo.sigla, null, 48));
     nome.textContent = `Bancada do ${alvo.sigla}`;
-    meta.textContent = `${alvo.n} deputados votaram`;
+    elMeta.textContent = `${alvo.n} deputados votaram`;
   } else {
     const c = alvo.cand;
     const av = document.createElement("div");
@@ -158,7 +195,7 @@ function mostrar() {
     if (c.foto) { const img = new Image(); img.src = c.foto; img.alt = ""; img.onload = () => av.replaceChildren(img); }
     box.prepend(av);
     nome.textContent = c.n;
-    meta.textContent = `${c.p} · deputado federal em exercício`;
+    elMeta.textContent = `${c.p} · deputado federal em exercício`;
   }
   jogo.querySelectorAll(".chutes button").forEach((b) => (b.onclick = () => responder(b.dataset.pos)));
 }
@@ -168,13 +205,18 @@ function responder(chute) {
   const ok = chute === alvo.pos;
   if (ok) acertos++;
   elAcertos.textContent = String(acertos);
-  jogo.querySelectorAll(".chutes button").forEach((b) => { b.disabled = true; b.classList.toggle("ativo", b.dataset.pos === alvo.pos); });
-  let detalhe = alvo.tipo === "partido"
+  jogo.querySelectorAll(".chutes button").forEach((b) => {
+    b.disabled = true;
+    b.classList.toggle("ativo", b.dataset.pos === alvo.pos);
+    b.classList.toggle("chutado", !ok && b.dataset.pos === chute);
+  });
+  const detalhe = alvo.tipo === "partido"
     ? (alvo.coesao < 0.7 ? "Bancada dividida: " : "") + `${Math.round(alvo.coesao * 100)}% da bancada votou assim.`
     : "Voto registrado no painel da Câmara.";
+  const veredito = ok ? `Acertou. De fato: ${ROTULO[alvo.pos]}.` : `Errou. Você chutou ${ROTULO[chute]}; votou ${ROTULO[alvo.pos]}.`;
   const revela = document.getElementById("revela");
-  revela.innerHTML = `<div class="revela ${ok ? "ok" : "erro"}" role="status">${ok ? "Acertou." : "Errou."} De fato: ${ROTULO[alvo.pos]}.<small>${esc(detalhe)}</small></div>
-    <button class="primario" id="proxima">${atual + 1 < rodadas.length ? "Próxima" : "Ver resultado"}</button>`;
+  revela.innerHTML = `<div class="revela ${ok ? "ok" : "erro"}" role="status">${veredito}<small>${esc(detalhe)}</small></div>
+    <button class="primario" id="proxima">${atual + 1 < RODADAS ? "Próxima" : "Ver resultado"}</button>`;
   document.getElementById("proxima").onclick = () => { atual++; mostrar(); };
   document.getElementById("proxima").focus();
 }
@@ -207,7 +249,13 @@ function fim() {
   document.getElementById("denovo").onclick = jogar;
 }
 
-carregar().catch(() => { jogo.innerHTML = `<p class="aviso">Não consegui carregar as votações. Tente recarregar a página.</p>`; });
+function iniciar() {
+  carregar().catch(() => {
+    jogo.innerHTML = `<p class="aviso">Não consegui carregar as votações.</p><button class="secundario" id="denovo">Tentar de novo</button>`;
+    document.getElementById("denovo").onclick = iniciar;
+  });
+}
+iniciar();
 </script>
 </body>
 </html>

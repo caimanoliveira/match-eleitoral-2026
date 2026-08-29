@@ -10,41 +10,40 @@
 <meta property="og:url" content="https://colinha.app.br/bancada.html">
 <meta property="og:image" content="https://colinha.app.br/previa.png">
 <link rel="icon" href="logo.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@600;700&display=swap">
 <link rel="stylesheet" href="style.css">
 <style>
   main { max-width: 640px; }
   .cartoes { display: grid; gap: .6rem; margin: 1rem 0; }
-  .cartao { display: flex; gap: .8rem; align-items: flex-start; padding: .9rem 1rem; background: var(--superficie); border: 2px solid transparent; border-radius: var(--raio); box-shadow: var(--sombra-1); }
+  .cartao { display: flex; gap: .8rem; align-items: flex-start; padding: .9rem 1rem; background: var(--superficie); border: 2px solid var(--linha); border-radius: var(--raio); }
   .cartao.marcado { border-color: var(--acao); background: var(--acao-suave); }
   .cartao button { flex: 1; text-align: left; background: none; border: 0; padding: 0; font: inherit; color: var(--tinta); cursor: pointer; line-height: 1.4; }
   .cartao button b { display: block; }
-  .cartao button small { display: block; color: var(--suave); margin-top: .3rem; font-size: .2rem; }
-  .cartao .idx { font: 800 .2rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--acao); margin-right: .45rem; }
-  .cartao a { font-size: .2rem; color: var(--acao); white-space: nowrap; }
+  .cartao button small { display: block; color: var(--suave); margin-top: .3rem; font-size: .85rem; }
+  .cartao .idx { font: 700 .85rem/1 var(--mono); color: var(--acao); margin-right: .45rem; }
+  .cartao a { font-size: .85rem; color: var(--acao); white-space: nowrap; }
   .contagem { position: sticky; bottom: 0; background: var(--papel); padding: .8rem 0 1rem; margin-top: 1rem; }
   .contagem .primario { width: 100%; }
-  .contagem small { display: block; text-align: center; color: var(--suave); margin-top: .5rem; font-size: .2rem; }
-  .pauta { padding: .2rem 0; border-bottom: 1px solid var(--linha); }
+  .contagem small { display: block; text-align: center; color: var(--suave); margin-top: .5rem; font-size: .85rem; }
+  .pauta { padding: .75rem 0; border-bottom: 1px solid var(--linha); }
   .pauta p { margin: 0 0 .5rem; font-weight: 700; line-height: 1.4; }
-  .barra { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--veu); }
+  .barra { display: flex; height: 8px; border-radius: var(--raio-sm); overflow: hidden; background: var(--veu); }
   .barra i { display: block; }
   .barra .sim { background: var(--acao); } .barra .nao { background: var(--contra); }
-  .rotulo { display: flex; justify-content: space-between; font-size: .2rem; color: var(--suave); margin-top: .2rem; }
+  .rotulo { display: flex; justify-content: space-between; font-size: .75rem; color: var(--suave); margin-top: .2rem; }
   .rotulo b.passa { color: var(--acao); } .rotulo b.nao-passa { color: var(--contra); }
   .coalizao { display: grid; gap: .4rem; margin: 1rem 0; }
   .partido { display: flex; align-items: center; gap: .7rem; padding: .5rem .7rem; border-radius: var(--raio); background: var(--superficie); }
   .partido.total { background: var(--acao-suave); font-weight: 700; }
-  .partido span.n { margin-left: auto; font: 800 .2rem ui-monospace, SFMono-Regular, Menlo, monospace; }
-  .sintese { padding: 1rem; background: var(--superficie); border-radius: var(--raio); box-shadow: var(--sombra-1); margin: 1.4rem 0; }
+  .partido span.n { margin-left: auto; font: 700 1rem var(--mono); }
+  .sintese { padding: 1rem; background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio); margin: 1.4rem 0; }
   .sintese p { margin: 0; }
   .fim { display: grid; gap: .6rem; margin-top: 1.6rem; }
   .fim .primario, .fim .secundario { width: 100%; text-align: center; }
-  footer { max-width: 640px; margin: 2rem auto 0; padding: 1rem 1.1rem 3rem; color: var(--suave); font-size: .2rem; border-top: 1px solid var(--linha); }
+  footer { max-width: 640px; margin: 2rem auto 0; padding: 1rem 1.1rem 3rem; color: var(--suave); font-size: .85rem; border-top: 1px solid var(--linha); }
   footer a { color: var(--acao); }
   h2 { margin: 1.6rem 0 .4rem; }
+  .cartao[aria-disabled="true"] { opacity: .6; }
+  .erro { color: var(--contra); font-weight: 700; margin: 0; }
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -103,12 +102,20 @@ const URL_PAGINA = "https://colinha.app.br/bancada.html";
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-const meta = await (await fetch("data/meta.json", { cache: "no-store" })).json();
-const carimbo = (meta.gerado_em || "").replace(/\D/g, "").slice(0, 14);
-const [teses, partidos] = await Promise.all([
-  fetch(`data/teses.json?v=${carimbo}`).then((r) => r.json()).then((j) => j.teses),
-  fetch(`data/partidos.json?v=${carimbo}`).then((r) => r.json()),
-]);
+let teses, partidos;
+try {
+  const meta = await (await fetch("data/meta.json", { cache: "no-store" })).json();
+  const carimbo = (meta.gerado_em || "").replace(/\D/g, "").slice(0, 14);
+  [teses, partidos] = await Promise.all([
+    fetch(`data/teses.json?v=${carimbo}`).then((r) => r.json()).then((j) => j.teses),
+    fetch(`data/partidos.json?v=${carimbo}`).then((r) => r.json()),
+  ]);
+} catch {
+  $("cartoes").innerHTML = `<p class="erro" role="alert">Não consegui carregar as pautas. Verifique a conexão.</p>
+    <button class="secundario" type="button" onclick="location.reload()">Tentar de novo</button>`;
+  $("contador").textContent = "";
+  throw new Error("dados indisponíveis");
+}
 
 const escolhidas = new Set();
 
@@ -126,6 +133,10 @@ function desenharCartoes() {
 function atualizarContador() {
   $("contador").textContent = `${escolhidas.size} de ${LIMITE}`;
   $("confirmar").disabled = escolhidas.size !== LIMITE;
+  const cheio = escolhidas.size === LIMITE;
+  for (const c of $("cartoes").querySelectorAll(".cartao:not(.marcado)")) {
+    if (cheio) c.setAttribute("aria-disabled", "true"); else c.removeAttribute("aria-disabled");
+  }
 }
 
 $("cartoes").addEventListener("click", (ev) => {

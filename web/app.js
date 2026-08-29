@@ -28,6 +28,20 @@ const VAGAS = { senador: 2 };
 const vagas = (cargo) => VAGAS[cargo] || 1;
 
 const CHAVE_FAVORITOS = "colinha:favoritos";
+const CHAVE_UF = "colinha:uf";
+// Hashes dos resultados gerados NESTE aparelho: abrir o próprio link em outra
+// aba (ou depois de fechar o navegador) não passa pela tela "É o seu?".
+const CHAVE_MEUS = "colinha:meus";
+const lerMeus = () => { try { return JSON.parse(localStorage.getItem(CHAVE_MEUS) || "[]"); } catch { return []; } };
+function guardarMeu(hash) {
+  const meus = lerMeus().filter((h) => h !== hash);
+  // ponytail: uma entrada por sessão (modo/versão/UF) — cada resposta muda o
+  // hash, e sem isto um quiz de 34 respostas expulsava os 20 anteriores.
+  const sessao = hash.split("/").slice(0, 4).join("/");
+  if (meus.length && meus[meus.length - 1].startsWith(sessao + "/")) meus.pop();
+  meus.push(hash);
+  try { localStorage.setItem(CHAVE_MEUS, JSON.stringify(meus.slice(-20))); } catch { /* sem storage */ }
+}
 function lerFavoritos() {
   try { return new Set(JSON.parse(localStorage.getItem(CHAVE_FAVORITOS) || "[]")); }
   catch { return new Set(); }
@@ -41,6 +55,8 @@ const estado = {
   teses: [],
   partidos: {},     // sigla -> {tese_id: posição da bancada}
   respostas: {},
+  // Peso marcado ANTES de responder, por tese: sobrevive a Pular/Voltar.
+  rascunhoImportante: {},
   indice: 0,
   // Carregados juntos e trocados de uma vez só: se `uf` e `porCargo` puderem
   // descolar, a colinha carimba a UF de um estado sobre o número de outro.
@@ -254,6 +270,7 @@ function salvarNaURL() {
     .join("");
   history.replaceState(
     null, "", `#/${{ rapido: "q", colinha: "c" }[estado.modo] || "r"}/${estado.versaoTeses}/${estado.uf}/${respostas}/${ids}`);
+  if (respondidas() > 0) guardarMeu(location.hash);
 }
 
 function lerDaURL() {
@@ -321,7 +338,7 @@ function lerDaURL() {
  *  velho. */
 function zerarSessao() {
   Object.assign(estado, {
-    uf: null, respostas: {}, indice: 0, escolhas: {},
+    uf: null, respostas: {}, rascunhoImportante: {}, indice: 0, escolhas: {},
     dados: { uf: null, porCargo: {}, falhas: {} },
     cargoAtivo: null, busca: "", limite: POR_PAGINA,
   });
@@ -336,6 +353,10 @@ function telaInicio(motivo = "", modo = "completo") {
   const sel = node.getElementById("uf");
   sel.append(new Option("Selecione…", ""));
   UFS.forEach((uf) => sel.append(new Option(uf, uf)));
+  try {
+    const salva = localStorage.getItem(CHAVE_UF);
+    if (UFS.includes(salva)) sel.value = salva;
+  } catch { /* sem storage */ }
 
   const erro = node.getElementById("erro-uf");
   // Link recusado (outra versão do questionário, hash corrompida) era
@@ -369,6 +390,7 @@ function telaInicio(motivo = "", modo = "completo") {
     ev.target.disabled = true;
     ev.target.textContent = "Carregando candidatos…";
     estado.uf = sel.value;
+    try { localStorage.setItem(CHAVE_UF, sel.value); } catch { /* sem storage */ }
     await carregarCandidatos();
     // Engolir a falha aqui fazia o eleitor responder 34 afirmações para só
     // então descobrir que não havia candidato nenhum para comparar.
@@ -442,11 +464,12 @@ function telaQuiz() {
 
   const check = node.querySelector(".importante input");
   const anterior = estado.respostas[tese.id];
-  check.checked = anterior?.importante || false;
+  check.checked = anterior?.importante || estado.rascunhoImportante[tese.id] || false;
   // Gravar no próprio change: antes o peso só era lido no clique da resposta,
   // então marcar "muito importante" depois de responder — ou antes de usar
   // Voltar/Pular — não surtia efeito nenhum.
   check.onchange = () => {
+    estado.rascunhoImportante[tese.id] = check.checked;
     const r = estado.respostas[tese.id];
     if (r) {
       r.importante = check.checked;
@@ -594,7 +617,8 @@ function telaResultado({ rolar = true } = {}) {
   for (const [cargo] of CARGOS) {
     if (!estado.dados.porCargo[cargo]?.length) continue;
     const b = document.createElement("button");
-    b.textContent = rotuloComUF(cargo);
+    b.dataset.cargo = cargo;
+    b.textContent = rotuloAba(cargo);
     b.className = cargo === estado.cargoAtivo ? "aba ativa" : "aba";
     b.setAttribute("aria-current", cargo === estado.cargoAtivo ? "true" : "false");
     if (cargo === estado.cargoAtivo) abaAtiva = b;
@@ -649,6 +673,7 @@ function telaResultado({ rolar = true } = {}) {
   const mais = node.getElementById("mais");
   const rodape = node.getElementById("rodape-fonte");
   const avisos = node.getElementById("avisos-lista");
+  const legendaHerdada = node.getElementById("legenda-herdada");
 
   function renderLista() {
     if (!estado.cargoAtivo) {
@@ -658,7 +683,8 @@ function telaResultado({ rolar = true } = {}) {
       avisos.replaceChildren();
       mais.hidden = true;
       campo.disabled = true;
-      rodape.textContent = idadeDaFonte();
+      legendaHerdada.hidden = true;
+      rodape.innerHTML = idadeDaFonte();
       return;
     }
     const universo = estado.dados.porCargo[estado.cargoAtivo] || [];
@@ -735,7 +761,11 @@ function telaResultado({ rolar = true } = {}) {
     }
 
     lista.replaceChildren();
-    visiveis.slice(0, estado.limite).forEach((r) => lista.append(itemCandidato(r, porPartido)));
+    const pagina = visiveis.slice(0, estado.limite);
+    pagina.forEach((r) => lista.append(itemCandidato(r, porPartido)));
+    // A explicação do "≈" fica uma vez, acima da lista, e só quando há card
+    // com posição herdada — não repetida em cada card.
+    legendaHerdada.hidden = !pagina.some((r) => soPosicaoDoPartido(r.detalhe));
 
     const restam = visiveis.length - estado.limite;
     mais.hidden = restam <= 0;
@@ -752,10 +782,10 @@ function telaResultado({ rolar = true } = {}) {
     // foi o eleitor.
     const semRegistroAlgum = universo.filter((c) => [...c.src].every((s) => s === "?")).length;
     const semTeseEmComum = universo.length - completo.length - semRegistroAlgum;
-    rodape.textContent = [
+    const contagens = [
       alvo
         ? `${visiveis.length} de ${universo.length} candidatos a ` +
-          `${rotuloComUF(estado.cargoAtivo)} para “${estado.busca}”.`
+          `${rotuloComUF(estado.cargoAtivo)} para “${esc(estado.busca)}”.`
         : visiveis.length > estado.limite
           ? `Mostrando ${estado.limite} de ${universo.length} candidatos a ${rotuloComUF(estado.cargoAtivo)}.`
           : `${universo.length} candidatos a ${rotuloComUF(estado.cargoAtivo)}.`,
@@ -765,14 +795,16 @@ function telaResultado({ rolar = true } = {}) {
       semTeseEmComum > 0 && !montando
         ? `${semTeseEmComum} não puderam ser comparados com as afirmações que você respondeu.`
         : "",
-      idadeDaFonte(),
     ].filter(Boolean).join(" ");
+    rodape.innerHTML = [contagens, idadeDaFonte()].filter(Boolean)
+      .map((t) => `<span>${t}</span>`).join("");
 
     if (alvo) anunciar(`${visiveis.length} candidatos encontrados.`);
   }
 
   renderLista();
   node.getElementById("ver-colinha").onclick = telaColinha;
+  node.getElementById("barra-colinha").onclick = telaColinha;
   atualizarBotaoColinha(node);
   const base = `${location.origin}${location.pathname}`;
   node.getElementById("mandar-quiz").onclick = () =>
@@ -851,10 +883,14 @@ function idadeDaFonte() {
   if (!iso) return "";
   const dias = (Date.now() - new Date(iso)) / 86400000;
   const data = new Date(iso).toLocaleDateString("pt-BR");
-  return dias > 7
-    ? `Lista de candidatos do TSE de ${data} — pode estar desatualizada; confira no site do TSE.`
-    : `Lista de candidatos do TSE de ${data}.`;
+  const link = `<a href="https://divulgacandcontas.tse.jus.br/" target="_blank" rel="noopener">consultar no TSE</a>`;
+  return `Lista de candidatos do TSE de <b>${data}</b>` +
+    (dias > 7 ? ` — pode estar desatualizada; ${link}.` : ` · ${link}.`);
 }
+
+/** Rótulo da aba: cargo + ✓ quando já há escolha para ele. */
+const rotuloAba = (cargo) =>
+  rotuloComUF(cargo) + (idsEscolhidos(cargo).length ? " ✓" : "");
 
 function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPartido = {}) {
   const li = document.createElement("li");
@@ -937,7 +973,8 @@ function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPar
 
   const det = document.createElement("details");
   det.className = "quebra";
-  det.innerHTML = `<summary>Por que ${pct(score ?? 0)}? (${temas} temas)</summary>`;
+  const concordam = detalhe.filter((d) => d.concorda).length;
+  det.innerHTML = `<summary>Concordam em ${concordam} de ${temas} temas respondidos — ver quais</summary>`;
   det.append(quebraPorTese(detalhe, candidato.p, candidato));
 
   const marcarFixar = (b, on) => {
@@ -1232,6 +1269,15 @@ function atualizarBotaoColinha(raiz = document) {
   b.textContent = n ? `Ver minha colinha (${n})` : "Ver minha colinha";
   b.classList.toggle("secundario", !n);
   b.classList.toggle("primario", n > 0);
+  // Barra fixa do celular e ✓ nas abas: "N de M cargos" sobre o que carregou.
+  const cargos = Object.keys(estado.dados.porCargo);
+  const comEscolha = cargos.filter((c) => idsEscolhidos(c).length).length;
+  const barra = raiz.getElementById ? raiz.getElementById("barra-colinha") : raiz.querySelector("#barra-colinha");
+  if (barra) {
+    barra.hidden = !cargos.length;
+    barra.textContent = `Colinha: ${comEscolha} de ${cargos.length} cargos · Ver`;
+  }
+  raiz.querySelectorAll(".aba[data-cargo]").forEach((a) => { a.textContent = rotuloAba(a.dataset.cargo); });
 }
 
 function telaColinha() {
@@ -1329,6 +1375,29 @@ function telaColinha() {
     };
   }
 
+  // Cargo carregado e ainda sem escolha entra como linha vazia, com atalho
+  // para a aba certa: a colinha diz o que falta, não só o que já tem.
+  for (const [cargo] of CARGOS) {
+    if (!estado.dados.porCargo[cargo] || idsEscolhidos(cargo).length) continue;
+    const linha = document.createElement("div");
+    linha.className = "linha-colinha vazia";
+    const txt = document.createElement("div");
+    txt.className = "txt";
+    txt.innerHTML = `<span class="cargo">${rotuloComUF(cargo)}</span><span class="nome">ainda não escolhido</span>`;
+    const escolher = document.createElement("button");
+    escolher.className = "secundario";
+    escolher.textContent = "Escolher";
+    escolher.setAttribute("aria-label", `Escolher ${rotuloComUF(cargo)}`);
+    escolher.onclick = () => {
+      estado.cargoAtivo = cargo;
+      estado.busca = "";
+      estado.limite = POR_PAGINA;
+      telaResultado();
+    };
+    linha.append(txt, escolher);
+    cartao.append(linha);
+  }
+
   const aviso = node.getElementById("colinha-perdidos");
   if (perdidos.length || orfas.length) {
     aviso.hidden = false;
@@ -1398,7 +1467,17 @@ function telaChegada() {
     estado.uf = uf;
     estado.modo = modo;
     history.replaceState(null, "", location.pathname + "#/comecar");
-    carregarCandidatos().then(() => telaQuiz());
+    carregarCandidatos().then(() => {
+      if (Object.keys(estado.dados.porCargo).length) return telaQuiz();
+      const topo = document.getElementById("chegada-topo");
+      if (!topo) return;
+      topo.textContent = "Não consegui carregar os candidatos. Verifique sua conexão e tente de novo.";
+      const tentar = document.createElement("button");
+      tentar.className = "secundario";
+      tentar.textContent = "Tentar de novo";
+      tentar.onclick = () => document.getElementById("chegada-meu")?.click();
+      topo.append(document.createElement("br"), tentar);
+    });
   };
   node.getElementById("chegada-ver").onclick = () => { marcarMeu(); telaResultado(); };
   mostrar(node);
@@ -1487,7 +1566,10 @@ async function rotear() {
   // ser de um amigo ou o dele mesmo em outra aba. Perguntar antes de abrir —
   // inclusive quando é um quiz pela metade, que antes retomava como se fosse
   // do eleitor.
-  if (!ehMeu() && respondidas() > 0) return telaChegada();
+  if (!ehMeu() && respondidas() > 0) {
+    if (!lerMeus().includes(location.hash)) return telaChegada();
+    marcarMeu();
+  }
   if (estado.indice < estado.teses.length && respondidas() < 5) return telaQuiz();
   telaResultado();
 }
@@ -1512,8 +1594,13 @@ async function rotear() {
     // lia. 23 KB.
     estado.partidos = await carregarJSON("data/partidos.json").catch(() => ({}));
   } catch (e) {
-    app.innerHTML = `<p class="erro">Não consegui carregar as perguntas (${e.message}).
+    app.innerHTML = `<p class="erro">Não consegui carregar as perguntas (${esc(e.message)}).
       Recarregue a página; se persistir, os dados do site podem estar sendo publicados.</p>`;
+    const tentar = document.createElement("button");
+    tentar.className = "secundario";
+    tentar.textContent = "Tentar de novo";
+    tentar.onclick = () => location.reload();
+    app.append(tentar);
     return;
   }
 
