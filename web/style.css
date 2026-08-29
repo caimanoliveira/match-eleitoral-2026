@@ -18,8 +18,16 @@
   --nao: var(--contra);
   --campo: var(--veu);
 
-  --raio: 16px;
-  --raio-sm: 8px;
+  /* Editorial (rodada Nexo, 29/08): cantos quase retos, regra fina no lugar
+     de sombra, e a slab nos títulos. Pílula fica só em botão e campo. */
+  --raio: 8px;
+  --raio-sm: 4px;
+  --display: "Zilla Slab", "Roboto Slab", Georgia, serif;
+  /* Blocos ilustrativos chapados: cor sólida sob pictograma. São ilustração,
+     não interface — por isso vivem fora da regra "uma cor saturada". */
+  --bloco-1: #0B4A36;
+  --bloco-2: #5E4B8B;
+  --bloco-3: #2A7F84;
   --raio-pill: 999px;
   --sombra-1: 0 1px 2px rgb(20 32 27 / .06), 0 4px 12px rgb(20 32 27 / .05);
   --sombra-2: 0 2px 4px rgb(20 32 27 / .08), 0 12px 32px rgb(20 32 27 / .10);
@@ -70,7 +78,10 @@ header {
 
 main { max-width: 680px; margin: 0 auto; padding: 1.4rem 1.1rem 4rem; }
 
-h1 { font-size: 1.85rem; line-height: 1.2; letter-spacing: -.02em; margin: .2rem 0 .8rem; }
+h1 { font: 700 clamp(1.8rem, 5vw, 2.3rem)/1.15 var(--display); letter-spacing: -.01em; margin: .2rem 0 .8rem; text-wrap: balance; }
+h2 { font: 700 1.35rem/1.2 var(--display); letter-spacing: -.005em; }
+/* A barra à esquerda do título é a assinatura do Nexo — pedida pelo briefing. */
+h1 { border-left: 4px solid var(--acao); padding-left: .7rem; }
 h1 em { color: var(--acento); font-style: normal; }
 .lead { color: var(--suave); margin: 0 0 1.6rem; }
 
@@ -139,7 +150,7 @@ select {
 }
 .contador { font-size: .82rem; color: var(--suave); margin: .6rem 0 1.6rem; }
 
-.tese { font-size: 1.45rem; line-height: 1.32; letter-spacing: -.015em; margin: 0 0 1rem; }
+.tese { font: 700 clamp(1.5rem, 4.6vw, 1.85rem)/1.25 var(--display); letter-spacing: -.005em; margin: 0 0 1rem; text-wrap: balance; }
 
 .contexto { margin-bottom: 1.8rem; }
 .contexto summary { font-size: .88rem; color: var(--acento); cursor: pointer; }
@@ -503,16 +514,16 @@ h1:focus-visible, h2:focus-visible { outline: none; }
 
 /* ------------------------------------------------------------------ landing */
 
-.landing h1 { font-size: clamp(1.9rem, 6vw, 2.5rem); margin-bottom: 1rem; }
+.landing h1 { margin-bottom: 1rem; }
 .landing .lead { font-size: 1.08rem; margin-bottom: 1.6rem; }
 
 .eyebrow {
   margin: 0 0 .9rem;
-  font-size: .78rem;
-  font-weight: 600;
-  letter-spacing: .08em;
+  font-size: .74rem;
+  font-weight: 800;
+  letter-spacing: .1em;
   text-transform: uppercase;
-  color: var(--suave);
+  color: var(--acao);
 }
 
 /* O CTA é um link com cara de botão: a rota é "#/comecar", e link é o que
@@ -584,7 +595,7 @@ a.cta {
 }
 .fatos dd { margin: 0; font-size: .85rem; color: var(--suave); line-height: 1.4; }
 
-.honesto h2 { font-size: 1.1rem; margin: 0 0 .6rem; }
+.honesto h2 { font-size: 1.2rem; margin: 0 0 .6rem; }
 .honesto p { color: var(--suave); font-size: .95rem; margin: 0 0 .8rem; }
 .honesto a { color: var(--acento); }
 
@@ -635,10 +646,8 @@ main:has(.landing)::before {
 @media (min-width: 40rem) { .hero { grid-template-columns: 1.3fr 1fr; gap: 2rem; } }
 
 .display {
-  font-size: clamp(2.2rem, 7vw, 3.4rem);
-  font-weight: 800;
-  letter-spacing: -.03em;
-  line-height: 1.05;
+  font: 700 clamp(2.3rem, 7vw, 3.6rem)/1.05 var(--display);
+  letter-spacing: -.015em;
   text-wrap: balance;
   margin: 0 0 1rem;
 }
@@ -649,6 +658,10 @@ main:has(.landing)::before {
    o eleitor, tela à esquerda, teclado 3x4 à direita com BRANCO, CORRIGE e
    CONFIRMA. É o objeto em que ele digita o número da colinha — a ilustração
    ensina o produto. Só transform anima; nada de layout. ---- */
+.hero-bloco { background: var(--bloco-1); border-radius: var(--raio-sm); padding: 1.2rem 0 .2rem; display: grid; place-items: center; overflow: hidden; }
+/* A urna em 3D é mais larga que sua caixa; encolhe e desloca para caber no
+   bloco em vez de vazar pela direita. */
+.hero-bloco .urna { transform: translateX(-12px) scale(.82); transform-origin: center; }
 .urna {
   --ue-cinza: #D9DCD6;
   --ue-cinza-escuro: #B9BEB6;
@@ -774,10 +787,10 @@ main:has(.landing)::before {
 
 /* ---- cartões sem borda ---- */
 .candidato, #cartao, .porque, .linha-colinha { border-color: transparent; }
-.candidato, #cartao { background: var(--superficie); box-shadow: var(--sombra-1); transition: box-shadow var(--rapido) var(--ease), transform var(--rapido) var(--ease); }
+.candidato, #cartao { background: var(--superficie); border: 1px solid var(--linha); transition: border-color var(--rapido) var(--ease); }
 .linha-colinha { border-bottom-color: var(--linha); }
 .como li::before { background: var(--acao-suave); color: var(--acao); border-color: transparent; font-weight: 800; }
-.fatos dt { color: var(--acao); }
+.fatos dt { color: var(--tinta); font-family: var(--display); font-weight: 700; }
 
 /* ---- hover só onde existe ponteiro fino ---- */
 @media (hover: hover) and (pointer: fine) {
@@ -817,8 +830,8 @@ button:disabled { opacity: .55; }
 .marca i { font-style: italic; font-weight: 500; color: var(--acao); }
 
 /* ---- bloco cívico: chamada para votar, sem virar cartaz ---- */
-.civico { margin: 0 0 2.2rem; padding: 1.4rem 1.5rem; border-radius: var(--raio); background: var(--veu); }
-.civico h2 { font-size: 1.2rem; margin: 0 0 .6rem; letter-spacing: -.015em; }
+.civico { margin: 0 0 2.2rem; padding: 1.2rem 0 0; border-top: 4px solid var(--acao); }
+.civico h2 { margin: 0 0 .6rem; }
 .civico p { margin: 0 0 1rem; font-size: .98rem; }
 .civico-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: .7rem; }
 .civico-lista li { font-size: .92rem; line-height: 1.5; color: var(--suave); padding-left: 1.1rem; position: relative; }
@@ -845,11 +858,20 @@ button:disabled { opacity: .55; }
 
 /* ------------------------------------------------------------------- jogos */
 .jogos { margin: 2.4rem 0 1.6rem; }
-.jogos h2 { font-size: 1.35rem; letter-spacing: -.015em; margin: 0 0 .2rem; }
+.jogos h2 { margin: 0 0 .2rem; }
 .jogos .lead { margin-bottom: 1rem; }
 .jogos-lista { display: grid; gap: .6rem; }
 @media (min-width: 40rem) { .jogos-lista { grid-template-columns: repeat(3, 1fr); } }
-.jogo { display: block; padding: 1rem; border-radius: var(--raio); background: var(--superficie); box-shadow: var(--sombra-1); color: inherit; text-decoration: none; transition: transform var(--rapido) var(--ease), box-shadow var(--rapido) var(--ease); }
-.jogo:hover { transform: translateY(-2px); box-shadow: var(--sombra-2); }
-.jogo b { display: block; color: var(--acao); margin-bottom: .25rem; }
-.jogo span { font-size: .88rem; color: var(--suave); line-height: 1.45; }
+/* Card de jogo = bloco chapado com pictograma em cima, texto embaixo, como
+   a capa de matéria do Nexo. O bloco é a ilustração. */
+.jogo { display: block; color: inherit; text-decoration: none; border-top: 1px solid var(--linha); padding-top: .9rem; }
+.jogo .bloco { display: grid; place-items: center; aspect-ratio: 16 / 10; border-radius: var(--raio-sm); margin-bottom: .8rem; color: #fff; overflow: hidden; transition: transform var(--normal) var(--ease); }
+.jogo .bloco svg { width: 56%; height: auto; }
+.jogo:hover .bloco svg { transform: translateY(-3px); }
+.jogo .bloco svg { transition: transform var(--normal) var(--ease); }
+.jogo:nth-child(1) .bloco { background: var(--bloco-1); }
+.jogo:nth-child(2) .bloco { background: var(--bloco-2); }
+.jogo:nth-child(3) .bloco { background: var(--bloco-3); }
+.jogo b { display: block; font: 700 1.2rem/1.2 var(--display); margin-bottom: .3rem; }
+.jogo span { font-size: .9rem; color: var(--suave); line-height: 1.45; }
+.jogos h2 { border-left: 4px solid var(--acao); padding-left: .7rem; }

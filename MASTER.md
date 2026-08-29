@@ -42,6 +42,16 @@ Regras:
 
 ## Tipografia
 
+**Rodada editorial (29/08/2026, referência Nexo Jornal).** Títulos passam a
+**Zilla Slab 700** (`--display`): h1, h2, `.display`, a afirmação do quiz
+(`.tese`), títulos dos jogos e os números de `.fatos`. Manrope continua no
+corpo, botões e rótulos. Todo h1 leva a barra de 4px `--acao` à esquerda —
+assinatura do Nexo, pedida no briefing. Cartões trocam sombra por regra de
+1px `--linha`; `--raio` cai para 8px (pílula só em botão e campo). Blocos
+ilustrativos chapados (`--bloco-1/2/3`: verde-escuro, roxo, petróleo) sob
+pictogramas SVG — são ilustração, ficam fora da regra "uma cor saturada".
+
+
 Manrope (Google Fonts), pesos 500/700/800. Fallback: `system-ui, sans-serif`.
 Números tabulares em qualquer coluna de dígitos (`font-variant-numeric`).
 Mono para número de urna e ids: `ui-monospace, SFMono-Regular, Menlo`.
