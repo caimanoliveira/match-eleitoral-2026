@@ -206,6 +206,7 @@ function calcular() {
 const ROTULO = { passa: ["Passa", "passa"], nao: ["Não passa", "nao-passa"], apertado: ["Apertado", ""] };
 
 function mostrar() {
+  window.medir && medir("jogo_fim", { jogo: "bancada" });
   const r = calcular();
   const passam = r.porTese.filter((p) => p.status === "passa").length;
   $("placar").textContent = `${passam} de ${LIMITE} pautas passariam`;

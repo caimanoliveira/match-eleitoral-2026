@@ -315,6 +315,7 @@ def main() -> None:
                     "id": t["id"],
                     "texto": t["texto"],
                     "contexto": t.get("contexto", ""),
+                    "simples": t.get("simples", ""),
                     "esfera": t["esfera"],
                     "eixo": t["eixo"],
                     "fontes": [

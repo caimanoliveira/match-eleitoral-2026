@@ -218,6 +218,7 @@ function resultado() {
     rank.slice(-2).reverse().forEach((r) => ul2.append(linha(r, 34)));
     box.append(h2, ul2);
   }
+  window.medir && medir("jogo_fim", { jogo: "qual-partido" });
   mostrar("fim");
 }
 

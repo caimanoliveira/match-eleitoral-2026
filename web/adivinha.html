@@ -230,6 +230,7 @@ function frase(n) {
 }
 
 function fim() {
+  window.medir && medir("jogo_fim", { jogo: "adivinha" });
   elRodada.textContent = "Fim";
   const n = rodadas.length;
   const texto = `Acertei ${acertos}/${n} no Adivinha como votou. Você sabe como seu partido vota?`;

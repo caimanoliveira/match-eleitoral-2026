@@ -473,6 +473,11 @@ function telaQuiz() {
   node.querySelector(".contador").textContent =
     `Afirmação ${estado.indice + 1} de ${teses.length}`;
   node.querySelector(".tese").textContent = tese.texto;
+  // Em palavras simples, sempre visível: quem entende tudo já sabe em quem
+  // vota; o site existe para quem não entende ainda.
+  const simples = node.querySelector(".simples");
+  simples.textContent = tese.simples || "";
+  simples.hidden = !tese.simples;
 
   const ctx = node.querySelector(".contexto");
   if (tese.contexto) ctx.querySelector("p").textContent = tese.contexto;
@@ -527,7 +532,8 @@ function telaQuiz() {
   const pular = node.getElementById("pular");
   // "Pular" apagava em silêncio uma resposta já dada. Se há resposta, o botão
   // só avança.
-  pular.textContent = anterior && anterior.valor !== PULOU ? "Avançar" : "Pular esta";
+  pular.textContent = anterior && anterior.valor !== PULOU ? "Avançar" : "Não sei / pular";
+  pular.setAttribute("aria-pressed", String(!!anterior && anterior.valor === PULOU));
   pular.onclick = () => {
     if (!anterior || anterior.valor === PULOU) {
       estado.respostas[tese.id] = { valor: PULOU, importante: false };
@@ -555,7 +561,7 @@ function telaQuiz() {
       telaQuiz();
       return true;
     }
-    if (ev.key === "ArrowRight") {
+    if (ev.key === "4" || ev.key === "ArrowRight") {
       document.getElementById("pular")?.click();
       return true;
     }

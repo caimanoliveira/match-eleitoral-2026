@@ -965,3 +965,6 @@ main:has(.landing) { max-width: none; padding: 0; }
 .bussola-hero .b-logo-caixa { stroke: none; }
 .voltar-topo { display: inline-block; margin: 0 0 .6rem; font-size: .9rem; font-weight: 600; color: var(--suave); text-decoration: none; min-height: 44px; line-height: 44px; }
 .voltar-topo:hover { color: var(--tinta); }
+.simples { margin: -.3rem 0 .9rem; font-size: 1rem; line-height: 1.5; color: var(--suave); }
+.resp.naosei { color: var(--suave); font-weight: 500; }
+.resp.naosei[aria-pressed="true"] { border-color: var(--tinta); color: var(--tinta); }
