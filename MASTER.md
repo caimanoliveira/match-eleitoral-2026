@@ -40,19 +40,20 @@ Nenhuma outra cor saturada existe.
 
 ## Tipografia
 
-**Inter** (400/600/700/800) com `font-feature-settings: "cv11","ss01","tnum"`.
-Fallback `system-ui`. Mono: JetBrains Mono 700/800 para número de urna.
+**IBM Plex Sans** (400/500/600/700) com `font-feature-settings: "tnum"`.
+Fallback `system-ui`. Mono: IBM Plex Mono 600/700 para número de urna.
+(Inter foi descartada: cara de template; Plex tem o mesmo rigor de dado com voz própria.)
 
 | Papel | Tamanho | Peso | Tracking |
 |---|---|---|---|
-| display (hero) | `clamp(2.4rem, 6.5vw, 4rem)` / 1.0 | 800 | −0.04em |
-| h1 | `clamp(1.7rem, 4.6vw, 2.2rem)` / 1.1 | 800 | −0.03em |
-| h2 | `1.25rem` | 800 | −0.02em |
+| display (hero) | `clamp(2.4rem, 6.5vw, 4rem)` / 1.0 | 700 | −0.04em |
+| h1 | `clamp(1.7rem, 4.6vw, 2.2rem)` / 1.1 | 700 | −0.03em |
+| h2 | `1.25rem` | 700 | −0.02em |
 | afirmação do quiz | `clamp(1.4rem, 4.4vw, 1.75rem)` / 1.25 | 700 | −0.025em |
 | corpo | `1rem` (16px) / 1.55 | 400 | 0 |
 | rótulo | `0.7rem` | 600 | +0.12em, caixa alta, `--suave` |
-| número grande (faixa) | `2.4rem` | 800 | −0.04em, tabular |
-| número de urna | `1.7rem` mono | 800 | −0.02em |
+| número grande (faixa) | `2.4rem` | 700 | −0.04em, tabular |
+| número de urna | `1.7rem` mono | 700 | −0.02em |
 
 ## Espaço
 

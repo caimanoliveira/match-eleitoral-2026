@@ -27,8 +27,8 @@
   --raio: 6px;
   --raio-sm: 4px;
   --raio-pill: 6px;
-  --display: "Inter", system-ui, sans-serif;
-  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --display: "IBM Plex Sans", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --sombra-1: none;
   --sombra-2: 0 1px 2px rgb(0 0 0 / .06), 0 8px 24px rgb(0 0 0 / .08);
   --sombra-cta: none;
@@ -55,8 +55,8 @@ body {
   margin: 0;
   background: var(--papel);
   color: var(--tinta);
-  font: 400 16px/1.55 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  font-feature-settings: "cv11", "ss01", "tnum";
+  font: 400 16px/1.55 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-feature-settings: "tnum";
   -webkit-text-size-adjust: 100%;
 }
 
@@ -79,8 +79,8 @@ header {
 
 main { max-width: 680px; margin: 0 auto; padding: 1.4rem 1.1rem 4rem; }
 
-h1 { font-weight: 800; font-size: clamp(1.7rem, 4.6vw, 2.2rem); line-height: 1.1; letter-spacing: -.03em; margin: .2rem 0 .8rem; text-wrap: balance; }
-h2 { font-weight: 800; font-size: 1.25rem; line-height: 1.2; letter-spacing: -.02em; }
+h1 { font-weight: 700; font-size: clamp(1.7rem, 4.6vw, 2.2rem); line-height: 1.1; letter-spacing: -.03em; margin: .2rem 0 .8rem; text-wrap: balance; }
+h2 { font-weight: 700; font-size: 1.25rem; line-height: 1.2; letter-spacing: -.02em; }
 h1 em { color: var(--acento); font-style: normal; }
 .lead { color: var(--suave); margin: 0 0 1.6rem; }
 
@@ -197,11 +197,11 @@ select {
 .b-sigla, .b-nome, .b-voce-rot, .b-destaque { paint-order: stroke; stroke: var(--campo); stroke-width: .9px; stroke-linejoin: round; }
 .b-sigla { font-size: 2.6px; font-weight: 700; fill: var(--suave); }
 .b-item { cursor: pointer; }
-.b-destaque { font-size: 3.6px; font-weight: 800; fill: var(--tinta); text-anchor: middle; pointer-events: none; }
+.b-destaque { font-size: 3.6px; font-weight: 700; fill: var(--tinta); text-anchor: middle; pointer-events: none; }
 .b-pres { stroke: var(--tinta); stroke-width: .5; }
-.b-nome { font-size: 2.9px; font-weight: 800; fill: var(--tinta); }
+.b-nome { font-size: 2.9px; font-weight: 700; fill: var(--tinta); }
 .b-voce { fill: var(--acento); stroke: var(--papel); stroke-width: 1.6; }
-.b-voce-rot { font-size: 3.4px; font-weight: 800; fill: var(--acento); text-anchor: middle; }
+.b-voce-rot { font-size: 3.4px; font-weight: 700; fill: var(--acento); text-anchor: middle; }
 /* No celular a sigla vira ruído de 7px: some, e fica o ponto com o nome no
    toque. Presidenciáveis e "você" continuam rotulados. */
 @media (max-width: 480px) { .b-rot { font-size: 4px; } }
@@ -346,7 +346,7 @@ select {
   color: var(--suave);
 }
 .linha-colinha .num {
-  font: 800 1.5rem/1.15 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 700 1.5rem/1.15 ui-monospace, SFMono-Regular, Menlo, monospace;
   margin-right: .5rem;
 }
 .linha-colinha .nome { font-weight: 600; }
@@ -519,7 +519,7 @@ h1:focus-visible, h2:focus-visible { outline: none; }
 .eyebrow {
   margin: 0 0 .9rem;
   font-size: .74rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: .1em;
   text-transform: uppercase;
   color: var(--acao);
@@ -587,7 +587,7 @@ a.cta {
    landing são números — falam nessa voz, com peso e tamanho para se
    distinguirem do corpo em Manrope. */
 .fatos dt {
-  font: 800 2.1rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 700 2.1rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
   font-variant-numeric: tabular-nums;
   letter-spacing: -.03em;
   color: var(--acao);
@@ -607,7 +607,7 @@ header {
   -webkit-backdrop-filter: blur(12px);
 }
 .marca { display: inline-flex; align-items: center; gap: .55rem; font-weight: 500; letter-spacing: -.01em; }
-.marca b { color: var(--tinta); font-weight: 800; }
+.marca b { color: var(--tinta); font-weight: 700; }
 .marca-icone { color: var(--tinta); flex: none; }
 .link-metodo { font-weight: 700; }
 
@@ -620,7 +620,7 @@ header {
   border-radius: var(--raio-pill);
   background: var(--acao);
   color: var(--acao-tinta);
-  font-weight: 800;
+  font-weight: 700;
   min-height: 56px;
   box-shadow: var(--sombra-cta);
   transition: transform var(--rapido) var(--ease), box-shadow var(--rapido) var(--ease), filter var(--rapido) var(--ease);
@@ -632,7 +632,7 @@ header {
 .aba { background: var(--veu); color: var(--tinta); border-color: transparent; font-weight: 700; }
 .aba.ativa { background: var(--tinta); color: var(--papel); }
 .busca input, select { border-radius: var(--raio-pill); border-color: transparent; background: var(--superficie); box-shadow: var(--sombra-1); }
-.fixar { background: var(--acao-suave); color: var(--acao); border-color: transparent; font-weight: 800; }
+.fixar { background: var(--acao-suave); color: var(--acao); border-color: transparent; font-weight: 700; }
 .fixar.fixado { background: var(--acao); color: var(--acao-tinta); }
 .resp { border-radius: var(--raio); background: var(--superficie); border-color: transparent; box-shadow: var(--sombra-1); font-weight: 700; }
 .resp.escolhida { background: var(--acao); color: var(--acao-tinta); }
@@ -641,7 +641,7 @@ header {
 .candidato, #cartao, .porque, .linha-colinha { border-color: transparent; }
 .candidato, #cartao { background: var(--superficie); border: 1px solid var(--linha); transition: border-color var(--rapido) var(--ease); }
 .linha-colinha { border-bottom-color: var(--linha); }
-.como li::before { background: var(--acao-suave); color: var(--acao); border-color: transparent; font-weight: 800; }
+.como li::before { background: var(--acao-suave); color: var(--acao); border-color: transparent; font-weight: 700; }
 
 /* ---- hover só onde existe ponteiro fino ---- */
 @media (hover: hover) and (pointer: fine) {
@@ -708,7 +708,7 @@ button:disabled { opacity: .55; }
 
 header { padding: .8rem 1.1rem; border-bottom: 1px solid var(--linha); background: var(--papel); backdrop-filter: none; -webkit-backdrop-filter: none; }
 .marca { gap: .5rem; font-size: 1.05rem; }
-.marca b { font-weight: 800; letter-spacing: -.03em; }
+.marca b { font-weight: 700; letter-spacing: -.03em; }
 .marca i { color: var(--suave); font-style: normal; font-weight: 500; }
 .link-metodo { font-weight: 600; font-size: .85rem; color: var(--tinta); }
 
@@ -747,7 +747,7 @@ main:has(.landing) { max-width: none; padding: 0; }
 .hero { max-width: 1040px; margin: 0 auto; padding: 2.5rem 1.1rem 2.2rem; display: grid; gap: 2rem; align-items: center; grid-template-columns: 1fr; }
 @media (min-width: 48rem) { .hero { grid-template-columns: 1.05fr 1fr; gap: 3rem; padding: 3.5rem 1.1rem 3rem; } }
 .hero .rotulo { color: var(--preto-suave); }
-.display { font-weight: 800; font-size: clamp(2.4rem, 6.5vw, 4rem); line-height: 1.0; letter-spacing: -.04em; text-wrap: balance; margin: 0 0 1rem; }
+.display { font-weight: 700; font-size: clamp(2.4rem, 6.5vw, 4rem); line-height: 1.0; letter-spacing: -.04em; text-wrap: balance; margin: 0 0 1rem; }
 .display em { color: var(--acao-escuro); font-style: normal; }
 .hero .lead { color: var(--preto-suave); font-size: 1.08rem; max-width: 34rem; margin-bottom: 1.4rem; }
 .hero .ctas { display: flex; flex-wrap: wrap; gap: .6rem; }
@@ -781,7 +781,7 @@ main:has(.landing) { max-width: none; padding: 0; }
 .como li { display: block; border-top: 1px solid var(--tinta); padding-top: .9rem; }
 .como li::before { content: none; }
 .como .n { display: block; font-size: .72rem; font-weight: 600; letter-spacing: .1em; color: var(--suave); margin-bottom: 1.2rem; font-variant-numeric: tabular-nums; }
-.como strong { display: block; font-size: 1.15rem; font-weight: 800; letter-spacing: -.02em; margin-bottom: .35rem; }
+.como strong { display: block; font-size: 1.15rem; font-weight: 700; letter-spacing: -.02em; margin-bottom: .35rem; }
 .como span { color: var(--suave); font-size: .95rem; line-height: 1.5; }
 
 .jogos { padding-top: 2.4rem; padding-bottom: .4rem; }
@@ -793,14 +793,14 @@ main:has(.landing) { max-width: none; padding: 0; }
 .jogo .bloco { display: grid; place-items: center; width: 40px; height: 40px; border-radius: var(--raio); background: var(--veu); color: var(--tinta); }
 .jogo .bloco svg { width: 22px; height: 22px; }
 .jogo .bloco svg rect[fill] { fill: var(--veu); }
-.jogo b { display: block; font-weight: 800; letter-spacing: -.02em; font-size: 1rem; margin-bottom: .15rem; }
+.jogo b { display: block; font-weight: 700; letter-spacing: -.02em; font-size: 1rem; margin-bottom: .15rem; }
 .jogo .txt { display: block; min-width: 0; }
 .jogo .txt span { display: block; font-size: .88rem; color: var(--suave); line-height: 1.45; }
 
 .faixa { background: var(--preto); color: var(--preto-tinta); max-width: none; padding: 0; margin-top: 2.6rem; }
 .faixa-in { max-width: 1040px; margin: 0 auto; padding: 2.2rem 1.1rem; display: grid; gap: 1.6rem; }
 @media (min-width: 40rem) { .faixa-in { grid-template-columns: repeat(3, 1fr); } }
-.faixa b { display: block; font-size: 2.4rem; font-weight: 800; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+.faixa b { display: block; font-size: 2.4rem; font-weight: 700; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums; }
 .faixa span { display: block; margin-top: .4rem; font-size: .85rem; color: var(--preto-suave); line-height: 1.4; }
 
 .honesto { padding-top: 2.4rem; padding-bottom: 3rem; display: grid; gap: 1.6rem; }
@@ -849,7 +849,7 @@ main:has(.landing) { max-width: none; padding: 0; }
 /* ---- colinha: papel, tabela, número enorme ---- */
 .linha-colinha { padding: .9rem .8rem; }
 .linha-colinha .cargo { font-size: .68rem; letter-spacing: .1em; }
-.linha-colinha .num { font: 800 1.7rem/1.1 var(--mono); letter-spacing: -.02em; }
+.linha-colinha .num { font: 700 1.7rem/1.1 var(--mono); letter-spacing: -.02em; }
 .linha-colinha .num .rot { display: none; }
 #comecar-rapido { width: 100%; margin-top: .6rem; }
 #comecar { width: 100%; }
