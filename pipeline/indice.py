@@ -44,7 +44,7 @@ def main() -> None:
                 "dep_nao": sum(b[p]["n"] for p in nao),
                 "sim": sim,
                 "nao": nao,
-                "url": f"https://www.camara.leg.br/votacoes/{vid}",
+                "url": f"https://www.camara.leg.br/propostas-legislativas/{vid.split('-')[0]}",
                 "api": f"https://dadosabertos.camara.leg.br/api/v2/votacoes/{vid}",
             }
         )

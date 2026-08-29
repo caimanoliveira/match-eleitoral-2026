@@ -47,6 +47,16 @@ function lerFavoritos() {
   catch { return new Set(); }
 }
 
+// Semente do desempate: sorteada por sessão. Fixa por candidato, o mesmo
+// nome ganharia o empate para todo eleitor do país — vantagem sistemática.
+const SEMENTE = (() => {
+  try {
+    let v = sessionStorage.getItem("colinha:semente");
+    if (!v) { v = String(Math.floor(Math.random() * 2 ** 31)); sessionStorage.setItem("colinha:semente", v); }
+    return Number(v);
+  } catch { return Math.floor(Math.random() * 2 ** 31); }
+})();
+
 const app = document.getElementById("app");
 const estado = {
   uf: null,
@@ -708,7 +718,7 @@ function telaResultado({ rolar = true } = {}) {
           .map((c) => ({ candidato: c, score: null, detalhe: [], respondidas: 0 }))
       // SEMPRE estado.teses: pos/src são posicionais sobre a lista completa.
       // Passar o subconjunto do quiz rápido desalinhava tudo (bug real).
-      : ranquear(estado.respostas, estado.teses, universo);
+      : ranquear(estado.respostas, estado.teses, universo, SEMENTE);
 
     const alvo = normalizar(estado.busca);
     let visiveis = alvo
@@ -810,6 +820,9 @@ function telaResultado({ rolar = true } = {}) {
         : "",
       semTeseEmComum > 0 && !montando
         ? `${semTeseEmComum} não puderam ser comparados com as afirmações que você respondeu.`
+        : "",
+      !montando && empatados > 1
+        ? "Empatados aparecem em ordem sorteada a cada visita — não por número nem por nome."
         : "",
     ].filter(Boolean).join(" ");
     rodape.innerHTML = [contagens, idadeDaFonte()].filter(Boolean)
@@ -1097,7 +1110,7 @@ function quebraPorTese(detalhe, sigla, candidato = {}) {
         ((() => {
           const casa = d.fonte === "2" && votouNoSenado(d.tese) ? "senado" : "camara";
           const f = (d.tese.fontes || []).find((x) => x.casa === casa) || d.tese.fontes?.[0];
-          return f ? ` · <a href="${f.url}" target="_blank" rel="noopener">ver votação</a>` : "";
+          return f ? ` · <a href="${f.url}" target="_blank" rel="noopener">ver a proposta na Câmara</a>` : "";
         })()) +
         `</em></span>`;
     }
@@ -1187,7 +1200,7 @@ function painelVisoes() {
     abas.querySelectorAll("button").forEach((b) => { const on = b.dataset.v === estado.visao; b.className = on ? "filtro ativo" : "filtro"; b.setAttribute("aria-pressed", on); });
     if (estado.visao === "mapa") { corpo.append(desenharBussola()); return; }
     const universo = estado.dados.porCargo[estado.cargoAtivo] || [];
-    const rank = ranquear(estado.respostas, estado.teses, universo);
+    const rank = ranquear(estado.respostas, estado.teses, universo, SEMENTE);
     if (!rank.length) { corpo.innerHTML = `<p class="aviso">Responda algumas afirmações para ver o radar.</p>`; return; }
     estado.radar = (estado.radar || []).filter((id) => rank.some((r) => r.candidato.id === id));
     if (!estado.radar.length) estado.radar = rank.slice(0, 3).map((r) => r.candidato.id);

@@ -147,7 +147,7 @@ function pergunta() {
   $("contexto").append(t.contexto || "");
   if (url) {
     const a = document.createElement("a");
-    a.href = url; a.target = "_blank"; a.rel = "noopener"; a.textContent = "Ver a votação";
+    a.href = url; a.target = "_blank"; a.rel = "noopener"; a.textContent = "Ver a proposta na Câmara";
     $("contexto").append(" ", a);
   }
   $("voltar").disabled = i === 0;

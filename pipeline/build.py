@@ -319,7 +319,7 @@ def main() -> None:
                     "eixo": t["eixo"],
                     "fontes": [
                         {"id": v["id"], "casa": "camara",
-                         "url": f"https://www.camara.leg.br/votacoes/{v['id']}"}
+                         "url": f"https://www.camara.leg.br/propostas-legislativas/{v['id'].split('-')[0]}"}
                         for v in t["votacoes"]
                     ] + [
                         {"id": v["id"], "casa": "senado",
