@@ -839,6 +839,8 @@ button:disabled { opacity: .55; }
 @media (min-width: 30rem) { .mandar { grid-template-columns: 1fr 1fr; } }
 /* Quiz rápido não monta colinha: some o que é da colinha. */
 .modo-rapido .fixar, .modo-rapido #ver-colinha, .modo-rapido .dica-vagas { display: none; }
+/* Montar à mão: sem mapa, sem 'continuar respondendo', sem 'mandar resultado'. */
+.modo-colinha #continuar, .modo-colinha #mandar-resultado, .modo-colinha .responder { display: none; }
 .chegada .navegacao { flex-direction: column; }
 
 /* ------------------------------------------------------------------- jogos */

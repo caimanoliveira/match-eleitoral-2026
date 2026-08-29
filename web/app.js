@@ -57,9 +57,9 @@ const estado = {
   // Camadas do mapa. No celular partidos começam desligados: 30 siglas em
   // 350px é ruído; o eleitor liga se quiser.
   mapa: { partidos: !matchMedia("(max-width: 480px)").matches, pres: true },
-  // "completo" (34 afirmações → colinha) ou "rapido" (10, só resultado).
-  // São dois produtos: o rápido nunca mostra colinha, o completo nunca fala
-  // em rodada rápida.
+  // "completo" (34 afirmações → resultado → colinha), "rapido" (10, só
+  // resultado) ou "colinha" (sem quiz: busca por nome/número e fixa). Três
+  // produtos; o rápido nunca mostra colinha, a colinha nunca mostra percentual.
   modo: "completo",
 };
 
@@ -253,14 +253,14 @@ function salvarNaURL() {
     })
     .join("");
   history.replaceState(
-    null, "", `#/${estado.modo === "rapido" ? "q" : "r"}/${estado.versaoTeses}/${estado.uf}/${respostas}/${ids}`);
+    null, "", `#/${{ rapido: "q", colinha: "c" }[estado.modo] || "r"}/${estado.versaoTeses}/${estado.uf}/${respostas}/${ids}`);
 }
 
 function lerDaURL() {
-  const m = location.hash.match(/^#\/(r|q)\/([a-f0-9]{6})\/([A-Z]{2})\/([cndxp!]*)\/(.*)$/);
+  const m = location.hash.match(/^#\/(r|q|c)\/([a-f0-9]{6})\/([A-Z]{2})\/([cndxp!]*)\/(.*)$/);
   if (!m) return false;
   const [, modoChar, versao, uf, respostas, ids] = m;
-  const modo = modoChar === "q" ? "rapido" : "completo";
+  const modo = { q: "rapido", c: "colinha" }[modoChar] || "completo";
 
   // As respostas são posicionais. Um link gerado com outro conjunto de teses
   // seria decodificado contra as perguntas erradas — e o eleitor veria um
@@ -310,7 +310,8 @@ function lerDaURL() {
     indice: semResposta === -1 ? estado.teses.length : semResposta,
     busca: "", limite: POR_PAGINA, cargoAtivo: null,
   });
-  return Object.keys(lidas).length > 0;
+  // A colinha montada à mão não tem resposta nenhuma — e é válida assim.
+  return modo === "colinha" || Object.keys(lidas).length > 0;
 }
 
 // -------------------------------------------------------------------- telas
@@ -367,7 +368,7 @@ function telaInicio(motivo = "", modo = "completo") {
       return;
     }
     estado.indice = 0;
-    telaQuiz();
+    if (estado.modo === "colinha") telaResultado(); else telaQuiz();
   };
   mostrar(node);
 }
@@ -514,13 +515,21 @@ function telaQuiz() {
 function telaResultado({ rolar = true } = {}) {
   salvarNaURL();
   const node = tpl("tpl-resultado");
-  node.getElementById("bussola").append(desenharBussola());
+  const montando = estado.modo === "colinha";
+  node.querySelector(".resultado").classList.toggle("modo-colinha", montando);
+  if (!montando) node.getElementById("bussola").append(desenharBussola());
 
   const teses = tesesDoEleitor();
   const faltam = teses.length - respondidas();
   const cabecalho = node.querySelector("h1");
   const rapido = estado.modo === "rapido";
   node.querySelector(".resultado").classList.toggle("modo-rapido", rapido);
+  if (montando) {
+    cabecalho.textContent = "Monte sua colinha";
+    const nota = node.getElementById("nota-parcial");
+    nota.hidden = false;
+    nota.textContent = "Busque por nome ou número em cada cargo e toque em “Colocar na colinha”. Sem percentual: aqui é só a sua escolha.";
+  }
   if (rapido) {
     cabecalho.textContent = "Seus candidatos — quiz rápido";
     // O rápido não monta colinha: o convite é completar as 34 e montar.
@@ -537,7 +546,7 @@ function telaResultado({ rolar = true } = {}) {
       telaQuiz();
     };
   }
-  if (faltam > 0 && !rapido) {
+  if (faltam > 0 && !rapido && !montando) {
     cabecalho.textContent = "Seus candidatos — resultado parcial";
     const nota = node.getElementById("nota-parcial");
     nota.hidden = false;
@@ -632,7 +641,11 @@ function telaResultado({ rolar = true } = {}) {
       return;
     }
     const universo = estado.dados.porCargo[estado.cargoAtivo] || [];
-    const completo = ranquear(estado.respostas, teses, universo);
+    // Montando à mão não há percentual: ordem alfabética, e o card sem barra.
+    const completo = montando
+      ? [...universo].sort((a, b) => a.n.localeCompare(b.n, "pt-BR"))
+          .map((c) => ({ candidato: c, score: null, detalhe: [], respondidas: 0 }))
+      : ranquear(estado.respostas, teses, universo);
 
     const alvo = normalizar(estado.busca);
     let visiveis = alvo
@@ -673,7 +686,7 @@ function telaResultado({ rolar = true } = {}) {
       p.className = "aviso";
       p.textContent = `Nenhum favorito em ${rotuloComUF(estado.cargoAtivo)} ainda. Toque em ☆ nos candidatos que quiser guardar.`;
       avisos.append(p);
-    } else if (empatados > 3) {
+    } else if (empatados > 3 && !montando) {
       const aviso = document.createElement("p");
       aviso.className = "empate";
       aviso.innerHTML =
@@ -686,7 +699,9 @@ function telaResultado({ rolar = true } = {}) {
     if (!visiveis.length && !(estado.soFavoritos && !favoritosAqui)) {
       const vazio = document.createElement("p");
       vazio.className = "aviso";
-      vazio.textContent = respondidas() === 0
+      vazio.textContent = montando
+        ? `Nenhum candidato a ${rotuloComUF(estado.cargoAtivo)} com “${estado.busca}”.`
+        : respondidas() === 0
         ? `Você ainda não respondeu nenhuma afirmação, então não há como comparar ` +
           `você com ninguém. Volte e responda pelo menos algumas.`
         : alvo
@@ -723,10 +738,10 @@ function telaResultado({ rolar = true } = {}) {
         : visiveis.length > estado.limite
           ? `Mostrando ${estado.limite} de ${universo.length} candidatos a ${rotuloComUF(estado.cargoAtivo)}.`
           : `${universo.length} candidatos a ${rotuloComUF(estado.cargoAtivo)}.`,
-      semRegistroAlgum > 0
+      semRegistroAlgum > 0 && !montando
         ? `${semRegistroAlgum} não têm registro de posição sobre nenhum tema.`
         : "",
-      semTeseEmComum > 0
+      semTeseEmComum > 0 && !montando
         ? `${semTeseEmComum} não puderam ser comparados com as afirmações que você respondeu.`
         : "",
       idadeDaFonte(),
@@ -848,10 +863,11 @@ function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPar
   const barra = document.createElement("div");
   barra.className = "score";
   barra.innerHTML =
-    `<div class="score-barra"><i style="width:${pct(score)}"></i></div>` +
-    `<b>${pct(score)}</b>`;
+    `<div class="score-barra"><i style="width:${pct(score ?? 0)}"></i></div>` +
+    `<b>${pct(score ?? 0)}</b>`;
 
-  topo.append(avatar, nome, selo(candidato.p, candidato.pn), barra);
+  topo.append(avatar, nome, selo(candidato.p, candidato.pn));
+  if (score !== null) topo.append(barra);
 
   if (candidato.numDisputado) {
     const alerta = document.createElement("p");
@@ -894,7 +910,7 @@ function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPar
 
   const det = document.createElement("details");
   det.className = "quebra";
-  det.innerHTML = `<summary>Por que ${pct(score)}? (${temas} temas)</summary>`;
+  det.innerHTML = `<summary>Por que ${pct(score ?? 0)}? (${temas} temas)</summary>`;
   det.append(quebraPorTese(detalhe, candidato.p, candidato));
 
   const marcarFixar = (b, on) => {
@@ -955,7 +971,7 @@ function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPar
   acoes.className = "acoes";
   acoes.append(fixar, estrela);
 
-  li.append(topo, ...(origem ? [origem] : []), det, acoes, responder);
+  li.append(topo, ...(origem ? [origem] : []), ...(score === null ? [] : [det]), acoes, responder);
   return li;
 }
 
@@ -1367,6 +1383,9 @@ async function rotear() {
   if (location.hash === "#/rapido") {
     return telaInicio("", "rapido");
   }
+  if (location.hash === "#/colinha") {
+    return telaInicio("", "colinha");
+  }
   const geracao = estado.geracao;
   let ok = false;
   let motivo = "";
@@ -1384,6 +1403,10 @@ async function rotear() {
   await carregarCandidatos();
   // Outra rota assumiu enquanto esta carregava.
   if (geracao !== estado.geracao - 1) return;
+  // Colinha montada à mão: link com escolhas abre a colinha; sem, o montador.
+  if (estado.modo === "colinha") {
+    return Object.keys(estado.escolhas).length ? telaColinha() : telaResultado();
+  }
   // Link parcial retoma de onde parou em vez de fingir que o teste acabou.
   if (estado.indice < estado.teses.length && respondidas() < 5) return telaQuiz();
   // Resultado que veio de fora (o eleitor nunca respondeu nada nesta aba):
