@@ -1567,8 +1567,8 @@ function telaLanding() {
       const r = hero.getBoundingClientRect();
       const px = (ev.clientX - r.left) / r.width - 0.5;
       const py = (ev.clientY - r.top) / r.height - 0.5;
-      alvo.style.setProperty("--rx", `${(-py * 6).toFixed(2)}deg`);
-      alvo.style.setProperty("--ry", `${(px * 8).toFixed(2)}deg`);
+      alvo.style.setProperty("--rx", `${(-py * 4).toFixed(2)}deg`);
+      alvo.style.setProperty("--ry", `${(px * 4).toFixed(2)}deg`);
     });
     hero.addEventListener("pointerleave", () => { alvo.style.removeProperty("--rx"); alvo.style.removeProperty("--ry"); });
   }

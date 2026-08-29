@@ -769,7 +769,7 @@ main:has(.landing) { max-width: none; padding: 0; }
 .hero-mapa { perspective: 1200px; --rx: 0deg; --ry: 0deg; }
 .hero-mapa .mapa {
   max-width: none; margin: 0;
-  transform: rotateX(calc(9deg + var(--rx))) rotateY(calc(-7deg + var(--ry))) translateZ(0);
+  transform: rotateX(calc(6deg + var(--rx))) rotateY(var(--ry)) translateZ(0);
   transform-style: preserve-3d;
   transition: transform .6s var(--ease);
   background: radial-gradient(120% 100% at 30% 0%, #17171b 0%, #0e0e11 60%, #0a0a0a 100%);
