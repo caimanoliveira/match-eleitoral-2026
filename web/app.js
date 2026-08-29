@@ -554,13 +554,22 @@ function telaResultado({ rolar = true } = {}) {
   const node = tpl("tpl-resultado");
   const montando = estado.modo === "colinha";
   node.querySelector(".resultado").classList.toggle("modo-colinha", montando);
-  if (!montando) node.getElementById("bussola").append(desenharBussola());
+  if (!montando) node.getElementById("bussola").append(painelVisoes());
 
   const teses = tesesDoEleitor();
   const faltam = teses.length - respondidas();
   const cabecalho = node.querySelector("h1");
   const rapido = estado.modo === "rapido";
   node.querySelector(".resultado").classList.toggle("modo-rapido", rapido);
+  if (!montando && respondidas() > 0) {
+    const p = bussola(estado.respostas, teses);
+    if (p.pesos.economico || p.pesos.social) {
+      const rot = document.createElement("p");
+      rot.className = "voce-e";
+      rot.innerHTML = `Pelo que você respondeu, você é <b>${esc(nomeDaPosicao(p))}</b>. <small>É a sua posição nos dois eixos do mapa, não um rótulo de partido.</small>`;
+      cabecalho.after(rot);
+    }
+  }
   if (montando) {
     cabecalho.textContent = "Monte sua colinha";
     const nota = node.getElementById("nota-parcial");
@@ -1098,6 +1107,112 @@ const RAIO_MAPA = 42;
 const noMapa = (p) => ({ x: 50 + p.economico * RAIO_MAPA, y: 50 - p.social * RAIO_MAPA });
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
+// Seis temas para o radar, curadoria sobre os ids de theses.toml.
+const TEMAS = {
+  "Segurança e justiça": ["aumentar-penas-furto-roubo", "castracao-quimica-pedofilia", "flexibilizar-acesso-armas", "pena-dura-arma-uso-proibido", "progressao-80-por-cento-hediondos", "medida-protetiva-mesmo-com-consentimento"],
+  "Economia e impostos": ["imposto-grandes-fortunas", "tributar-aplicacoes-financeiras", "limite-gastos-receita-extra", "pre-sal-fora-do-teto-saude-educacao", "recursos-esquecidos-tesouro", "crime-preco-abusivo", "correios-sem-licitacao", "desconto-antecipacao-bancaria-inss"],
+  "Trabalho e social": ["compra-alimentos-agricultura-familiar", "cancelamento-online-contribuicao-sindical", "desoneracao-com-contrapartida-de-emprego", "multa-cota-jovem-aprendiz", "primeiro-emprego-encargos-reduzidos", "vale-refeicao-entregador-aplicativo"],
+  "Meio ambiente e terra": ["marco-temporal", "anular-demarcacoes-indigenas", "agro-fora-do-mercado-de-carbono", "licenciamento-ambiental-simplificado", "reduzir-areas-de-protecao", "silvicultura-atividade-poluidora"],
+  "Costumes e direitos": ["aborto-legal-meninas", "regular-redes-sociais", "regras-publicidade-jogos-criancas", "candidatura-coletiva"],
+  "Instituições": ["anistia-8-janeiro", "anistia-desaparecimento-forcado", "camara-susta-acao-penal", "foro-privilegiado-presidentes-partido"],
+};
+
+/** "progressista de mercado", "conservador estatista", "de centro"… A
+ *  posição do próprio eleitor nos dois eixos, em palavras. Não fala de
+ *  candidato nenhum. */
+function nomeDaPosicao(p) {
+  const eco = p.economico > 0.15 ? "de mercado" : p.economico < -0.15 ? "estatista" : "";
+  const soc = p.social > 0.15 ? "conservador" : p.social < -0.15 ? "progressista" : "";
+  if (!eco && !soc) return "de centro";
+  if (!soc) return eco === "estatista" ? "estatista de centro" : "de centro, pró-mercado";
+  if (!eco) return `${soc} de centro`;
+  return `${soc} ${eco}`;
+}
+
+/** Radar (smartspider): concordância entre o eleitor e cada candidato por
+ *  tema, 0–100%, com os mesmos detalhes que o percentual geral usa. */
+function desenharRadar(candidatos) {
+  const temas = Object.keys(TEMAS);
+  const n = temas.length;
+  const teses = tesesDoEleitor();
+  const porTema = (detalhe) => temas.map((t) => {
+    const ids = new Set(TEMAS[t]);
+    const ds = detalhe.filter((d) => ids.has(d.tese.id) && d.posicao !== null);
+    return ds.length ? ds.filter((d) => d.concorda).length / ds.length : null;
+  });
+  const ang = (i) => -Math.PI / 2 + (i * 2 * Math.PI) / n;
+  const pt = (i, r) => [50 + Math.cos(ang(i)) * r * 40, 50 + Math.sin(ang(i)) * r * 40];
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "-28 -6 156 112");
+  svg.setAttribute("class", "radar");
+  svg.setAttribute("role", "img");
+  let html = "";
+  for (const r of [0.25, 0.5, 0.75, 1]) html += `<polygon points="${temas.map((_, i) => pt(i, r).join(",")).join(" ")}" class="r-anel"/>`;
+  temas.forEach((t, i) => {
+    const [x, y] = pt(i, 1); const [lx, ly] = pt(i, 1.22);
+    html += `<line x1="50" y1="50" x2="${x}" y2="${y}" class="r-eixo"/>` +
+      `<text x="${lx}" y="${ly}" class="r-rot" text-anchor="${lx < 45 ? "end" : lx > 55 ? "start" : "middle"}">${esc(t)}</text>`;
+  });
+  const series = [];
+  candidatos.forEach((c, k) => {
+    const r = match(estado.respostas, teses, c.candidato);
+    if (!r) return;
+    const vals = porTema(r.detalhe);
+    const pts = vals.map((v, i) => pt(i, v ?? 0));
+    html += `<polygon points="${pts.map((p) => p.join(",")).join(" ")}" class="r-serie" style="stroke:${cor(c.candidato.p)};fill:${cor(c.candidato.p)}"/>` +
+      pts.map((p, i) => vals[i] === null ? "" : `<circle cx="${p[0]}" cy="${p[1]}" r="1.4" style="fill:${cor(c.candidato.p)}"><title>${esc(c.candidato.n)} · ${esc(temas[i])}: ${Math.round(vals[i] * 100)}%</title></circle>`).join("");
+    series.push({ nome: c.candidato.n, sigla: c.candidato.p, vals });
+  });
+  svg.innerHTML = html;
+  svg.setAttribute("aria-label", series.map((s) => `${s.nome}: ` + s.vals.map((v, i) => `${temas[i]} ${v === null ? "sem dado" : Math.round(v * 100) + "%"}`).join(", ")).join(". "));
+  return svg;
+}
+
+/** Painel do resultado: abas Mapa / Radar. O radar compara o eleitor com até
+ *  3 candidatos do cargo ativo (os 3 primeiros do ranking, por padrão). */
+function painelVisoes() {
+  const caixa = document.createElement("div");
+  caixa.className = "visoes";
+  const abas = document.createElement("div");
+  abas.className = "visoes-abas";
+  const corpo = document.createElement("div");
+  estado.visao = estado.visao || "mapa";
+  const render = () => {
+    corpo.replaceChildren();
+    abas.querySelectorAll("button").forEach((b) => { const on = b.dataset.v === estado.visao; b.className = on ? "filtro ativo" : "filtro"; b.setAttribute("aria-pressed", on); });
+    if (estado.visao === "mapa") { corpo.append(desenharBussola()); return; }
+    const universo = estado.dados.porCargo[estado.cargoAtivo] || [];
+    const rank = ranquear(estado.respostas, tesesDoEleitor(), universo);
+    if (!rank.length) { corpo.innerHTML = `<p class="aviso">Responda algumas afirmações para ver o radar.</p>`; return; }
+    estado.radar = (estado.radar || []).filter((id) => rank.some((r) => r.candidato.id === id));
+    if (!estado.radar.length) estado.radar = rank.slice(0, 3).map((r) => r.candidato.id);
+    const escolhidos = rank.filter((r) => estado.radar.includes(r.candidato.id));
+    corpo.append(desenharRadar(escolhidos));
+    const leg = document.createElement("div");
+    leg.className = "radar-legenda";
+    leg.innerHTML = `<p class="aviso" style="margin:.2rem 0 .6rem">Quanto você e cada candidato concordam por tema, em % das afirmações respondidas. Até 3 de ${rotuloComUF(estado.cargoAtivo)}.</p>`;
+    escolhidos.forEach((r) => {
+      const b = document.createElement("span"); b.className = "radar-item";
+      b.innerHTML = `<i class="seletor-cor" style="background:${cor(r.candidato.p)}"></i>${esc(r.candidato.n)} <small>${pct(r.score)}</small>`;
+      leg.append(b);
+    });
+    const sel = document.createElement("select");
+    sel.setAttribute("aria-label", "Trocar candidato no radar");
+    sel.innerHTML = `<option value="">Trocar um candidato…</option>` + rank.slice(0, 30).map((r) => `<option value="${esc(r.candidato.id)}"${estado.radar.includes(r.candidato.id) ? " disabled" : ""}>${esc(r.candidato.n)} (${esc(r.candidato.p)}) · ${pct(r.score)}</option>`).join("");
+    sel.onchange = () => { if (!sel.value) return; estado.radar = [...estado.radar.slice(-2), sel.value]; render(); };
+    leg.append(sel);
+    corpo.append(leg);
+  };
+  for (const [v, rot] of [["mapa", "Mapa"], ["radar", "Radar por tema"]]) {
+    const b = document.createElement("button"); b.type = "button"; b.dataset.v = v; b.textContent = rot;
+    b.onclick = () => { estado.visao = v; render(); };
+    abas.append(b);
+  }
+  caixa.append(abas, corpo);
+  render();
+  return caixa;
+}
+
 /** Posição de uma bancada ou de um candidato no mapa, pela MESMA conta do
  *  eleitor: as posições viram "respostas" (peso 1) e passam pela bússola.
  *  Nada de novo entra aqui — é a aritmética já publicada na metodologia. */
@@ -1121,8 +1236,12 @@ function desenharBussola({ hero = false } = {}) {
     .map(([sigla, bancada]) => ({ sigla, p: pontoDePosicoes((t) => bancada[t.id]?.pos) }))
     .filter((x) => x.p);
   const presTodos = (estado.dados.porCargo.presidente || [])
-    .map((c) => ({ nome: c.n, sigla: c.p, p: pontoDePosicoes((t, i) => c.pos[i]) }))
+    .map((c) => ({ nome: c.n, sigla: c.p, foto: c.foto, id: c.id, p: pontoDePosicoes((t, i) => c.pos[i]) }))
     .filter((x) => x.p);
+  // Hero: só as 6 maiores bancadas (pela maior contagem de votos registrada).
+  const tamanho = (sigla) => Math.max(0, ...Object.values(estado.partidos[sigla] || {}).map((v) => v.n || 0));
+  const maiores = new Set([...partidosTodos].sort((a, b) => tamanho(b.sigla) - tamanho(a.sigla)).slice(0, 6).map((x) => x.sigla));
+  if (hero) { for (let i = partidosTodos.length - 1; i >= 0; i--) if (!maiores.has(partidosTodos[i].sigla)) partidosTodos.splice(i, 1); }
   if (estado.mapa.partidosOff) { partidosTodos.forEach((x) => estado.mapa.ocultos.add("p:" + x.sigla)); estado.mapa.partidosOff = false; }
   const oc = estado.mapa.ocultos;
   const partidos = hero ? partidosTodos : partidosTodos.filter((x) => !oc.has("p:" + x.sigla));
@@ -1140,8 +1259,9 @@ function desenharBussola({ hero = false } = {}) {
       if (g.length < 2) continue;
       g.forEach((it, i) => {
         const a = (i / g.length) * 2 * Math.PI;
-        it.x += Math.cos(a) * 2.2;
-        it.y += Math.sin(a) * 2.2;
+        const raio = Math.max(2.4, ...g.map((x) => x.r)) + 0.6;
+        it.x += Math.cos(a) * raio;
+        it.y += Math.sin(a) * raio;
       });
     }
   };
@@ -1150,10 +1270,10 @@ function desenharBussola({ hero = false } = {}) {
   // esquerda, depois subindo e descendo em degraus. Greedy, e chega para ~30
   // siglas. Quem não acha lugar fica só com o ponto — e o nome no toque.
   const ocupados = [];
-  const lugar = (x, y, larg) => {
+  const lugar = (x, y, larg, off = 2.4) => {
     for (const dy of [0, -3.4, 3.4, -6.8, 6.8]) {
       for (const lado of [1, -1]) {
-        const cx = Math.min(Math.max(lado > 0 ? x + 2.4 : x - 2.4 - larg, 3), 97 - larg);
+        const cx = Math.min(Math.max(lado > 0 ? x + off : x - off - larg, 3), 97 - larg);
         const cy = Math.min(Math.max(y + dy + 1, 7), 95);
         const c = cx + larg / 2;
         const livre = !ocupados.some((o) =>
@@ -1184,20 +1304,36 @@ function desenharBussola({ hero = false } = {}) {
   // siglas se encaixam no que sobrou. Bolinhas todas antes, textos todos
   // depois: rótulo nunca fica debaixo de um ponto.
   const itens = [
-    ...presidenciaveis.map((c) => ({ ...c, ...noMapa(c.p), cls: "pres", r: 2.6,
+    ...presidenciaveis.map((c) => ({ ...c, ...noMapa(c.p), cls: "pres", r: hero ? 4.2 : 3.4,
       texto: c.nome, larg: c.nome.length * 1.8, titulo: `${c.nome} (${c.sigla}), candidato a presidente` })),
-    ...partidos.map((c) => ({ ...c, ...noMapa(c.p), cls: "partido", r: 1.4,
+    ...partidos.map((c) => ({ ...c, ...noMapa(c.p), cls: "partido", r: 2.2,
       texto: c.sigla, larg: c.sigla.length * 1.6, titulo: `${c.sigla}: bancada na Câmara` })),
   ];
   espalhar(itens);
   // No hero o mapa é ilustração: siglas de partido saem (30 rótulos são
   // ruído ali), ficam só os presidenciáveis e os eixos.
-  itens.forEach((it) => { it.l = hero && it.cls === "partido" ? null : lugar(it.x, it.y, it.larg); });
-  // --i escalona a animação de entrada no hero (CSS); no resultado é inerte.
-  const pontosSVG = itens.map((it, i) =>
-    `<g class="b-item" data-nome="${esc(it.texto)}"${hero ? "" : ` tabindex="0" role="button" aria-label="${esc(it.titulo)}"`}><title>${esc(it.titulo)}</title><circle cx="${it.x}" cy="${it.y}" r="${it.r}" class="b-${it.cls}" style="fill:${cor(it.sigla)};--i:${i}"/></g>`).join("");
+  // Selo de partido se rotula sozinho (a sigla está dentro dele); só o
+  // presidenciável ganha o nome ao lado da foto.
+  itens.forEach((it) => { it.l = it.cls === "pres" ? lugar(it.x, it.y, it.larg, it.r + 0.8) : null; });
+  // Marcadores à la Kieskompas: foto do candidato num círculo, selo com a
+  // sigla na cor do partido. Nada de ponto anônimo.
+  const pontosSVG = itens.map((it, i) => {
+    const attrs = `class="b-item" data-nome="${esc(it.texto)}"${hero ? "" : ` tabindex="0" role="button" aria-label="${esc(it.titulo)}"`} style="--i:${i}"`;
+    if (it.cls === "pres") {
+      const clip = `clip-${hero ? "h" : "r"}-${i}`;
+      return `<g ${attrs}><title>${esc(it.titulo)}</title>` +
+        `<clipPath id="${clip}"><circle cx="${it.x}" cy="${it.y}" r="${it.r - 0.4}"/></clipPath>` +
+        `<circle cx="${it.x}" cy="${it.y}" r="${it.r}" class="b-pres" style="fill:${cor(it.sigla)}"/>` +
+        (it.foto ? `<image href="${esc(it.foto)}" x="${it.x - it.r}" y="${it.y - it.r}" width="${it.r * 2}" height="${it.r * 2}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${clip})"/>` : "") +
+        `</g>`;
+    }
+    const w = it.sigla.length * (hero ? 1.55 : 1.3) + 1.4, h = hero ? 3.2 : 2.7;
+    return `<g ${attrs}><title>${esc(it.titulo)}</title>` +
+      `<rect x="${it.x - w / 2}" y="${it.y - h / 2}" width="${w}" height="${h}" rx=".7" class="b-selo" style="fill:${cor(it.sigla)}"/>` +
+      `<text x="${it.x}" y="${it.y + (hero ? 0.85 : 0.7)}" class="b-selo-txt" style="fill:${tinta(it.sigla)};font-size:${hero ? 2.1 : 1.8}px">${esc(it.sigla)}</text></g>`;
+  }).join("");
   const rotulosSVG = itens.filter((it) => it.l).map((it, i) =>
-    `<text x="${it.l.x}" y="${it.l.y}" class="${it.cls === "pres" ? "b-nome" : "b-sigla"}" style="--i:${i + 8}">${esc(it.texto)}</text>`).join("");
+    `<text x="${it.l.x}" y="${it.l.y}" class="b-nome" style="--i:${i + 8}">${esc(it.texto)}</text>`).join("");
 
   svg.innerHTML = `
     <rect x="2" y="2" width="96" height="96" rx="4" class="b-fundo"/>` +

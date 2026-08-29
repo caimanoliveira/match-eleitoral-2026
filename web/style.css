@@ -937,3 +937,27 @@ main:has(.landing) { max-width: none; padding: 0; }
 .linha-colinha.vazia { grid-template-columns: 1fr auto; }
 .linha-colinha.vazia .nome { color: var(--suave); font-weight: 400; }
 .linha-colinha.vazia .secundario { min-height: 44px; }
+
+/* ---- marcadores Kieskompas: foto e selo ---- */
+.b-selo { stroke: #fff; stroke-width: .35; }
+.b-selo-txt { font-size: 2.1px; font-weight: 700; text-anchor: middle; letter-spacing: .02em; }
+.bussola-hero .b-selo { stroke: #111114; }
+.bussola-hero .b-partido, .bussola-hero .b-pres { opacity: 1; }
+.b-pres { stroke: #fff; stroke-width: .5; }
+.bussola-hero .b-pres { stroke: #fff; stroke-width: .6; }
+.hero-mapa .mapa rect, .hero-mapa .mapa image { animation: assenta .9s var(--ease-sai) both; animation-delay: calc(var(--i, 0) * 28ms); transform-box: fill-box; transform-origin: center; }
+@media (prefers-reduced-motion: reduce) { .hero-mapa .mapa rect, .hero-mapa .mapa image { animation: none !important; } }
+/* ---- visões do resultado ---- */
+.visoes-abas { display: flex; gap: .4rem; margin-bottom: .6rem; }
+.voce-e { margin: -.2rem 0 1rem; font-size: 1.05rem; }
+.voce-e b { font-weight: 800; }
+.voce-e small { display: block; color: var(--suave); font-size: .8rem; margin-top: .15rem; }
+.radar { width: 100%; max-width: 520px; display: block; margin: 0 auto; }
+.r-anel { fill: none; stroke: var(--linha); stroke-width: .4; }
+.r-eixo { stroke: var(--linha); stroke-width: .4; }
+.r-rot { font-size: 3.1px; fill: var(--suave); font-weight: 600; }
+.r-serie { fill-opacity: .12; stroke-width: .9; stroke-linejoin: round; }
+.radar-legenda { display: flex; flex-wrap: wrap; gap: .5rem .9rem; align-items: center; margin: .4rem 0 1.2rem; font-size: .9rem; }
+.radar-item { display: inline-flex; align-items: center; gap: .4rem; font-weight: 600; }
+.radar-item small { color: var(--suave); font-weight: 500; }
+.radar-legenda select { width: auto; padding: .45rem .7rem; font-size: .85rem; }
