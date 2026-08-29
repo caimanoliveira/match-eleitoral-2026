@@ -479,9 +479,13 @@ function telaQuiz() {
   simples.textContent = tese.simples || "";
   simples.hidden = !tese.simples;
 
+  // "Saber mais": no desktop vira um bloco à direita da pergunta, aberto;
+  // no celular fica dobrado abaixo dela.
   const ctx = node.querySelector(".contexto");
-  if (tese.contexto) ctx.querySelector("p").textContent = tese.contexto;
-  else ctx.remove();
+  ctx.querySelector(".contexto-simples").textContent = tese.simples || "";
+  ctx.querySelector(".contexto-texto").textContent = tese.contexto || "";
+  if (!tese.contexto && !tese.simples) ctx.remove();
+  else ctx.open = matchMedia("(min-width: 60rem)").matches;
 
   const check = node.querySelector(".importante input");
   const anterior = estado.respostas[tese.id];

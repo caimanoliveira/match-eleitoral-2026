@@ -163,6 +163,17 @@ select {
 .contexto { margin-bottom: 1rem; }
 .contexto summary { font-size: .88rem; color: var(--acento); cursor: pointer; }
 .contexto p { font-size: .92rem; color: var(--suave); margin: .6rem 0 0; }
+.contexto .contexto-simples { color: var(--tinta); }
+.contexto p:empty { display: none; }
+/* Desktop: "Saber mais" vira um bloco à direita da pergunta. */
+@media (min-width: 60rem) {
+  main:has(.quiz) { max-width: 1040px; }
+  .quiz { display: grid; grid-template-columns: minmax(0, 1fr) 19rem; column-gap: 3rem; align-content: start; }
+  .quiz > * { grid-column: 1; }
+  .quiz .contexto { grid-column: 2; grid-row: 3 / span 6; align-self: start; position: sticky; top: 1rem; border: 1px solid var(--linha); border-radius: var(--raio); padding: 1rem 1.1rem; margin: 0; }
+  .quiz .contexto summary { font-weight: 700; color: var(--tinta); font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; }
+  .quiz .simples { display: none; }
+}
 
 .respostas { display: grid; gap: .6rem; }
 
