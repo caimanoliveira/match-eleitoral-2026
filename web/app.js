@@ -1201,9 +1201,7 @@ function desenharBussola({ hero = false } = {}) {
 
   svg.innerHTML = `
     <rect x="2" y="2" width="96" height="96" rx="4" class="b-fundo"/>` +
-    // Grade sutil no hero: dá plano ao mapa sem competir com os pontos.
-    (hero ? [10, 20, 30, 40, 60, 70, 80, 90].map((v) =>
-      `<line x1="${v}" y1="3" x2="${v}" y2="97" class="b-grade"/><line x1="3" y1="${v}" x2="97" y2="${v}" class="b-grade"/>`).join("") : "") + `
+`
     <line x1="50" y1="4" x2="50" y2="96" class="b-eixo"/>
     <line x1="4" y1="50" x2="96" y2="50" class="b-eixo"/>
     <text x="50" y="6.5" class="b-rot">conservador</text>
@@ -1559,19 +1557,6 @@ function telaLanding() {
   // presidenciáveis entram quando o shard nacional chega (é pequeno).
   const alvo = node.getElementById("hero-mapa");
   alvo.append(desenharBussola({ hero: true }));
-  // Parallax leve com o ponteiro: só onde há ponteiro fino e sem
-  // reduced-motion. Move o plano, não os pontos.
-  if (matchMedia("(pointer: fine)").matches && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    const hero = node.querySelector(".hero");
-    hero.addEventListener("pointermove", (ev) => {
-      const r = hero.getBoundingClientRect();
-      const px = (ev.clientX - r.left) / r.width - 0.5;
-      const py = (ev.clientY - r.top) / r.height - 0.5;
-      alvo.style.setProperty("--rx", `${(-py * 4).toFixed(2)}deg`);
-      alvo.style.setProperty("--ry", `${(px * 4).toFixed(2)}deg`);
-    });
-    hero.addEventListener("pointerleave", () => { alvo.style.removeProperty("--rx"); alvo.style.removeProperty("--ry"); });
-  }
   mostrar(node);
   carregarJSON("data/presidente-BR.json").then((lista) => {
     if (!document.getElementById("hero-mapa")) return;
