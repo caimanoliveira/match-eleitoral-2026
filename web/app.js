@@ -1254,7 +1254,10 @@ function desenharBussola({ hero = false } = {}) {
     .map(([sigla, bancada]) => ({ sigla, p: pontoDePosicoes((t) => bancada[t.id]?.pos) }))
     .filter((x) => x.p);
   const presTodos = (estado.dados.porCargo.presidente || [])
-    .map((c) => ({ nome: c.n, sigla: c.p, foto: c.foto, id: c.id, p: pontoDePosicoes((t, i) => c.pos[i]) }))
+    .map((c) => ({ nome: c.n, sigla: c.p, foto: c.foto, id: c.id, p: pontoDePosicoes((t, i) => c.pos[i]),
+      // No resultado, o percentual vai junto do nome: proximidade no mapa e
+      // concordância tema a tema são medidas diferentes, e as duas ficam à vista.
+      pct: hero ? null : (match(estado.respostas, estado.teses, c) || {}).score ?? null }))
     .filter((x) => x.p);
   // Hero: só as 6 maiores bancadas (pela maior contagem de votos registrada).
   const tamanho = (sigla) => Math.max(0, ...Object.values(estado.partidos[sigla] || {}).map((v) => v.n || 0));
@@ -1322,8 +1325,8 @@ function desenharBussola({ hero = false } = {}) {
   // siglas se encaixam no que sobrou. Bolinhas todas antes, textos todos
   // depois: rótulo nunca fica debaixo de um ponto.
   const itens = [
-    ...presidenciaveis.map((c) => ({ ...c, ...noMapa(c.p), cls: "pres", r: hero ? 4.2 : 3.4,
-      texto: c.nome, larg: c.nome.length * 1.8, titulo: `${c.nome} (${c.sigla}), candidato a presidente` })),
+    ...presidenciaveis.map((c) => { const texto = c.pct == null ? c.nome : `${c.nome} · ${Math.round(c.pct * 100)}%`; return { ...c, ...noMapa(c.p), cls: "pres", r: hero ? 4.2 : 3.4,
+      texto, larg: texto.length * 1.8, titulo: `${c.nome} (${c.sigla}), candidato a presidente${c.pct == null ? "" : `, ${Math.round(c.pct * 100)}% de concordância com você`}` }; }),
     ...partidos.map((c) => ({ ...c, ...noMapa(c.p), cls: "partido", r: 2.2,
       texto: c.sigla, larg: c.sigla.length * 1.6, titulo: `${c.sigla}: bancada na Câmara` })),
   ];
@@ -1459,7 +1462,7 @@ function desenharBussola({ hero = false } = {}) {
     (perto.length
       ? `<b>Mais perto de você no mapa:</b> ${perto.map((x) => esc(x.sigla)).join(", ")}` +
         (pertoPres.length ? ` e, entre os presidenciáveis, ${pertoPres.map((x) => esc(x.nome)).join(" e ")}.` : ".") +
-        ` É proximidade em dois eixos, não o percentual de match — a lista abaixo é que compara tema a tema.`
+        ` Proximidade no mapa e percentual são medidas diferentes: o mapa pesa cada afirmação pelos dois eixos; o percentual conta concordância em todas as afirmações, inclusive as sem cor ideológica. Por isso alguém pode estar perto no mapa e ter percentual menor — os dois estão certos.`
       : "");
   caixa.append(legenda);
   return caixa;
