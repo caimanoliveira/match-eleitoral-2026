@@ -778,6 +778,7 @@ main:has(.landing) { max-width: none; padding: 0; }
   animation: flutua-mapa 9s ease-in-out infinite alternate;
 }
 @keyframes flutua-mapa { from { translate: 0 0; } to { translate: 0 -8px; } }
+.bussola-hero .b-item { cursor: default; }
 .b-grade { stroke: rgb(255 255 255 / .05); stroke-width: .3; }
 .bussola-hero .b-fundo { fill: transparent; stroke: rgb(255 255 255 / .12); }
 .bussola-hero .b-eixo { stroke: rgb(255 255 255 / .22); stroke-width: .5; }
@@ -792,20 +793,35 @@ main:has(.landing) { max-width: none; padding: 0; }
 }
 @keyframes respira { from { transform: translateY(0) scale(1); } to { transform: translateY(-1.2px) scale(1.12); } }
 @media (prefers-reduced-motion: reduce) { .hero-mapa .mapa { animation: none !important; transform: none !important; } .hero-mapa .mapa circle { animation: none !important; } }
-.mapa { background: var(--preto); border-radius: var(--raio); padding: .6rem; }
-.b-fundo { fill: #111114; stroke: var(--preto-linha); }
-.b-eixo { stroke: var(--preto-linha); }
-.b-rot { fill: var(--preto-suave); }
-.b-sigla { fill: #D4D4D8; stroke: #111114; }
-.b-nome { fill: #FFFFFF; stroke: #111114; }
-.b-destaque { fill: #FFFFFF; stroke: #111114; }
-.b-partido { stroke: #111114; opacity: 1; }
-.b-pres { stroke: #FFFFFF; }
-.b-voce { fill: var(--acao-escuro); stroke: #111114; }
-.b-voce-rot { fill: var(--acao-escuro); stroke: #111114; }
-.camadas { padding: 0 0 .5rem; }
-.camadas .filtro { background: transparent; color: var(--preto-suave); border-color: var(--preto-linha); }
-.camadas .filtro.ativo { background: var(--preto-tinta); color: var(--preto); border-color: var(--preto-tinta); }
+/* Resultado: mapa em verde-claro (o véu do projeto original), fundo claro.
+   O hero continua preto — lá é ilustração. */
+.mapa { --mapa-fundo: #E6F4EE; --mapa-linha: #C9E2D6; border-radius: var(--raio); }
+.b-fundo { fill: var(--mapa-fundo); stroke: var(--mapa-linha); }
+.b-eixo { stroke: var(--mapa-linha); stroke-width: .7; }
+.b-rot { fill: var(--suave); }
+.b-sigla { fill: var(--tinta); stroke: var(--mapa-fundo); }
+.b-nome { fill: var(--tinta); stroke: var(--mapa-fundo); }
+.b-destaque { fill: var(--tinta); stroke: var(--mapa-fundo); }
+.b-partido { stroke: #FFFFFF; stroke-width: .5; opacity: 1; }
+.b-pres { stroke: var(--tinta); }
+.b-voce { fill: var(--acao); stroke: #FFFFFF; }
+.b-voce-rot { fill: var(--acao); stroke: var(--mapa-fundo); }
+.hero-mapa .mapa { background: var(--preto); padding: .6rem; }
+.bussola-hero .b-sigla, .bussola-hero .b-nome, .bussola-hero .b-destaque { fill: #FFFFFF; stroke: #111114; }
+.bussola-hero .b-partido { stroke: #111114; }
+/* Painel do resultado: mapa + legenda seletora ao lado (empilha no celular). */
+.mapa-painel { display: grid; gap: 1rem; grid-template-columns: 1fr; align-items: start; }
+@media (min-width: 48rem) { .mapa-painel { grid-template-columns: minmax(0, 1fr) 15rem; } }
+.seletor { font-size: .85rem; }
+.seletor-grupo { border: 1px solid var(--linha); border-radius: var(--raio); padding: .5rem .7rem; margin-bottom: .6rem; }
+.seletor-grupo summary { cursor: pointer; font-weight: 700; display: flex; justify-content: space-between; }
+.seletor-n { color: var(--suave); font-weight: 500; font-variant-numeric: tabular-nums; }
+.seletor-acoes { margin: .3rem 0 .2rem; color: var(--suave); font-size: .78rem; }
+.seletor .link { background: none; border: 0; padding: 0; color: var(--tinta); text-decoration: underline; font: inherit; font-size: .78rem; cursor: pointer; }
+.seletor ul { list-style: none; margin: 0; padding: 0; max-height: 18rem; overflow: auto; }
+.seletor li label { display: flex; align-items: center; gap: .45rem; padding: .25rem 0; min-height: 32px; cursor: pointer; }
+.seletor input { accent-color: var(--acao); width: 16px; height: 16px; }
+.seletor-cor { width: 10px; height: 10px; border-radius: 50%; flex: none; }
 .hero-mapa .mapa circle, .hero-mapa .mapa text { animation: assenta .9s var(--ease-sai) both; animation-delay: calc(var(--i, 0) * 28ms); transform-box: fill-box; transform-origin: center; }
 @media (prefers-reduced-motion: reduce) { .hero-mapa .mapa circle, .hero-mapa .mapa text { animation: none !important; } }
 @keyframes assenta { from { opacity: 0; transform: scale(.4) translateY(6px); } to { opacity: 1; transform: none; } }

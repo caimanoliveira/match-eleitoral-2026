@@ -72,7 +72,9 @@ const estado = {
   soFavoritos: false,
   // Camadas do mapa. No celular partidos começam desligados: 30 siglas em
   // 350px é ruído; o eleitor liga se quiser.
-  mapa: { partidos: !matchMedia("(max-width: 480px)").matches, pres: true },
+  // Legenda seletora do mapa: cada partido e cada presidenciável pode ser
+  // ligado/desligado. Começa com partidos desligados no celular.
+  mapa: { ocultos: new Set(), partidosOff: matchMedia("(max-width: 480px)").matches },
   // "completo" (34 afirmações → resultado → colinha), "rapido" (10, só
   // resultado) ou "colinha" (sem quiz: busca por nome/número e fixa). Três
   // produtos; o rápido nunca mostra colinha, a colinha nunca mostra percentual.
@@ -1115,12 +1117,16 @@ function desenharBussola({ hero = false } = {}) {
   const semLastro = !p.pesos.economico && !p.pesos.social;
   const voce = noMapa(p);
 
-  const partidos = !hero && !estado.mapa.partidos ? [] : Object.entries(estado.partidos)
+  const partidosTodos = Object.entries(estado.partidos)
     .map(([sigla, bancada]) => ({ sigla, p: pontoDePosicoes((t) => bancada[t.id]?.pos) }))
     .filter((x) => x.p);
-  const presidenciaveis = !hero && !estado.mapa.pres ? [] : (estado.dados.porCargo.presidente || [])
+  const presTodos = (estado.dados.porCargo.presidente || [])
     .map((c) => ({ nome: c.n, sigla: c.p, p: pontoDePosicoes((t, i) => c.pos[i]) }))
     .filter((x) => x.p);
+  if (estado.mapa.partidosOff) { partidosTodos.forEach((x) => estado.mapa.ocultos.add("p:" + x.sigla)); estado.mapa.partidosOff = false; }
+  const oc = estado.mapa.ocultos;
+  const partidos = hero ? partidosTodos : partidosTodos.filter((x) => !oc.has("p:" + x.sigla));
+  const presidenciaveis = hero ? presTodos : presTodos.filter((x) => !oc.has("c:" + x.nome));
 
   // Partidos com posição idêntica caem no mesmo ponto exato e viram um só.
   // Quem coincide é aberto num anel pequeno em volta do lugar original.
@@ -1230,6 +1236,11 @@ function desenharBussola({ hero = false } = {}) {
     svg.append(t);
   };
   svg.addEventListener("click", destacar);
+  if (hero) {
+    // Ilustração sem rótulos: o nome aparece ao passar o mouse.
+    svg.addEventListener("pointerover", destacar);
+    svg.addEventListener("pointerout", (ev) => { if (!ev.relatedTarget?.closest?.(".b-item")) svg.querySelector(".b-destaque")?.remove(); });
+  }
   svg.addEventListener("keydown", (ev) => {
     if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); destacar(ev); }
   });
@@ -1237,17 +1248,44 @@ function desenharBussola({ hero = false } = {}) {
   const caixa = document.createElement("div");
   caixa.className = "mapa";
   if (hero) { caixa.append(svg); return caixa; }
-  const camadas = document.createElement("div");
-  camadas.className = "camadas";
-  for (const [chave, rotulo] of [["partidos", "Partidos"], ["pres", "Presidenciáveis"]]) {
-    const b = document.createElement("button");
-    b.className = estado.mapa[chave] ? "filtro ativo" : "filtro";
-    b.setAttribute("aria-pressed", estado.mapa[chave] ? "true" : "false");
-    b.textContent = rotulo;
-    b.onclick = () => { estado.mapa[chave] = !estado.mapa[chave]; caixa.replaceWith(desenharBussola()); };
-    camadas.append(b);
-  }
-  caixa.append(camadas, svg);
+  // Legenda seletora: um checkbox por presidenciável e por partido. Quem
+  // desmarca, despolui o próprio mapa; o estado vive na sessão.
+  const seletor = document.createElement("div");
+  seletor.className = "seletor";
+  const grupo = (titulo, itens, chave, rotulo) => {
+    const det = document.createElement("details");
+    det.className = "seletor-grupo";
+    det.open = !matchMedia("(max-width: 48rem)").matches;
+    const ativos = itens.filter((x) => !oc.has(chave(x))).length;
+    det.innerHTML = `<summary>${titulo} <span class="seletor-n">${ativos}/${itens.length}</span></summary>`;
+    const acoes = document.createElement("p");
+    acoes.className = "seletor-acoes";
+    const todos = document.createElement("button"); todos.type = "button"; todos.className = "link"; todos.textContent = "todos";
+    const nenhum = document.createElement("button"); nenhum.type = "button"; nenhum.className = "link"; nenhum.textContent = "nenhum";
+    todos.onclick = () => { itens.forEach((x) => oc.delete(chave(x))); caixa.replaceWith(desenharBussola()); };
+    nenhum.onclick = () => { itens.forEach((x) => oc.add(chave(x))); caixa.replaceWith(desenharBussola()); };
+    acoes.append(todos, " · ", nenhum);
+    const ul = document.createElement("ul");
+    for (const x of itens) {
+      const li = document.createElement("li");
+      const lab = document.createElement("label");
+      const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = !oc.has(chave(x));
+      cb.onchange = () => { cb.checked ? oc.delete(chave(x)) : oc.add(chave(x)); caixa.replaceWith(desenharBussola()); };
+      const dot = document.createElement("i"); dot.className = "seletor-cor"; dot.style.background = cor(x.sigla);
+      lab.append(cb, dot, rotulo(x));
+      li.append(lab); ul.append(li);
+    }
+    det.append(acoes, ul);
+    return det;
+  };
+  seletor.append(
+    grupo("Presidenciáveis", presTodos, (x) => "c:" + x.nome, (x) => `${x.nome} (${x.sigla})`),
+    grupo("Partidos", [...partidosTodos].sort((a, b) => a.sigla.localeCompare(b.sigla)), (x) => "p:" + x.sigla, (x) => x.sigla),
+  );
+  const painel = document.createElement("div");
+  painel.className = "mapa-painel";
+  painel.append(svg, seletor);
+  caixa.append(painel);
 
   const legenda = document.createElement("p");
   legenda.className = "b-legenda";
