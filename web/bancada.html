@@ -135,7 +135,12 @@ $("cartoes").addEventListener("click", (ev) => {
   const id = card.dataset.id;
   if (escolhidas.has(id)) escolhidas.delete(id);
   else if (escolhidas.size < LIMITE) escolhidas.add(id);
-  else return;
+  else {
+    // Sexto toque não pode morrer em silêncio.
+    $("contador").textContent = `Já são ${LIMITE}. Desmarque uma para trocar.`;
+    setTimeout(atualizarContador, 2000);
+    return;
+  }
   card.classList.toggle("marcado", escolhidas.has(id));
   btn.setAttribute("aria-pressed", escolhidas.has(id));
   atualizarContador();
@@ -226,9 +231,11 @@ function mostrar() {
   try { sessionStorage.setItem("bancada", JSON.stringify({ passam, ids: [...escolhidas] })); } catch {}
 
   $("compartilhar").onclick = () => {
-    const text = `Montei minha bancada no Colinha: ${passam} de ${LIMITE} pautas passariam. E a sua? ${URL_PAGINA}?via=wa`;
-    if (navigator.share) navigator.share({ text, url: `${URL_PAGINA}?via=wa` }).catch(() => {});
-    else window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+    const url = `${URL_PAGINA}?via=wa`;
+    const text = `Montei minha bancada no Colinha: ${passam} de ${LIMITE} pautas passariam. E a sua?`;
+    const wa = () => window.open(`https://wa.me/?text=${encodeURIComponent(text + " " + url)}`, "_blank", "noopener");
+    if (navigator.share) navigator.share({ text, url }).catch((e) => { if (e.name !== "AbortError") wa(); });
+    else wa();
   };
 }
 

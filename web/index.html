@@ -8,7 +8,7 @@
 <!-- Prévia do link no WhatsApp: sem isto o convite chega como texto cinza. -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Colinha">
-<meta property="og:title" content="Descubra em quem votar em 2 minutos">
+<meta property="og:title" content="Compare o que você pensa com o voto de cada candidato">
 <meta property="og:description" content="Compare o que você pensa com o que cada candidato votou — presidente a deputado estadual — e leve os números prontos para a urna. Grátis, sem cadastro.">
 <meta property="og:url" content="https://colinha.app.br/">
 <meta property="og:image" content="https://colinha.app.br/previa.png">
@@ -56,12 +56,16 @@
             <a class="primario cta" href="#/comecar">Descobrir meus candidatos</a>
             <a class="cta-secundario" href="#/colinha">Montar minha colinha</a>
           </div>
-          <p class="cta-nota">34 afirmações, uns 5 minutos (ou 10, em 2) · sem cadastro · nada sai do seu aparelho</p>
+          <p class="cta-nota">34 afirmações, uns 5 minutos · versão rápida de 10 na tela seguinte · sem cadastro · suas respostas não saem do aparelho</p>
         </div>
-        <div class="hero-mapa" id="hero-mapa" aria-hidden="true"></div>
+        <div class="hero-mapa-caixa">
+          <div class="hero-mapa" id="hero-mapa" aria-hidden="true"></div>
+          <p class="hero-legenda">Cada ponto é um partido, pela forma como a bancada votou na Câmara. Responda e veja onde você cai.</p>
+        </div>
       </div>
     </div>
 
+    <h2 class="rotulo como-titulo">Como funciona</h2>
     <ol class="como">
       <li><span class="n">01</span><strong>Responda</strong>
         <span>Afirmações sobre o que o Congresso votou de verdade: terras indígenas,
@@ -88,11 +92,11 @@
       <div class="faixa-in">
         <div><b id="fato-candidatos">—</b><span>candidatos comparados, todos os cargos e estados</span></div>
         <div><b id="fato-teses">—</b><span>afirmações, cada uma ancorada em uma votação real</span></div>
-        <div><b>0</b><span>dados seus enviados a qualquer lugar</span></div>
+        <div><b>0</b><span>respostas suas enviadas a qualquer lugar</span></div>
       </div>
     </section>
 
-    <section class="honesto">
+    <section class="honesto honesto-landing">
       <div>
         <h2>De onde vem a posição de cada candidato</h2>
         <p>Do voto dele no Congresso, quando é deputado ou senador. Quando não é, de
@@ -159,7 +163,7 @@
 
     <div class="respostas">
       <button data-valor="1"  class="resp concordo">Concordo</button>
-      <button data-valor="0"  class="resp neutro">Tanto faz</button>
+      <button data-valor="0"  class="resp neutro">Nem um nem outro</button>
       <button data-valor="-1" class="resp discordo">Discordo</button>
     </div>
 
@@ -211,13 +215,13 @@
 <template id="tpl-chegada">
   <section class="tela chegada">
     <p class="eyebrow">Alguém te mandou isto</p>
-    <h1>Esse resultado é de quem te mandou. O seu é diferente.</h1>
+    <h1>Este link traz um resultado pronto. É o seu?</h1>
     <p class="lead" id="chegada-topo"></p>
     <p class="lead">Responda e veja os seus candidatos — presidente, governador, senado e
       deputados. Sem cadastro.</p>
     <div class="navegacao">
-      <button class="primario" id="chegada-meu">Fazer o meu</button>
-      <button class="secundario" id="chegada-ver">Ver o resultado que me mandaram</button>
+      <button class="primario" id="chegada-meu">Não, quero fazer o meu</button>
+      <button class="secundario" id="chegada-ver">É meu, abrir</button>
     </div>
   </section>
 </template>
@@ -229,7 +233,8 @@
     <p class="falha-carga" id="colinha-perdidos" hidden></p>
     <div id="cartao"></div>
     <div class="navegacao">
-      <button class="primario" id="compartilhar">Compartilhar</button>
+      <button class="primario" id="compartilhar">Salvar imagem da colinha</button>
+      <button class="secundario" id="copiar-numeros">Copiar números</button>
       <button class="secundario" id="voltar-resultado">Voltar</button>
     </div>
     <p class="aviso">

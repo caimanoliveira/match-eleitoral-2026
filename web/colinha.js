@@ -21,6 +21,7 @@ const ALERTA = "#b42318";
  *  2288 é Carlos Jordy no RJ e Major Mecca em SP.
  *  @returns {Promise<Blob>} PNG da colinha */
 export async function desenharColinha(escolhidos, uf = "") {
+  try { await Promise.all([document.fonts.load('700 42px "IBM Plex Sans"'), document.fonts.load('700 56px "IBM Plex Mono"')]); } catch { /* cai no system-ui */ }
   const altura = TOPO + escolhidos.length * LINHA + RODAPE;
   const cv = document.createElement("canvas");
   cv.width = L * ESCALA;
@@ -32,14 +33,14 @@ export async function desenharColinha(escolhidos, uf = "") {
   ctx.fillRect(0, 0, L, altura);
 
   ctx.fillStyle = TINTA;
-  ctx.font = "700 42px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+  ctx.font = "700 42px 'IBM Plex Sans', system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
   ctx.fillText("MINHA COLINHA", 48, 66);
-  ctx.font = "500 18px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+  ctx.font = "500 18px 'IBM Plex Sans', system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
   ctx.textAlign = "right";
   ctx.fillText("colinha.app.br", L - 48, 66);
   ctx.textAlign = "left";
   ctx.fillStyle = SUAVE;
-  ctx.font = "400 24px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+  ctx.font = "400 24px 'IBM Plex Sans', system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
   ctx.fillText(
     (uf ? uf + " · " : "") + "Eleições de 4 de outubro de 2026", 48, 100);
 
@@ -80,19 +81,19 @@ export async function desenharColinha(escolhidos, uf = "") {
     const LARG_TEXTO = L - 116 - 20 - X; // até a borda do selo
 
     ctx.fillStyle = SUAVE;
-    ctx.font = "600 18px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+    ctx.font = "600 18px 'IBM Plex Sans', system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
     ctx.fillText(cortar(ctx, rotulo.toUpperCase(), LARG_TEXTO), X, y + 26);
 
     ctx.fillStyle = TINTA;
-    ctx.font = "600 28px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+    ctx.font = "600 28px 'IBM Plex Sans', system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
     ctx.fillText(cortar(ctx, candidato.n, LARG_TEXTO), X, y + 60);
 
     // O número é o que se digita na urna — é o maior elemento da linha.
     ctx.fillStyle = SUAVE;
-    ctx.font = "500 14px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+    ctx.font = "500 14px 'IBM Plex Sans', system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
     ctx.fillText("Nº NA URNA", X, y + 84);
     ctx.fillStyle = TINTA;
-    ctx.font = "800 56px ui-monospace, SFMono-Regular, Menlo, monospace";
+    ctx.font = "800 56px 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
     ctx.fillText(candidato.num, X, y + 136);
 
     // selo do partido, centrado na altura da linha
@@ -107,7 +108,7 @@ export async function desenharColinha(escolhidos, uf = "") {
   });
 
   const ambiguos = escolhidos.filter((e) => e.candidato.numDisputado);
-  ctx.font = "400 20px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+  ctx.font = "400 20px 'IBM Plex Sans', system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
   if (ambiguos.length) {
     // O PNG é o que vai junto para a urna: o aviso tem de viajar com ele.
     ctx.fillStyle = ALERTA;
@@ -120,7 +121,7 @@ export async function desenharColinha(escolhidos, uf = "") {
   }
   // A imagem circula sem o site em volta: o aviso de independência vai nela.
   ctx.fillStyle = SUAVE;
-  ctx.font = "400 15px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+  ctx.font = "400 15px 'IBM Plex Sans', system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
   ctx.fillText("Projeto independente, sem relação com o TSE ou a Justiça Eleitoral.", 48, altura - 22);
 
   return new Promise((resolve) => cv.toBlob(resolve, "image/png"));

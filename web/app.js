@@ -350,6 +350,9 @@ function telaInicio(motivo = "", modo = "completo") {
   if (modo === "completo") {
     rapidoBtn.hidden = false;
     rapidoBtn.onclick = () => {
+      // Só troca o modo depois de validar: antes, um toque sem UF deixava
+      // "rapido" gravado e o "Começar" seguinte abria o quiz errado.
+      if (!sel.value) { document.getElementById("comecar").click(); return; }
       estado.modo = "rapido";
       document.getElementById("comecar").click();
     };
@@ -537,7 +540,7 @@ function telaResultado({ rolar = true } = {}) {
     cabecalho.textContent = "Monte sua colinha";
     const nota = node.getElementById("nota-parcial");
     nota.hidden = false;
-    nota.textContent = "Busque por nome ou número em cada cargo e toque em “Colocar na colinha”. Sem percentual: aqui é só a sua escolha.";
+    nota.textContent = "Busque por nome ou número em cada cargo e toque em “+ Colinha”. Sem percentual: aqui é só a sua escolha.";
   }
   if (rapido) {
     cabecalho.textContent = "Seus candidatos — quiz rápido";
@@ -555,7 +558,16 @@ function telaResultado({ rolar = true } = {}) {
       telaQuiz();
     };
   }
-  if (faltam > 0 && !rapido && !montando) {
+  if (faltam > 0 && !rapido && !montando && respondidas() === 0) {
+    cabecalho.textContent = "Você pulou todas";
+    const nota = node.getElementById("nota-parcial");
+    nota.hidden = false;
+    nota.textContent = "Sem nenhuma resposta não há o que comparar. Responda pelo menos algumas.";
+    const continuar = node.getElementById("continuar");
+    continuar.hidden = false;
+    continuar.textContent = "Responder de novo";
+    continuar.onclick = () => { estado.indice = 0; telaQuiz(); };
+  } else if (faltam > 0 && !rapido && !montando) {
     cabecalho.textContent = "Seus candidatos — resultado parcial";
     const nota = node.getElementById("nota-parcial");
     nota.hidden = false;
@@ -761,9 +773,10 @@ function telaResultado({ rolar = true } = {}) {
 
   renderLista();
   node.getElementById("ver-colinha").onclick = telaColinha;
+  atualizarBotaoColinha(node);
   const base = `${location.origin}${location.pathname}`;
   node.getElementById("mandar-quiz").onclick = () =>
-    mandar("Fiz o meu em 2 minutos e descobri em quem votar para deputado. Faz o seu:", `${base}?via=wa#/rapido`);
+    mandar("Comparei o que penso com o voto real dos candidatos, em 2 minutos. Faz o seu:", `${base}?via=wa#/rapido`);
   node.getElementById("mandar-resultado").onclick = () =>
     mandar("Olha o meu resultado no Colinha — e o seu, dá quanto?", `${base}?via=wa${location.hash}`);
   mostrar(node, { rolar });
@@ -838,7 +851,7 @@ function idadeDaFonte() {
   if (!iso) return "";
   const dias = (Date.now() - new Date(iso)) / 86400000;
   const data = new Date(iso).toLocaleDateString("pt-BR");
-  return dias > 2
+  return dias > 7
     ? `Lista de candidatos do TSE de ${data} — pode estar desatualizada; confira no site do TSE.`
     : `Lista de candidatos do TSE de ${data}.`;
 }
@@ -877,6 +890,11 @@ function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPar
 
   topo.append(avatar, nome, selo(candidato.p, candidato.pn));
   if (score !== null) topo.append(barra);
+  // As ações entram AQUI, antes de qualquer aviso de largura total: depois
+  // deles o grid empurrava ＋/☆ para uma linha própria.
+  const acoes = document.createElement("div");
+  acoes.className = "acoes";
+  topo.append(acoes);
 
   if (candidato.numDisputado) {
     const alerta = document.createElement("p");
@@ -924,7 +942,7 @@ function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPar
 
   const marcarFixar = (b, on) => {
     b.className = on ? "fixar fixado" : "fixar";
-    b.textContent = on ? "✓" : "+";
+    b.textContent = on ? "✓ Na colinha" : "+ Colinha";
     b.title = on ? "Na sua colinha" : "Colocar na colinha";
     b.setAttribute("aria-label", on ? "Tirar da colinha" : "Colocar na colinha");
     b.setAttribute("aria-pressed", on ? "true" : "false");
@@ -943,6 +961,7 @@ function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPar
     }
     marcarFixar(fixar, agora);
     salvarNaURL();
+    atualizarBotaoColinha();
     anunciar(
       agora
         ? `${candidato.n}, número ${candidato.num}, na colinha.`
@@ -978,10 +997,7 @@ function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPar
     // Com o filtro ligado, tirar a estrela some com o card — mas só no
     // próximo redesenho, para não puxar a lista debaixo do dedo.
   };
-  const acoes = document.createElement("div");
-  acoes.className = "acoes";
   acoes.append(fixar, estrela);
-  topo.append(acoes);
 
   li.append(topo, ...(origem ? [origem] : []), ...(score === null ? [] : [det]), responder);
   return li;
@@ -1112,7 +1128,7 @@ function desenharBussola({ hero = false } = {}) {
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("viewBox", "0 0 100 100");
   svg.setAttribute("class", "bussola");
-  svg.setAttribute("role", "img");
+  svg.setAttribute("role", hero ? "img" : "group");
   svg.setAttribute("aria-label", (semLastro
     ? "Mapa de posições, ainda sem respostas suficientes para posicionar você."
     : `Sua posição: eixo econômico ${p.economico.toFixed(2)} de -1 (estatista) a ` +
@@ -1134,7 +1150,7 @@ function desenharBussola({ hero = false } = {}) {
   itens.forEach((it) => { it.l = lugar(it.x, it.y, it.larg); });
   // --i escalona a animação de entrada no hero (CSS); no resultado é inerte.
   const pontosSVG = itens.map((it, i) =>
-    `<g class="b-item" data-nome="${esc(it.texto)}"><title>${esc(it.titulo)}</title><circle cx="${it.x}" cy="${it.y}" r="${it.r}" class="b-${it.cls}" style="fill:${cor(it.sigla)};--i:${i}"/></g>`).join("");
+    `<g class="b-item" data-nome="${esc(it.texto)}"${hero ? "" : ` tabindex="0" role="button" aria-label="${esc(it.titulo)}"`}><title>${esc(it.titulo)}</title><circle cx="${it.x}" cy="${it.y}" r="${it.r}" class="b-${it.cls}" style="fill:${cor(it.sigla)};--i:${i}"/></g>`).join("");
   const rotulosSVG = itens.filter((it) => it.l).map((it, i) =>
     `<text x="${it.l.x}" y="${it.l.y}" class="${it.cls === "pres" ? "b-nome" : "b-sigla"}" style="--i:${i + 8}">${esc(it.texto)}</text>`).join("");
 
@@ -1157,10 +1173,11 @@ function desenharBussola({ hero = false } = {}) {
 
   // Toque num ponto mostra o nome em destaque — é o que salva quem ficou sem
   // rótulo no aglomerado, e serve a leitor de tela via <title>.
-  svg.addEventListener("click", (ev) => {
+  const destacar = (ev) => {
     const g = ev.target.closest(".b-item");
     svg.querySelector(".b-destaque")?.remove();
     if (!g) return;
+    anunciar(g.getAttribute("aria-label") || g.dataset.nome);
     const c = g.querySelector("circle");
     const x = +c.getAttribute("cx"), y = +c.getAttribute("cy");
     const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
@@ -1169,6 +1186,10 @@ function desenharBussola({ hero = false } = {}) {
     t.setAttribute("y", y < 12 ? y + 6.5 : y - 4);
     t.textContent = g.dataset.nome;
     svg.append(t);
+  };
+  svg.addEventListener("click", destacar);
+  svg.addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); destacar(ev); }
   });
 
   const caixa = document.createElement("div");
@@ -1203,6 +1224,16 @@ function desenharBussola({ hero = false } = {}) {
   return caixa;
 }
 
+/** O botão diz quantos já estão na colinha; com zero, fica secundário. */
+function atualizarBotaoColinha(raiz = document) {
+  const b = raiz.getElementById ? raiz.getElementById("ver-colinha") : raiz.querySelector("#ver-colinha");
+  if (!b) return;
+  const n = CARGOS.reduce((t, [c]) => t + idsEscolhidos(c).length, 0);
+  b.textContent = n ? `Ver minha colinha (${n})` : "Ver minha colinha";
+  b.classList.toggle("secundario", !n);
+  b.classList.toggle("primario", n > 0);
+}
+
 function telaColinha() {
   const node = tpl("tpl-colinha");
   salvarNaURL();
@@ -1235,7 +1266,7 @@ function telaColinha() {
   if (!escolhidos.length) {
     cartao.innerHTML =
       `<p class="vazio">Você ainda não escolheu ninguém. Volte ao resultado e
-       toque em <b>“Colocar na colinha”</b> nos candidatos que quiser levar.</p>`;
+       toque em <b>“+ Colinha”</b> nos candidatos que quiser levar.</p>`;
     compartilharBtn.disabled = true;
   } else {
     escolhidos.forEach(({ rotulo, candidato }) => {
@@ -1324,6 +1355,15 @@ function telaColinha() {
     cartao.after(p);
   }
 
+  // Papel na cabine: copiar os números como texto é o caminho mais curto.
+  const copiar = node.getElementById("copiar-numeros");
+  copiar.disabled = !escolhidos.length;
+  copiar.onclick = async () => {
+    const texto = escolhidos.map((e) => `${e.rotulo}: ${e.candidato.num} (${e.candidato.n})`).join("\n");
+    try { await navigator.clipboard.writeText(texto); copiar.textContent = "Copiado"; }
+    catch { copiar.textContent = "Não deu para copiar"; }
+    setTimeout(() => { copiar.textContent = "Copiar números"; }, 2000);
+  };
   node.getElementById("voltar-resultado").onclick = () => telaResultado();
   mostrar(node);
 }
@@ -1348,15 +1388,16 @@ function telaChegada() {
     estado.dados.porCargo.presidente || [])[0];
   if (topo) {
     node.getElementById("chegada-topo").textContent =
-      `Quem te mandou deu ${pct(topo.score)} com ${topo.candidato.n} para presidente.`;
+      `Este resultado deu ${pct(topo.score)} com ${topo.candidato.n} para presidente.`;
   }
   node.getElementById("chegada-meu").onclick = () => {
-    marcarMeu();
-    // Mesma UF já vem do link; só as respostas são zeradas.
+    // Mesma UF já vem do link; só as respostas são zeradas. O hash do amigo
+    // sai da URL: recarregar não pode devolver o resultado dele como seu.
     const uf = estado.uf, modo = estado.modo;
     zerarSessao();
     estado.uf = uf;
     estado.modo = modo;
+    history.replaceState(null, "", location.pathname + "#/comecar");
     carregarCandidatos().then(() => telaQuiz());
   };
   node.getElementById("chegada-ver").onclick = () => { marcarMeu(); telaResultado(); };
@@ -1372,8 +1413,19 @@ async function mandar(texto, url) {
 }
 
 function telaLanding() {
-  zerarSessao();
+  // Voltar do navegador ou o logo caíam aqui e apagavam 20 respostas sem
+  // aviso. Com quiz vivo, a landing oferece continuar em vez de zerar.
+  const viva = estado.uf && respondidas() > 0 && estado.indice < estado.teses.length;
+  if (!viva) zerarSessao();
   const node = tpl("tpl-landing");
+  if (viva) {
+    const b = document.createElement("a");
+    b.className = "primario cta";
+    b.href = "#/";
+    b.textContent = `Continuar de onde parei (${respondidas()} de ${tesesDoEleitor().length})`;
+    b.onclick = (ev) => { ev.preventDefault(); salvarNaURL(); telaQuiz(); };
+    node.querySelector(".hero .ctas").prepend(b);
+  }
   // Números reais, do build — uma landing eleitoral convence com fato, não
   // com adjetivo. Se meta.json não veio, o travessão fica.
   if (estado.meta) {
@@ -1431,11 +1483,12 @@ async function rotear() {
     return Object.keys(estado.escolhas).length ? telaColinha() : telaResultado();
   }
   // Link parcial retoma de onde parou em vez de fingir que o teste acabou.
+  // Link que veio de fora (o eleitor nunca respondeu nada nesta aba): pode
+  // ser de um amigo ou o dele mesmo em outra aba. Perguntar antes de abrir —
+  // inclusive quando é um quiz pela metade, que antes retomava como se fosse
+  // do eleitor.
+  if (!ehMeu() && respondidas() > 0) return telaChegada();
   if (estado.indice < estado.teses.length && respondidas() < 5) return telaQuiz();
-  // Resultado que veio de fora (o eleitor nunca respondeu nada nesta aba):
-  // é o link de um amigo. Cair direto no resultado dele confunde — e perde o
-  // convite de fazer o próprio.
-  if (!ehMeu()) return telaChegada();
   telaResultado();
 }
 

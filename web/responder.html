@@ -62,12 +62,12 @@
     <div id="perguntas"></div>
 
     <div class="pergunta campo-texto">
-      <p>Quem está respondendo</p>
-      <input type="text" id="quem" placeholder="Nome e função na campanha (ex.: Maria, coordenadora)" required>
+      <label for="quem"><p>Quem está respondendo</p></label>
+      <input type="text" id="quem" placeholder="Ex.: Maria, coordenadora" required>
     </div>
     <div class="pergunta campo-texto">
-      <p>E-mail para confirmação</p>
-      <input type="email" id="email" placeholder="Um e-mail da campanha — confirmamos antes de publicar" required>
+      <label for="email"><p>E-mail da campanha (confirmamos antes de publicar)</p></label>
+      <input type="email" id="email" placeholder="nome@partido.org.br" required>
     </div>
 
     <div class="contagem">
@@ -164,8 +164,19 @@ async function carregar() {
       "Declaro que respondo em nome da campanha e autorizo a publicação em colinha.app.br.",
     ].join("\n");
     const assunto = `[Colinha] Respostas — ${cand.n} (${cand.p}) SQ ${cand.id}`;
-    location.href = `mailto:${DESTINO}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`;
-    status.textContent = `${linhas.length} de ${teses.length} respondidas. Seu programa de e-mail deve ter aberto — é só enviar.`;
+    const mailto = `mailto:${DESTINO}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`;
+    location.href = mailto;
+    // Sem programa de e-mail configurado o mailto morre em silêncio: o texto
+    // fica visível para copiar, com o destino escrito.
+    status.innerHTML = "";
+    const ta = document.createElement("textarea");
+    ta.readOnly = true; ta.value = corpo; ta.rows = 8; ta.style.cssText = "width:100%;margin:.6rem 0;font:inherit;font-size:.85rem;padding:.6rem;border:1px solid var(--linha);border-radius:var(--raio)";
+    const cop = document.createElement("button");
+    cop.type = "button"; cop.className = "secundario"; cop.textContent = "Copiar texto";
+    cop.onclick = async () => { try { await navigator.clipboard.writeText(corpo); cop.textContent = "Copiado"; } catch { ta.select(); } };
+    const abrir = document.createElement("a");
+    abrir.href = mailto; abrir.textContent = "Abrir no e-mail"; abrir.className = "secundario"; abrir.style.marginLeft = ".5rem";
+    status.append(`${linhas.length} de ${teses.length} respondidas. Se o e-mail não abriu, copie o texto e mande para ${DESTINO}:`, ta, cop, abrir);
     status.className = "";
   };
 
