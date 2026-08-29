@@ -1,5 +1,19 @@
 # O que fazer a seguir
 
+## Atualização de 28/08/2026
+
+No ar em **colinha.app.br** (HTTPS forçado). Desde o texto abaixo entraram:
+dois votos para o Senado, favoritos, PNG re-diagramado, mapa com partidos e
+presidenciáveis (toggles), prévia de link para WhatsApp, botões de mandar,
+tela de chegada para link de amigo, rodada rápida de 10, e três jogos
+(`adivinha.html`, `qual-partido.html`, `bancada.html`). Métrica escolhida:
+"muita gente usou"; canal: WhatsApp.
+
+Bloqueado no dono do projeto: `respostas@colinha.app.br` (ImprovMX; MX/TXT
+ainda não propagados em 28/08 à noite) → e-mail de teste → disparo do lote 1
+(`pipeline/respostas/`). Não verificado ainda: cartão do WhatsApp no celular
+real; jogos em tela de 390px.
+
 Escrito em 27/08/2026. Eleição em **04/10/2026** — restam ~5 semanas.
 
 ## Onde o projeto está
