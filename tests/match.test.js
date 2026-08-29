@@ -92,3 +92,15 @@ test("empate não segue ordem alfabética nem de entrada", () => {
   // ...mas é estável entre execuções, senão a colinha mudaria ao recarregar.
   assert.deepEqual(ordem, ranquear(resp(1, 1, 1), TESES, cs).map((x) => x.candidato.id));
 });
+
+// Regressão: pos/src são posicionais sobre a lista COMPLETA de teses. Passar
+// um subconjunto (quiz rápido) desalinhava o match e o ranking saía errado.
+test("ranquear com subconjunto de teses lê posições erradas; com a lista completa acerta", () => {
+  const teses = ["a", "b", "c", "d"].map((id) => ({ id, eixo: {} }));
+  const cand = { id: "x", pos: "--+-", src: "5555" };
+  const respostas = { c: { valor: 1, importante: false }, d: { valor: -1, importante: false } };
+  const certo = ranquear(respostas, teses, [cand])[0].score;
+  assert.equal(certo, 1);
+  const errado = ranquear(respostas, [teses[2], teses[3]], [cand])[0].score;
+  assert.notEqual(errado, 1);
+});

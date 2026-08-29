@@ -578,6 +578,9 @@ function telaResultado({ rolar = true } = {}) {
   }
   if (rapido) {
     cabecalho.textContent = "Seus candidatos — quiz rápido";
+    const nota = node.getElementById("nota-parcial");
+    nota.hidden = false;
+    nota.textContent = `Prévia com ${teses.length} afirmações: os percentuais ficam grosseiros e muitos candidatos empatam. Abra “ver quais” para conferir tema a tema, e responda as outras ${estado.teses.length - teses.length} para afinar.`;
     // O rápido não monta colinha: o convite é completar as 34 e montar.
     const completar = node.getElementById("completar");
     completar.hidden = false;
@@ -703,7 +706,9 @@ function telaResultado({ rolar = true } = {}) {
     const completo = montando
       ? [...universo].sort((a, b) => a.n.localeCompare(b.n, "pt-BR"))
           .map((c) => ({ candidato: c, score: null, detalhe: [], respondidas: 0 }))
-      : ranquear(estado.respostas, teses, universo);
+      // SEMPRE estado.teses: pos/src são posicionais sobre a lista completa.
+      // Passar o subconjunto do quiz rápido desalinhava tudo (bug real).
+      : ranquear(estado.respostas, estado.teses, universo);
 
     const alvo = normalizar(estado.busca);
     let visiveis = alvo
@@ -1155,7 +1160,7 @@ function desenharRadar(candidatos) {
   });
   const series = [];
   candidatos.forEach((c, k) => {
-    const r = match(estado.respostas, teses, c.candidato);
+    const r = match(estado.respostas, estado.teses, c.candidato);
     if (!r) return;
     const vals = porTema(r.detalhe);
     const pts = vals.map((v, i) => pt(i, v ?? 0));
@@ -1182,7 +1187,7 @@ function painelVisoes() {
     abas.querySelectorAll("button").forEach((b) => { const on = b.dataset.v === estado.visao; b.className = on ? "filtro ativo" : "filtro"; b.setAttribute("aria-pressed", on); });
     if (estado.visao === "mapa") { corpo.append(desenharBussola()); return; }
     const universo = estado.dados.porCargo[estado.cargoAtivo] || [];
-    const rank = ranquear(estado.respostas, tesesDoEleitor(), universo);
+    const rank = ranquear(estado.respostas, estado.teses, universo);
     if (!rank.length) { corpo.innerHTML = `<p class="aviso">Responda algumas afirmações para ver o radar.</p>`; return; }
     estado.radar = (estado.radar || []).filter((id) => rank.some((r) => r.candidato.id === id));
     if (!estado.radar.length) estado.radar = rank.slice(0, 3).map((r) => r.candidato.id);
