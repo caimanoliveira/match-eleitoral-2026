@@ -196,6 +196,13 @@ def main() -> None:
     # própria mandaria alguém votar na pessoa errada.
     numeros = collections.Counter((c["cargo"], c["uf"], c["numero"]) for c in candidatos)
     disputados = {k for k, n in numeros.items() if n > 1}
+    # A mesma pessoa (CPF) registrada em dois cargos: o TSE ainda não julgou,
+    # só uma vai valer. Sem isso um candidato a senador aparecia também na
+    # lista de deputado como se fossem dois (bug reportado em 30/08).
+    cargos_por_cpf = collections.defaultdict(set)
+    for c in candidatos:
+        if c["cpf"]:
+            cargos_por_cpf[c["cpf"]].add(c["cargo"])
 
     for c in candidatos:
         dep = cpf_para_dep.get(c["cpf"])
@@ -240,6 +247,9 @@ def main() -> None:
         }
         if (c["cargo"], c["uf"], c["numero"]) in disputados:
             registro["numDisputado"] = True
+        outros = sorted(cargos_por_cpf.get(c["cpf"], set()) - {c["cargo"]})
+        if outros:
+            registro["cargoDuplo"] = outros
         if c["id"] in por_senador:
             registro["sen"] = True  # tem voto nominal no Senado
         if c["id"] in com_foto:

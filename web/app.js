@@ -1016,6 +1016,17 @@ function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPar
     topo.append(alerta);
   }
 
+  if (candidato.cargoDuplo) {
+    const alerta = document.createElement("p");
+    alerta.className = "num-disputado";
+    const rotulo = (c) => (CARGOS.find(([id]) => id === c) || [c, c])[1];
+    alerta.textContent =
+      `Atenção: o TSE também registra esta pessoa como candidata a ` +
+      `${candidato.cargoDuplo.map(rotulo).join(" e ")} — só uma das candidaturas vai valer. ` +
+      `Confira antes de votar.`;
+    topo.append(alerta);
+  }
+
   const divergiu = divergencias(detalhe, candidato.p);
   if (divergiu.length) {
     const p = document.createElement("p");
