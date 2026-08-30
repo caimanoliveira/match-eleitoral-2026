@@ -80,6 +80,7 @@ const estado = {
   // nunca entram na URL compartilhada. Chave é o SQ, único no país.
   favoritos: lerFavoritos(),
   soFavoritos: false,
+  soImportantes: false,
   // Camadas do mapa. No celular partidos começam desligados: 30 siglas em
   // 350px é ruído; o eleitor liga se quiser.
   // Legenda seletora do mapa: cada partido e cada presidenciável pode ser
@@ -593,6 +594,14 @@ function telaResultado({ rolar = true } = {}) {
       rot.className = "voce-e";
       rot.innerHTML = `Pelo que você respondeu, você é <b>${esc(nomeDaPosicao(p))}</b>. <small>É a sua posição nos dois eixos do mapa, não um rótulo de partido.</small>`;
       cabecalho.after(rot);
+      // Quadrante vazio é dado, não bug: o Congresso ocupa mal alguns cantos.
+      // Dizer isso na tela poupa o "fiquei sozinho" (feedback de 30/08).
+      const vizinhos = quadranteVazio(p);
+      if (vizinhos) {
+        const s = document.createElement("small");
+        s.textContent = ` Nenhuma bancada de partido cai no seu quadrante; as mais próximas no mapa são ${vizinhos.join(" e ")}. O ranking abaixo continua valendo: ele compara tema a tema, não a distância no mapa.`;
+        rot.querySelector("small").append(s);
+      }
     }
   }
   if (montando) {
@@ -707,6 +716,18 @@ function telaResultado({ rolar = true } = {}) {
     estado.limite = POR_PAGINA;
     renderLista();
   };
+  // Pedido de testador (30/08): "% só com o que marquei como muito
+  // importante". Mesma conta, sobre o subconjunto — e a tela diz sobre
+  // quantos temas, porque com 3 respostas o percentual vira degrau.
+  const filtroImp = node.getElementById("so-importantes");
+  const notaImp = node.getElementById("nota-importantes");
+  const importantes = () => Object.fromEntries(
+    Object.entries(estado.respostas).filter(([, r]) => r.importante && r.valor !== PULOU));
+  filtroImp.onclick = () => {
+    estado.soImportantes = !estado.soImportantes;
+    estado.limite = POR_PAGINA;
+    renderLista();
+  };
 
   const lista = node.getElementById("lista");
   const mais = node.getElementById("mais");
@@ -733,7 +754,16 @@ function telaResultado({ rolar = true } = {}) {
           .map((c) => ({ candidato: c, score: null, detalhe: [], respondidas: 0 }))
       // SEMPRE estado.teses: pos/src são posicionais sobre a lista completa.
       // Passar o subconjunto do quiz rápido desalinhava tudo (bug real).
-      : ranquear(estado.respostas, estado.teses, universo, SEMENTE);
+      : ranquear(estado.soImportantes ? importantes() : estado.respostas, estado.teses, universo, SEMENTE);
+    const nImp = Object.keys(importantes()).length;
+    filtroImp.disabled = !nImp || montando;
+    filtroImp.hidden = montando;
+    if (!nImp) estado.soImportantes = false;
+    filtroImp.textContent = nImp ? `Só o muito importante (${nImp})` : "Só o muito importante";
+    filtroImp.setAttribute("aria-pressed", estado.soImportantes ? "true" : "false");
+    filtroImp.classList.toggle("ativo", estado.soImportantes);
+    notaImp.hidden = !estado.soImportantes;
+    notaImp.textContent = `Percentual calculado só sobre ${nImp === 1 ? "o 1 tema" : `os ${nImp} temas`} que você marcou como muito importante — com poucos temas, muita gente empata.`;
 
     const alvo = normalizar(estado.busca);
     let visiveis = alvo
@@ -1160,6 +1190,20 @@ function nomeDaPosicao(p) {
   if (!soc) return eco === "estatista" ? "estatista de centro" : "de centro, pró-mercado";
   if (!eco) return `${soc} de centro`;
   return `${soc} ${eco}`;
+}
+
+/** Se nenhuma bancada está no quadrante do eleitor, devolve as 2 siglas mais
+ *  próximas no mapa; senão null. Eixo perto de zero conta como "sem quadrante". */
+function quadranteVazio(p) {
+  if (Math.abs(p.economico) < 0.15 && Math.abs(p.social) < 0.15) return null;
+  const pts = Object.entries(estado.partidos)
+    .map(([sigla, bancada]) => ({ sigla, p: pontoDePosicoes((t) => bancada[t.id]?.pos) }))
+    .filter((x) => x.p);
+  if (!pts.length) return null;
+  const mesmo = (a, b) => Math.sign(a.economico) === Math.sign(b.economico) && Math.sign(a.social) === Math.sign(b.social);
+  if (pts.some((x) => mesmo(x.p, p))) return null;
+  const d = (x) => Math.hypot(x.p.economico - p.economico, x.p.social - p.social);
+  return pts.sort((a, b) => d(a) - d(b)).slice(0, 2).map((x) => x.sigla);
 }
 
 /** Radar (smartspider): concordância entre o eleitor e cada candidato por

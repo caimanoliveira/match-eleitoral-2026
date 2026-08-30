@@ -229,7 +229,7 @@ select {
 .b-legenda { font-size: .82rem; line-height: 1.5; color: var(--suave); margin: .6rem 0 0; }
 .b-legenda b { color: var(--tinta); }
 
-.busca-linha { display: flex; gap: .5rem; align-items: center; margin-bottom: 1rem; }
+.busca-linha { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: 1rem; }
 .busca-linha .busca { flex: 1; margin: 0; }
 .filtro { white-space: nowrap; padding: .5rem .85rem; font-size: .9rem; background: var(--campo); color: var(--suave); border-color: var(--linha); }
 .filtro.ativo { background: var(--tinta); color: var(--papel); border-color: var(--tinta); }
@@ -979,3 +979,5 @@ main:has(.landing) { max-width: none; padding: 0; }
 .simples { margin: -.3rem 0 .9rem; font-size: 1rem; line-height: 1.5; color: var(--suave); }
 .resp.naosei { color: var(--suave); font-weight: 500; }
 .resp.naosei[aria-pressed="true"] { border-color: var(--tinta); color: var(--tinta); }
+.nota-importantes { font-size: .85rem; color: var(--suave); margin: -.4rem 0 .9rem; }
+.filtro:disabled { opacity: .45; cursor: not-allowed; }
