@@ -169,7 +169,9 @@
 
     <div class="respostas">
       <button data-valor="1"  class="resp concordo">Concordo</button>
+      <button data-valor="0.5" class="resp concordo-parcial">Concordo em parte</button>
       <button data-valor="0"  class="resp neutro">Nem um nem outro</button>
+      <button data-valor="-0.5" class="resp discordo-parcial">Discordo em parte</button>
       <button data-valor="-1" class="resp discordo">Discordo</button>
       <button class="resp naosei" id="pular">Não sei / pular</button>
     </div>
@@ -181,8 +183,8 @@
     <button class="ver-parcial" id="ver-parcial" hidden></button>
 
     <p class="dica-teclado" aria-hidden="true">
-      No teclado: <kbd>1</kbd> concordo · <kbd>2</kbd> nem um nem outro · <kbd>3</kbd> discordo
-      · <kbd>4</kbd> não sei · <kbd>←</kbd> voltar
+      No teclado: <kbd>1</kbd> concordo · <kbd>2</kbd> concordo em parte · <kbd>3</kbd> neutro ·
+      <kbd>4</kbd> discordo em parte · <kbd>5</kbd> discordo · <kbd>6</kbd> não sei · <kbd>←</kbd> voltar
     </p>
   </section>
 </template>

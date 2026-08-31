@@ -12,6 +12,7 @@ Roda só no runner: a máquina de desenvolvimento está bloqueada pelo WAF do TS
 """
 
 import io
+import json
 import re
 import zipfile
 from pathlib import Path
@@ -23,6 +24,18 @@ UFS = ("AC AL AM AP BA BR CE DF ES GO MA MG MS MT PA PB PE PI PR RJ RN RO RR "
        "RS SC SE SP TO").split()
 DESTINO = Path(__file__).resolve().parent.parent / "web" / "fotos"
 NOME = re.compile(r"F[A-Z]{2}(\d+)_div\.jpg$")
+
+
+def publicadas(data: Path) -> set[str]:
+    """IDs cujas fotos locais já constam dos shards publicados."""
+    ids = set()
+    for arquivo in data.glob("*.json"):
+        if arquivo.stem in {"teses", "partidos", "meta"}:
+            continue
+        for candidato in json.loads(arquivo.read_text(encoding="utf-8")):
+            if (candidato.get("foto") or "").startswith("fotos/"):
+                ids.add(candidato["id"])
+    return ids
 
 
 def baixar(ufs=UFS, max_age: float = 6 * 3600) -> set[str]:

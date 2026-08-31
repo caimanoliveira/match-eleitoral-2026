@@ -105,7 +105,8 @@ const opcao = (id, valor, rotulo) =>
 async function carregar() {
   const meta = await (await fetch("data/meta.json", { cache: "no-store" })).json();
   const carimbo = (meta.gerado_em || "").replace(/\D/g, "").slice(0, 14);
-  const teses = (await (await fetch(`data/teses.json?v=${carimbo}`)).json()).teses;
+  const teses = (await (await fetch(`data/teses.json?v=${carimbo}`)).json()).teses
+    .filter((t) => !t.aprofundada);
 
   // Acha o candidato: tenta cada shard que a UF dele pode ser. Sem UF na URL,
   // varre a lista de shards do meta (são 109 arquivos pequenos; só quando

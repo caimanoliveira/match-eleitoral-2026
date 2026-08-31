@@ -27,11 +27,22 @@ test("neutro do candidato fica a meio caminho", () => {
   assert.equal(match(resp(1, 1, 1), TESES, cand("000")).score, 0.5);
 });
 
+test("resposta parcial fica a um quarto de distância do candidato", () => {
+  assert.equal(match(resp(0.5), TESES.slice(0, 1), cand("+")).score, 0.75);
+  assert.equal(match(resp(-0.5), TESES.slice(0, 1), cand("-")).score, 0.75);
+});
+
 test("tese sem dado não conta nem a favor nem contra", () => {
   // Concorda com as duas comparáveis; a terceira não tem evidência.
   const r = match(resp(1, 1, 1), TESES, cand("++?"));
   assert.equal(r.score, 1);
   assert.equal(r.respondidas, 2);
+});
+
+test("detalhe preserva o link da evidência pública do candidato", () => {
+  const candidato = { id: "x", pos: "+", src: "3", ref: { 0: "https://exemplo.test/plano" } };
+  assert.equal(match(resp(1), TESES.slice(0, 1), candidato).detalhe[0].url,
+    "https://exemplo.test/plano");
 });
 
 test("marcar como importante dobra o peso da tese", () => {

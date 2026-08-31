@@ -17,7 +17,7 @@ DATA = RAIZ / "web" / "data"
 sys.path.insert(0, str(RAIZ / "pipeline"))
 
 POSICOES = set("+-0?")
-NIVEIS = set("125?")  # níveis da cascata em uso + sem dado
+NIVEIS = set("12345?")  # níveis da cascata em uso + sem dado
 
 
 def main() -> None:
@@ -64,6 +64,11 @@ def main() -> None:
             assert len(c["src"]) == n, f"{shard.name}/{c['id']}: src fora de sincronia"
             assert set(c["pos"]) <= POSICOES, f"{shard.name}/{c['id']}: pos inválido"
             assert set(c["src"]) <= NIVEIS, f"{shard.name}/{c['id']}: src inválido"
+            for i, nivel in enumerate(c["src"]):
+                if nivel in "34":
+                    assert (c.get("ref") or {}).get(str(i), "").startswith("http"), (
+                        f"{shard.name}/{c['id']}: fonte pública sem URL na tese {i}"
+                    )
 
             # Posição e fonte têm de existir juntas: uma sem a outra vira
             # afirmação sem procedência na tela.

@@ -1,8 +1,8 @@
 // Cálculo do match. Determinístico e roda inteiro no browser: nenhuma resposta
 // do eleitor sai do dispositivo.
 //
-// Escala Wahl-O-Mat: o eleitor responde +1 (concorda), 0 (neutro) ou -1
-// (discorda), e pode marcar a tese como importante, o que dobra o peso.
+// O eleitor responde numa escala de -1 a +1, incluindo concordância parcial,
+// e pode marcar a tese como importante, o que dobra o peso.
 
 export const CONCORDA = 1;
 export const NEUTRO = 0;
@@ -14,7 +14,7 @@ export const SEM_DADO = "?";
 const POSICAO = { "+": 1, "-": -1, "0": 0 };
 
 /**
- * @param respostas  {[teseId]: {valor: -1|0|1|null, importante: boolean}}
+ * @param respostas  {[teseId]: {valor: -1|-0.5|0|0.5|1|null, importante: boolean}}
  * @param teses      array de teses na MESMA ordem das strings pos/src
  * @param candidato  {pos, src} do shard
  * @returns {score: 0..1, respondidas: n, detalhe: [...]} ou null se não dá para comparar
@@ -48,6 +48,7 @@ export function match(respostas, teses, candidato) {
       posicao,
       resposta: resposta.valor,
       fonte: candidato.src[i],
+      url: candidato.ref?.[i] || null,
       concorda: resposta.valor === posicao,
     });
   }

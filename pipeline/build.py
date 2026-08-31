@@ -25,6 +25,7 @@ from pathlib import Path
 
 import congresso
 import fotos
+import publicas
 import senado
 import survey
 import teses as teses_mod
@@ -158,6 +159,8 @@ def main() -> None:
     # Nível 1: o que o candidato declarou, conferido. Vence tudo.
     declaradas = survey.carregar({t["id"] for t in ts})
     print(f"survey: {len(declaradas)} candidatos com resposta própria")
+    evidencias_publicas = publicas.carregar({t["id"] for t in ts})
+    print(f"fontes públicas: {len(evidencias_publicas)} candidatos")
 
     votacoes_sen = senado.votacoes()
     senadores = senado.senadores(votacoes_sen)
@@ -182,6 +185,8 @@ def main() -> None:
         com_foto = fotos.baixar()
     else:
         com_foto = {p.stem for p in fotos.DESTINO.glob("*.jpg")} if fotos.DESTINO.exists() else set()
+        if not com_foto:
+            com_foto = fotos.publicadas(DATA)
     print(f"fotos: {len(com_foto)} candidatos")
 
     cobertura = collections.Counter()
@@ -217,8 +222,10 @@ def main() -> None:
         do_partido = por_partido.get(c["partido"].upper(), {})
 
         declarou = declaradas.get(c["id"], {})
+        publicou = evidencias_publicas.get(c["id"], {})
         pos, src = [], []
-        for t in ts:
+        refs = {}
+        for i, t in enumerate(ts):
             if t["id"] in declarou:  # nível 1: o candidato respondeu
                 pos.append(declarou[t["id"]])
                 src.append("1")
@@ -227,6 +234,12 @@ def main() -> None:
                 pos.append(proprios[t["id"]])
                 src.append("2")
                 cobertura[2] += 1
+            elif t["id"] in publicou:  # níveis 3/4: plano ou declaração pública
+                valor, nivel, fonte = publicou[t["id"]]
+                pos.append(valor)
+                src.append(nivel)
+                refs[str(i)] = fonte
+                cobertura[int(nivel)] += 1
             elif t["id"] in do_partido:  # nível 5: como a bancada votou
                 pos.append(do_partido[t["id"]])
                 src.append("5")
@@ -245,6 +258,8 @@ def main() -> None:
             "pos": "".join(pos),
             "src": "".join(src),
         }
+        if refs:
+            registro["ref"] = refs
         if (c["cargo"], c["uf"], c["numero"]) in disputados:
             registro["numDisputado"] = True
         outros = sorted(cargos_por_cpf.get(c["cpf"], set()) - {c["cargo"]})
@@ -267,7 +282,9 @@ def main() -> None:
 
     total = sum(cobertura.values())
     print("\ncobertura das células (candidato x tese):")
-    for nivel, rotulo in ((1, "declarado pelo candidato"), (2, "voto do próprio"), (5, "bancada do partido"), (0, "sem dado")):
+    for nivel, rotulo in ((1, "declarado pelo candidato"), (2, "voto do próprio"),
+                          (3, "plano de governo"), (4, "declaração pública"),
+                          (5, "bancada do partido"), (0, "sem dado")):
         n = cobertura[nivel]
         print(f"  nível {nivel} {rotulo:<20} {n:>8} ({100 * n / total:5.1f}%)")
     print(f"\ncandidatos com voto próprio: {incumbentes}")
@@ -326,6 +343,7 @@ def main() -> None:
                     "texto": t["texto"],
                     "contexto": t.get("contexto", ""),
                     "simples": t.get("simples", ""),
+                    "aprofundada": t.get("aprofundada", False),
                     "esfera": t["esfera"],
                     "eixo": t["eixo"],
                     "fontes": [

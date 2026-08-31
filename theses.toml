@@ -489,3 +489,370 @@ verificado_em = "2026-08-26"
 verificado_por = "curadoria assistida + verificação independente"
 nota = "Votação do REQ 3680, requerimento de urgência (art. 155 do RICD) para o PL 1579/2025, em 10/09/2025, aprovado 300 a 99 (aprovacao=1). Li o inteiro teor do PL 1579/2025 (Talíria Petrone, PSOL, codteor 2889191): o art. 3º obriga as empresas de aplicativo de entrega a conceder crédito de no mínimo R$ 20 ao entregador a cada 4 horas ininterruptas ou 6 alternadas, de uso exclusivo para alimentos, vedada a conversão em dinheiro e o desconto da remuneração. Votar Sim foi aprovar a urgência desse projeto, levando a obrigação direto ao plenário. MDB, NOVO e PL votaram Não."
 votacoes = [{ id = "2556109-8", direcao = 1 }]
+
+# As 26 teses abaixo entram apenas no modo aprofundado. Todas ficam no fim para
+# preservar a ordem relativa das 34 perguntas principais.
+
+[[tese]]
+id = "seguro-obrigatorio-transito"
+texto = "Os proprietários de veículos devem pagar um seguro obrigatório para indenizar vítimas de acidentes de trânsito."
+simples = "Voltar a cobrar de donos de veículos um seguro nacional para pagar indenizações a vítimas de acidentes."
+contexto = "O SPVAT recriou o seguro obrigatório que substituiu o antigo DPVAT."
+esfera = "federal"
+eixo = { economico = -0.5, social = 0.0 }
+aprofundada = true
+verificado = true
+verificado_em = "2026-08-30"
+verificado_por = "curadoria aprofundada"
+nota = "Votação do substitutivo global do PLP 233/2023. Sim = instituir o SPVAT."
+votacoes = [{ id = "2400758-62", direcao = 1 }]
+
+[[tese]]
+id = "assistencia-juridica-vitimas-vulneraveis"
+texto = "Vítimas em situação de vulnerabilidade devem ter assistência jurídica obrigatória durante o processo criminal."
+simples = "Garantir advogado e acompanhamento jurídico para vítimas vulneráveis de crimes."
+contexto = "A PNAJOV cria assistência jurídica obrigatória para essas vítimas."
+esfera = "federal"
+eixo = { economico = -0.2, social = -0.4 }
+aprofundada = true
+verificado = true
+verificado_em = "2026-08-30"
+verificado_por = "curadoria aprofundada"
+nota = "Votação de manutenção do texto do PL 6415/2025. Sim = manter a política."
+votacoes = [{ id = "2596663-47", direcao = 1 }]
+
+[[tese]]
+id = "incentivos-transicao-energetica"
+texto = "O governo deve conceder incentivos financeiros a projetos de transição para fontes de energia de baixo carbono."
+simples = "Usar incentivos públicos para acelerar projetos de energia mais limpa."
+contexto = "O Paten permite financiar projetos de transição energética por instrumentos públicos."
+esfera = "federal"
+eixo = { economico = -0.4, social = -0.3 }
+aprofundada = true
+verificado = true
+verificado_em = "2026-08-30"
+verificado_por = "curadoria aprofundada"
+nota = "Votação de manutenção do texto do PL 327/2021. Sim = instituir o Paten."
+votacoes = [{ id = "2269745-86", direcao = 1 }]
+
+[[tese]]
+id = "autorizacao-rigorosa-desconto-inss"
+texto = "Associações só devem descontar mensalidades de aposentadorias com autorização formal e verificável do beneficiário."
+simples = "Exigir documento ou assinatura eletrônica forte antes de descontar mensalidade do benefício do INSS."
+contexto = "O PL 1546/2024 exige escritura, firma reconhecida ou assinatura eletrônica qualificada."
+esfera = "federal"
+eixo = { economico = 0.0, social = -0.2 }
+aprofundada = true
+verificado = true
+verificado_em = "2026-08-30"
+verificado_por = "curadoria aprofundada"
+nota = "Votação de manutenção do texto do PL 1546/2024. Sim = exigir autorização formal."
+votacoes = [{ id = "2430953-270", direcao = 1 }]
+
+[[tese]]
+id = "tarifa-social-agua-esgoto"
+texto = "Famílias de baixa renda devem ter tarifa social de água e esgoto em todo o país."
+simples = "Dar desconto nacional na conta de água e esgoto para famílias pobres."
+contexto = "O PL 9543/2018 instituiu diretrizes nacionais para a tarifa social."
+esfera = "ambas"
+eixo = { economico = -0.7, social = -0.2 }
+aprofundada = true
+verificado = true
+verificado_em = "2026-08-30"
+verificado_por = "curadoria aprofundada"
+nota = "Votação do substitutivo global do PL 9543/2018. Sim = instituir a tarifa social."
+votacoes = [{ id = "2167882-83", direcao = 1 }]
+
+[[tese]]
+id = "restricoes-invasores-propriedade"
+texto = "Quem participar de invasão de propriedade deve ficar impedido de receber benefícios públicos e participar de programas de reforma agrária."
+simples = "Aplicar restrições a quem ocupar propriedade sem autorização."
+contexto = "O PL 709/2023 criou impedimentos para ocupantes e invasores de propriedades."
+esfera = "federal"
+eixo = { economico = 0.6, social = 0.5 }
+aprofundada = true
+verificado = true
+verificado_em = "2026-08-30"
+verificado_por = "curadoria aprofundada"
+nota = "Votação de manutenção do texto do PL 709/2023. Sim = manter os impedimentos."
+votacoes = [{ id = "2349493-92", direcao = 1 }]
+
+[[tese]]
+id = "ampliar-imunidade-tributaria-religiosa"
+texto = "A imunidade tributária de organizações religiosas deve alcançar também entidades assistenciais e beneficentes ligadas a elas."
+simples = "Ampliar a proteção contra impostos para entidades mantidas por igrejas e templos."
+contexto = "A PEC 5/2023 ampliou o alcance constitucional da imunidade tributária religiosa."
+esfera = "federal"
+eixo = { economico = 0.5, social = 0.6 }
+aprofundada = true
+verificado = true
+verificado_em = "2026-08-30"
+verificado_por = "curadoria aprofundada"
+nota = "Votação de manutenção do texto da PEC 5/2023. Sim = ampliar a imunidade."
+votacoes = [{ id = "2351506-115", direcao = 1 }]
+
+[[tese]]
+id = "crime-discriminar-pessoa-politicamente-exposta"
+texto = "Recusar serviço bancário apenas porque alguém é pessoa politicamente exposta deve ser crime."
+simples = "Proibir banco de negar conta só por a pessoa exercer ou ter exercido cargo político relevante."
+contexto = "O PL 2720/2023 tipifica discriminação contra pessoas politicamente expostas."
+esfera = "federal"
+eixo = { economico = -0.2, social = 0.1 }
+aprofundada = true
+verificado = true
+verificado_em = "2026-08-30"
+verificado_por = "curadoria aprofundada"
+nota = "Votação do substitutivo do PL 2720/2023. Sim = criar a proteção penal."
+votacoes = [{ id = "2364109-35", direcao = 1 }]
+
+[[tese]]
+id = "marco-pesquisa-clinica-humanos"
+texto = "O Brasil deve ter um marco nacional que facilite pesquisas clínicas com seres humanos sob controle de comitês de ética."
+simples = "Criar regras nacionais para acelerar pesquisas médicas sem retirar a análise ética."
+contexto = "O PL 7082/2017 criou o Sistema Nacional de Ética em Pesquisa Clínica."
+esfera = "federal"
+eixo = { economico = 0.3, social = 0.0 }
+aprofundada = true
+verificado = true
+verificado_em = "2026-08-30"
+verificado_por = "curadoria aprofundada"
+nota = "Votação de manutenção do texto do PL 7082/2017. Sim = aprovar o marco."
+votacoes = [{ id = "2125189-191", direcao = 1 }]
+
+[[tese]]
+id = "cotas-raciais-concurso-publico"
+texto = "Concursos públicos federais devem reservar 30% das vagas para pessoas negras, indígenas e quilombolas."
+simples = "Reservar três de cada dez vagas do serviço público federal para esses grupos."
+contexto = "O PL 1958/2021 renovou e ampliou as cotas nos concursos federais."
+esfera = "federal"
+eixo = { economico = -0.2, social = -0.8 }
+aprofundada = true
+verificado = true
+verificado_em = "2026-08-30"
+verificado_por = "curadoria aprofundada"
+nota = "Votação do substitutivo global do PL 1958/2021. Sim = reservar 30% das vagas."
+votacoes = [{ id = "2439779-55", direcao = 1 }]
+
+[[tese]]
+id = "tributar-renda-exterior-offshores"
+texto = "Rendimentos de aplicações financeiras, fundos exclusivos e empresas offshore no exterior devem pagar imposto de renda no Brasil."
+simples = "Cobrar imposto de brasileiros sobre investimentos e empresas mantidos fora do país."
+contexto = "O PL 4173/2023 alterou a tributação de fundos e renda financeira no exterior."
+esfera = "federal"
+eixo = { economico = -0.7, social = -0.2 }
+aprofundada = true
+verificado = true
+verificado_em = "2026-08-30"
+verificado_por = "curadoria aprofundada"
+nota = "Votação do substitutivo global do PL 4173/2023. Sim = aprovar a tributação."
+votacoes = [{ id = "2383287-43", direcao = 1 }]
+
+[[tese]]
+id = "sistema-nacional-educacao"
+texto = "União, estados e municípios devem seguir um Sistema Nacional de Educação com metas e responsabilidades coordenadas."
+simples = "Fazer os governos trabalharem sob regras nacionais comuns para educação."
+contexto = "O PLP 235/2019 instituiu o Sistema Nacional de Educação."
+esfera = "ambas"
+eixo = { economico = -0.4, social = -0.2 }
+aprofundada = true
+verificado = true
+verificado_em = "2026-08-30"
+verificado_por = "curadoria aprofundada"
+nota = "Votação de manutenção do texto do PLP 235/2019. Sim = instituir o sistema."
+votacoes = [{ id = "2318217-90", direcao = 1 }]
+
+[[tese]]
+id = "direito-criancas-contato-natureza"
+texto = "Políticas urbanas e educacionais devem garantir a crianças e adolescentes acesso regular à natureza."
+simples = "Planejar escolas e cidades para que crianças tenham contato com áreas naturais."
+contexto = "O PL 2225/2024 criou diretrizes para efetivar o direito de crianças à natureza."
+esfera = "ambas"
+eixo = { economico = -0.3, social = -0.5 }
+aprofundada = true
+verificado = true
+verificado_em = "2026-08-30"
+verificado_por = "curadoria aprofundada"
+nota = "Votação do substitutivo do PL 2225/2024. Sim = aprovar as diretrizes."
+votacoes = [{ id = "2438687-71", direcao = 1 }]
+
+[[tese]]
+id = "campanha-uso-consciente-tecnologia"
+texto = "O governo deve promover uma campanha nacional para reduzir o uso excessivo de jogos, redes sociais e telas."
+simples = "Fazer campanha pública sobre uso equilibrado de celular, jogos e redes sociais."
+contexto = "O PL 3224/2024 instituiu campanha de utilização consciente da tecnologia digital."
+esfera = "federal"
+eixo = { economico = -0.2, social = 0.2 }
+aprofundada = true
+verificado = true
+verificado_em = "2026-08-30"
+verificado_por = "curadoria aprofundada"
+nota = "Votação do substitutivo do PL 3224/2024. Sim = instituir a campanha."
+votacoes = [{ id = "2453934-59", direcao = 1 }]
+
+[[tese]]
+id = "crime-violencia-patrimonial-crianca"
+texto = "Usar ou destruir bens de uma criança para controlá-la ou prejudicá-la deve ser crime específico."
+simples = "Punir como crime quem toma, destrói ou usa o patrimônio de uma criança contra ela."
+contexto = "O PL 3914/2023 criou o crime de violência patrimonial contra crianças e adolescentes."
+esfera = "ambas"
+eixo = { economico = 0.0, social = -0.3 }
+aprofundada = true
+verificado = true
+verificado_em = "2026-08-30"
+verificado_por = "curadoria aprofundada"
+nota = "Votação de manutenção do texto do PL 3914/2023. Sim = criar o crime."
+votacoes = [{ id = "2379209-61", direcao = 1 }]
+
+[[tese]]
+id = "violencia-vicaria-lei-maria-penha"
+texto = "Usar filhos, parentes ou animais para causar sofrimento à mulher deve ser reconhecido como violência doméstica."
+simples = "Aplicar a Lei Maria da Penha quando o agressor ataca alguém próximo para ferir a mulher."
+contexto = "O PL 3880/2024 incluiu a violência vicária na Lei Maria da Penha."
+esfera = "ambas"
+eixo = { economico = 0.0, social = -0.6 }
+aprofundada = true
+verificado = true
+verificado_em = "2026-08-30"
+verificado_por = "curadoria aprofundada"
+nota = "Votação de manutenção do texto do PL 3880/2024. Sim = incluir violência vicária."
+votacoes = [{ id = "2462009-79", direcao = 1 }]
+
+[[tese]]
+id = "seguro-defeso-pescador-artesanal"
+texto = "Pescadores artesanais devem receber seguro-desemprego nos meses em que a pesca fica proibida para reprodução dos peixes."
+simples = "Pagar renda temporária ao pescador artesanal durante o período de defeso."
+contexto = "A MPV 1323/2025 alterou as regras do seguro-defeso."
+esfera = "federal"
+eixo = { economico = -0.7, social = -0.2 }
+aprofundada = true
+verificado = true
+verificado_em = "2026-08-30"
+verificado_por = "curadoria aprofundada"
+nota = "Votação de manutenção do texto da MPV 1323/2025. Sim = manter o benefício."
+votacoes = [{ id = "2581700-31", direcao = 1 }]
+
+[[tese]]
+id = "regular-streaming-audiovisual"
+texto = "Serviços de streaming de vídeo devem financiar a produção audiovisual brasileira e cumprir regras nacionais de conteúdo."
+simples = "Cobrar contribuição e obrigações de plataformas como Netflix para financiar obras brasileiras."
+contexto = "O PL 8889/2017 regulamentou a oferta de vídeo sob demanda."
+esfera = "federal"
+eixo = { economico = -0.6, social = -0.3 }
+aprofundada = true
+verificado = true
+verificado_em = "2026-08-30"
+verificado_por = "curadoria aprofundada"
+nota = "Votação do substitutivo global do PL 8889/2017. Sim = aprovar a regulação."
+votacoes = [{ id = "2157806-137", direcao = 1 }]
+
+[[tese]]
+id = "igualdade-salarial-mulheres-homens"
+texto = "Empresas devem comprovar igualdade salarial entre mulheres e homens na mesma função e sofrer multa quando discriminarem."
+simples = "Obrigar empresas a demonstrar que pagam o mesmo salário para trabalho igual."
+contexto = "O PL 1085/2023 reforçou fiscalização, transparência e multas por desigualdade salarial."
+esfera = "federal"
+eixo = { economico = -0.5, social = -0.7 }
+aprofundada = true
+verificado = true
+verificado_em = "2026-08-30"
+verificado_por = "curadoria aprofundada"
+nota = "Votação do substitutivo global do PL 1085/2023. Sim = aprovar as obrigações."
+votacoes = [{ id = "2351179-51", direcao = 1 }]
+
+[[tese]]
+id = "linguagem-simples-governo"
+texto = "Órgãos públicos devem ser obrigados a escrever comunicações em linguagem simples e compreensível."
+simples = "Fazer cartas, sites e formulários do governo evitarem linguagem burocrática."
+contexto = "O PL 6256/2019 instituiu a Política Nacional de Linguagem Simples."
+esfera = "ambas"
+eixo = { economico = 0.0, social = -0.2 }
+aprofundada = true
+verificado = true
+verificado_em = "2026-08-30"
+verificado_por = "curadoria aprofundada"
+nota = "Votação do substitutivo global do PL 6256/2019. Sim = instituir a política."
+votacoes = [{ id = "2231632-97", direcao = 1 }]
+
+[[tese]]
+id = "politica-industrial-nacional"
+texto = "O governo federal deve coordenar uma política industrial com crédito, compras públicas e metas tecnológicas."
+simples = "Usar instrumentos do governo para estimular setores industriais escolhidos como estratégicos."
+contexto = "O PL 4133/2023 definiu diretrizes para a política industrial e tecnológica brasileira."
+esfera = "federal"
+eixo = { economico = -0.7, social = 0.0 }
+aprofundada = true
+verificado = true
+verificado_em = "2026-08-30"
+verificado_por = "curadoria aprofundada"
+nota = "Votação do substitutivo do PL 4133/2023. Sim = aprovar as diretrizes."
+votacoes = [{ id = "2382675-97", direcao = 1 }]
+
+[[tese]]
+id = "politica-consumo-sustentavel"
+texto = "O governo deve criar metas e incentivos nacionais para produção e consumo ambientalmente sustentáveis."
+simples = "Usar políticas públicas para reduzir desperdício e impacto ambiental de produtos."
+contexto = "O PL 3899/2012 instituiu a Política Nacional de Produção e Consumo Sustentáveis."
+esfera = "federal"
+eixo = { economico = -0.5, social = -0.5 }
+aprofundada = true
+verificado = true
+verificado_em = "2026-08-30"
+verificado_por = "curadoria aprofundada"
+nota = "Votação do substitutivo do PL 3899/2012. Sim = instituir a política."
+votacoes = [{ id = "545304-134", direcao = 1 }]
+
+[[tese]]
+id = "mercado-nacional-carbono"
+texto = "Empresas que emitem muitos gases de efeito estufa devem comprar créditos ou reduzir emissões em um mercado nacional de carbono."
+simples = "Criar limite e comércio de créditos para grandes emissores de carbono."
+contexto = "O PL 2148/2015 instituiu o Sistema Brasileiro de Comércio de Emissões."
+esfera = "federal"
+eixo = { economico = -0.4, social = -0.6 }
+aprofundada = true
+verificado = true
+verificado_em = "2026-08-30"
+verificado_por = "curadoria aprofundada"
+nota = "Votação do substitutivo global do PL 2148/2015. Sim = criar o SBCE."
+votacoes = [{ id = "1548579-126", direcao = 1 }]
+
+[[tese]]
+id = "saneamento-prestacao-regionalizada"
+texto = "O governo federal deve exigir prestação regionalizada de água e esgoto para liberar recursos públicos de saneamento."
+simples = "Condicionar dinheiro federal a municípios que organizem o saneamento em blocos regionais."
+contexto = "O PDL 98/2023 derrubou partes do decreto que flexibilizava essas exigências."
+esfera = "federal"
+eixo = { economico = 0.4, social = 0.0 }
+aprofundada = true
+verificado = true
+verificado_em = "2026-08-30"
+verificado_por = "curadoria aprofundada"
+nota = "Votação do substitutivo do PDL 98/2023. Sim = sustar a flexibilização e manter exigências da regionalização."
+votacoes = [{ id = "2355135-49", direcao = 1 }]
+
+[[tese]]
+id = "informar-direito-refugio-aeroportos"
+texto = "Portos e aeroportos devem informar, em cartazes e avisos sonoros, o direito de estrangeiros pedirem refúgio no Brasil."
+simples = "Avisar quem chega ao país que pode solicitar proteção como refugiado."
+contexto = "O PL 2459/2023 determina a divulgação desse direito nos pontos de entrada."
+esfera = "federal"
+eixo = { economico = 0.0, social = -0.7 }
+aprofundada = true
+verificado = true
+verificado_em = "2026-08-30"
+verificado_por = "curadoria aprofundada"
+nota = "Votação da urgência do PL 2459/2023. Sim = levar diretamente ao plenário a obrigação descrita no projeto."
+votacoes = [{ id = "2379378-9", direcao = 1 }]
+
+[[tese]]
+id = "politica-minerais-criticos"
+texto = "O governo deve definir minerais estratégicos e coordenar incentivos para ampliar sua extração e processamento no Brasil."
+simples = "Escolher minerais essenciais e apoiar uma cadeia nacional de mineração e indústria."
+contexto = "O PL 2780/2024 instituiu a Política Nacional de Minerais Críticos e Estratégicos."
+esfera = "federal"
+eixo = { economico = -0.3, social = 0.1 }
+aprofundada = true
+verificado = true
+verificado_em = "2026-08-30"
+verificado_por = "curadoria aprofundada"
+nota = "Votação de manutenção do texto do PL 2780/2024. Sim = instituir a política."
+votacoes = [{ id = "2447259-99", direcao = 1 }]

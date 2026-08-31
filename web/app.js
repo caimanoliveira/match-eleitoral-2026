@@ -1,6 +1,8 @@
 import { match, bussola, ranquear, PULOU } from "./match.js";
 import { cor, tinta, selo, iniciais, logosDisponiveis } from "./partidos.js";
 import { desenharColinha, compartilhar } from "./colinha.js";
+import { vagas, slotsVazios } from "./escolhas.js";
+import { codificarValor, decodificarValor, tesesDoModo } from "./questionario.js";
 
 const CARGOS = [
   ["presidente", "Presidente"],
@@ -17,15 +19,12 @@ const UFS = ("AC AL AM AP BA CE DF ES GO MA MG MS MT PA PB PE PI PR RJ RN RO RR 
 const FONTES = {
   "1": { rotulo: "Declarado pelo próprio candidato", inferida: false },
   "2": { rotulo: "Como votou no Congresso", inferida: false },
+  "3": { rotulo: "Proposta no plano de governo", inferida: false },
+  "4": { rotulo: "Declaração pública do candidato", inferida: false },
   "5": { rotulo: "Posição da bancada do partido", inferida: true },
 };
 
 const POR_PAGINA = 30;
-
-// Quantos o eleitor leva para a urna por cargo. Em 2026 renovam-se dois terços
-// do Senado: cada eleitor digita DOIS números para senador.
-const VAGAS = { senador: 2 };
-const vagas = (cargo) => VAGAS[cargo] || 1;
 
 const CHAVE_FAVORITOS = "colinha:favoritos";
 const CHAVE_UF = "colinha:uf";
@@ -86,8 +85,8 @@ const estado = {
   // Legenda seletora do mapa: cada partido e cada presidenciável pode ser
   // ligado/desligado. Começa com partidos desligados no celular.
   mapa: { ocultos: new Set(), partidosOff: matchMedia("(max-width: 480px)").matches },
-  // "completo" (34 afirmações → resultado → colinha), "rapido" (10, só
-  // resultado) ou "colinha" (sem quiz: busca por nome/número e fixa). Três
+  // "completo" (34 afirmações), "aprofundado" (60), "rapido" (10, só
+  // resultado) ou "colinha" (sem quiz: busca por nome/número e fixa). Quatro
   // produtos; o rápido nunca mostra colinha, a colinha nunca mostra percentual.
   modo: "completo",
 };
@@ -242,17 +241,18 @@ const RAPIDAS = 10;
 let rapidas = null;
 const tesesRapidas = () => {
   if (rapidas && rapidas.length && estado.teses.length) return rapidas;
+  const principais = tesesDoModo(estado.teses, "completo");
   const peso = (t, e) => Math.abs((t.eixo || {})[e] || 0);
-  const porEco = [...estado.teses].sort((a, b) => peso(b, "economico") - peso(a, "economico"));
-  const porSoc = [...estado.teses].sort((a, b) => peso(b, "social") - peso(a, "social"));
+  const porEco = [...principais].sort((a, b) => peso(b, "economico") - peso(a, "economico"));
+  const porSoc = [...principais].sort((a, b) => peso(b, "social") - peso(a, "social"));
   const sel = [];
-  for (let i = 0; sel.length < Math.min(RAPIDAS, estado.teses.length); i++) {
+  for (let i = 0; sel.length < Math.min(RAPIDAS, principais.length); i++) {
     for (const t of [porEco[i], porSoc[i]]) {
       if (t && !sel.includes(t) && sel.length < RAPIDAS) sel.push(t);
     }
   }
   // Na ordem de teses.json, para o quiz não parecer embaralhado.
-  rapidas = estado.teses.filter((t) => sel.includes(t));
+  rapidas = principais.filter((t) => sel.includes(t));
   return rapidas;
 };
 // Quem completa a partir do rápido continua com as 10 na frente (começa na
@@ -262,9 +262,10 @@ const tesesRapidas = () => {
 let continuouDoRapido = false;
 const tesesDoEleitor = () => {
   if (estado.modo === "rapido") return tesesRapidas();
-  if (!continuouDoRapido) return estado.teses;
+  const base = tesesDoModo(estado.teses, estado.modo);
+  if (!continuouDoRapido) return base;
   const r = tesesRapidas();
-  return [...r, ...estado.teses.filter((t) => !r.includes(t))];
+  return [...r, ...base.filter((t) => !r.includes(t))];
 };
 
 const respondidas = () =>
@@ -281,19 +282,19 @@ function salvarNaURL() {
       const r = estado.respostas[t.id];
       if (!r) return "x";                      // ainda não chegou nesta
       if (r.valor === PULOU) return "p";       // pulou de propósito
-      return { "1": "c", "0": "n", "-1": "d" }[String(r.valor)] + (r.importante ? "!" : "");
+      return codificarValor(r.valor) + (r.importante ? "!" : "");
     })
     .join("");
   history.replaceState(
-    null, "", `#/${{ rapido: "q", colinha: "c" }[estado.modo] || "r"}/${estado.versaoTeses}/${estado.uf}/${respostas}/${ids}`);
+    null, "", `#/${{ rapido: "q", colinha: "c", aprofundado: "a" }[estado.modo] || "r"}/${estado.versaoTeses}/${estado.uf}/${respostas}/${ids}`);
   if (respondidas() > 0) guardarMeu(location.hash);
 }
 
 function lerDaURL() {
-  const m = location.hash.match(/^#\/(r|q|c)\/([a-f0-9]{6})\/([A-Z]{2})\/([cndxp!]*)\/(.*)$/);
+  const m = location.hash.match(/^#\/(r|q|c|a)\/([a-f0-9]{6})\/([A-Z]{2})\/([cundvxp!]*)\/(.*)$/);
   if (!m) return false;
   const [, modoChar, versao, uf, respostas, ids] = m;
-  const modo = { q: "rapido", c: "colinha" }[modoChar] || "completo";
+  const modo = { q: "rapido", c: "colinha", a: "aprofundado" }[modoChar] || "completo";
 
   // As respostas são posicionais. Um link gerado com outro conjunto de teses
   // seria decodificado contra as perguntas erradas — e o eleitor veria um
@@ -317,7 +318,7 @@ function lerDaURL() {
       lidas[tese.id] = { valor: PULOU, importante: false };
       return;
     }
-    const valor = { c: 1, n: 0, d: -1 }[ch];
+    const valor = decodificarValor(ch);
     // Hash corrompida não vira resultado plausível: sem isto, `undefined`
     // escorria para o cálculo e todos os percentuais viravam NaN.
     if (valor === undefined) throw new RangeError("resposta inválida na URL");
@@ -340,7 +341,7 @@ function lerDaURL() {
   void primeiraSemResposta;
   Object.assign(estado, {
     uf, escolhas, respostas: lidas,
-    indice: semResposta === -1 ? estado.teses.length : semResposta,
+    indice: semResposta === -1 ? tesesDoEleitor().length : semResposta,
     busca: "", limite: POR_PAGINA, cargoAtivo: null,
   });
   // A colinha montada à mão não tem resposta nenhuma — e é válida assim.
@@ -503,7 +504,7 @@ function telaQuiz() {
     }
   };
 
-  node.querySelectorAll(".resp").forEach((btn) => {
+  node.querySelectorAll(".resp[data-valor]").forEach((btn) => {
     const valor = Number(btn.dataset.valor);
     const escolhida = anterior && anterior.valor === valor;
     if (escolhida) btn.classList.add("escolhida");
@@ -556,7 +557,7 @@ function telaQuiz() {
   // Consultar o documento, não `node`: mostrar() move os filhos do fragmento
   // para o DOM e o fragmento fica vazio — querySelector nele devolveria null.
   teclado((ev) => {
-    const porTecla = { 1: "1", 2: "0", 3: "-1" };
+    const porTecla = { 1: "1", 2: "0.5", 3: "0", 4: "-0.5", 5: "-1" };
     if (porTecla[ev.key]) {
       document.querySelector(`.resp[data-valor="${porTecla[ev.key]}"]`)?.click();
       return true;
@@ -566,7 +567,7 @@ function telaQuiz() {
       telaQuiz();
       return true;
     }
-    if (ev.key === "4" || ev.key === "ArrowRight") {
+    if (ev.key === "6" || ev.key === "ArrowRight") {
       document.getElementById("pular")?.click();
       return true;
     }
@@ -614,11 +615,12 @@ function telaResultado({ rolar = true } = {}) {
     cabecalho.textContent = "Seus candidatos — quiz rápido";
     const nota = node.getElementById("nota-parcial");
     nota.hidden = false;
-    nota.textContent = `Prévia com ${teses.length} afirmações: os percentuais ficam grosseiros e muitos candidatos empatam. Abra “ver quais” para conferir tema a tema, e responda as outras ${estado.teses.length - teses.length} para afinar.`;
+    const principais = tesesDoModo(estado.teses, "completo");
+    nota.textContent = `Prévia com ${teses.length} afirmações: os percentuais ficam grosseiros e muitos candidatos empatam. Abra “ver quais” para conferir tema a tema, e responda as outras ${principais.length - teses.length} para afinar.`;
     // O rápido não monta colinha: o convite é completar as 34 e montar.
     const completar = node.getElementById("completar");
     completar.hidden = false;
-    completar.textContent = `Responder as outras ${estado.teses.length - teses.length} e montar minha colinha`;
+    completar.textContent = `Responder questionário principal — mais ${principais.length - teses.length}`;
     completar.onclick = () => {
       estado.modo = "completo";
       continuouDoRapido = true;
@@ -628,6 +630,24 @@ function telaResultado({ rolar = true } = {}) {
       salvarNaURL();
       telaQuiz();
     };
+  }
+  if (!rapido && !montando && estado.modo === "completo" && faltam === 0) {
+    const completar = node.getElementById("completar");
+    const extras = estado.teses.length - teses.length;
+    completar.hidden = false;
+    completar.textContent = `Quero me aprofundar — responder mais ${extras}`;
+    completar.onclick = () => {
+      estado.modo = "aprofundado";
+      continuouDoRapido = false;
+      estado.indice = tesesDoEleitor().findIndex((t) => !estado.respostas[t.id]);
+      salvarNaURL();
+      telaQuiz();
+    };
+  }
+  if (estado.modo === "aprofundado" && faltam === 0) {
+    const nota = node.getElementById("nota-parcial");
+    nota.hidden = false;
+    nota.textContent = `Resultado aprofundado com ${teses.length} afirmações.`;
   }
   if (faltam > 0 && !rapido && !montando && respondidas() === 0) {
     cabecalho.textContent = "Você pulou todas";
@@ -1164,6 +1184,7 @@ function quebraPorTese(detalhe, sigla, candidato = {}) {
         `${b ? `Posição da bancada do ${sigla}` : fonte.rotulo}` +
         `${rompeu ? ` — <b>diferente da bancada do ${sigla}</b>` : ""}${detalheBancada}` +
         ((() => {
+          if (d.url) return ` · <a href="${d.url}" target="_blank" rel="noopener">ver fonte</a>`;
           const casa = d.fonte === "2" && votouNoSenado(d.tese) ? "senado" : "camara";
           const f = (d.tese.fontes || []).find((x) => x.casa === casa) || d.tese.fontes?.[0];
           return f ? ` · <a href="${f.url}" target="_blank" rel="noopener">ver a proposta na Câmara</a>` : "";
@@ -1660,24 +1681,28 @@ function telaColinha() {
   // Cargo carregado e ainda sem escolha entra como linha vazia, com atalho
   // para a aba certa: a colinha diz o que falta, não só o que já tem.
   for (const [cargo] of CARGOS) {
-    if (!estado.dados.porCargo[cargo] || idsEscolhidos(cargo).length) continue;
-    const linha = document.createElement("div");
-    linha.className = "linha-colinha vazia";
-    const txt = document.createElement("div");
-    txt.className = "txt";
-    txt.innerHTML = `<span class="cargo">${rotuloComUF(cargo)}</span><span class="nome">ainda não escolhido</span>`;
-    const escolher = document.createElement("button");
-    escolher.className = "secundario";
-    escolher.textContent = "Escolher";
-    escolher.setAttribute("aria-label", `Escolher ${rotuloComUF(cargo)}`);
-    escolher.onclick = () => {
-      estado.cargoAtivo = cargo;
-      estado.busca = "";
-      estado.limite = POR_PAGINA;
-      telaResultado();
-    };
-    linha.append(txt, escolher);
-    cartao.append(linha);
+    if (!estado.dados.porCargo[cargo]) continue;
+    for (const k of slotsVazios(cargo, idsEscolhidos(cargo))) {
+      const linha = document.createElement("div");
+      linha.className = "linha-colinha vazia";
+      const txt = document.createElement("div");
+      txt.className = "txt";
+      const rotulo = vagas(cargo) > 1
+        ? `${rotuloComUF(cargo)} · ${k + 1}º voto` : rotuloComUF(cargo);
+      txt.innerHTML = `<span class="cargo">${rotulo}</span><span class="nome">ainda não escolhido</span>`;
+      const escolher = document.createElement("button");
+      escolher.className = "secundario";
+      escolher.textContent = "Escolher";
+      escolher.setAttribute("aria-label", `Escolher ${rotulo}`);
+      escolher.onclick = () => {
+        estado.cargoAtivo = cargo;
+        estado.busca = "";
+        estado.limite = POR_PAGINA;
+        telaResultado();
+      };
+      linha.append(txt, escolher);
+      cartao.append(linha);
+    }
   }
 
   const aviso = node.getElementById("colinha-perdidos");
@@ -1776,7 +1801,7 @@ async function mandar(texto, url) {
 function telaLanding() {
   // Voltar do navegador ou o logo caíam aqui e apagavam 20 respostas sem
   // aviso. Com quiz vivo, a landing oferece continuar em vez de zerar.
-  const viva = estado.uf && respondidas() > 0 && estado.indice < estado.teses.length;
+  const viva = estado.uf && respondidas() > 0 && estado.indice < tesesDoEleitor().length;
   if (!viva) zerarSessao();
   const node = tpl("tpl-landing");
   if (viva) {
@@ -1852,7 +1877,7 @@ async function rotear() {
     if (!lerMeus().includes(location.hash)) return telaChegada();
     marcarMeu();
   }
-  if (estado.indice < estado.teses.length && respondidas() < 5) return telaQuiz();
+  if (estado.indice < tesesDoEleitor().length && respondidas() < 5) return telaQuiz();
   telaResultado();
 }
 

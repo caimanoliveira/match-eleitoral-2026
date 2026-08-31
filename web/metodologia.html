@@ -51,10 +51,11 @@
   </p>
 
   <p>
-    Há dois questionários. O <b>completo</b> tem as 34 afirmações e é o que
-    monta a colinha. O <b>rápido</b> usa as 10 de maior peso nos dois eixos do
-    mapa e só mostra o resultado; dele dá para continuar e responder as outras
-    24. A ordem é fixa e igual para todo mundo; nada muda por cargo ou estado.
+    Há três extensões do questionário. O <b>principal</b> tem 34 afirmações e
+    monta a colinha. O <b>rápido</b> usa 10 delas e permite continuar pelas
+    outras 24. Depois do resultado principal, o <b>aprofundado</b> acrescenta
+    26 afirmações, totalizando 60 e preservando tudo o que você já respondeu.
+    A ordem é fixa e igual para todo mundo; nada muda por cargo ou estado.
   </p>
 
   <h2>2. De onde vem a posição de cada candidato</h2>
@@ -66,8 +67,8 @@
     <tr><th>#</th><th>Fonte</th><th>Cobertura</th></tr>
     <tr><td>1</td><td>Questionário respondido pelo próprio candidato</td><td>em implantação</td></tr>
     <tr><td>2</td><td><b>Voto nominal do próprio candidato</b> na votação vinculada, na Câmara ou no Senado</td><td>611 candidatos: deputados e senadores em exercício</td></tr>
-    <tr><td>3</td><td>Proposta no plano de governo registrado no TSE</td><td>em implantação</td></tr>
-    <tr><td>4</td><td>Declaração pública, com link para a fonte</td><td>em implantação</td></tr>
+    <tr><td>3</td><td>Proposta no plano de governo registrado no TSE</td><td>quando houver posição explícita</td></tr>
+    <tr><td>4</td><td>Declaração pública, com link para a fonte</td><td>quando houver posição explícita</td></tr>
     <tr><td>5</td><td><b>Posição da bancada do partido</b> na mesma votação</td><td>quase todos os candidatos</td></tr>
   </table>
   <p>
@@ -102,7 +103,8 @@
   <h2>3. Como o percentual é calculado</h2>
   <p>
     Para cada tema comparável, medimos a distância entre a sua resposta e a posição do
-    candidato numa escala de três pontos (concorda, tanto faz, discorda). Marcar um
+    candidato numa escala de cinco pontos, de discordo a concordo, incluindo respostas
+    parciais. Marcar um
     tema como muito importante dobra o peso dele.
   </p>
   <p><code>match = 1 − Σ(peso × distância) ÷ Σ(peso × 2)</code></p>
@@ -147,7 +149,7 @@
   </p>
 
   <p>
-    O resultado também mostra um <b>radar por tema</b>: as 34 afirmações são
+    O resultado também mostra um <b>radar por tema</b>: as afirmações respondidas são
     agrupadas em seis temas (segurança e justiça; economia e impostos; trabalho
     e social; meio ambiente e terra; costumes e direitos; instituições) e, para
     cada um, o radar mostra em quantas afirmações respondidas você e o
@@ -186,7 +188,7 @@
       no arquivo do TSE até a Justiça Eleitoral julgar. Não escolhemos qual vale — o
       site marca esses casos em vermelho, na lista e na colinha, para você conferir no
       TSE antes de votar.</li>
-    <li>Cobrimos votações da Câmara dos Deputados e, em 4 dos 34 temas, do Senado. O
+    <li>Cobrimos votações da Câmara dos Deputados e, em 4 dos 60 temas, do Senado. O
       Senado renumera os projetos e vota o substitutivo inteiro em vez do destaque que
       virou afirmação na Câmara, então cada votação do Senado foi lida antes de entrar —
       numa delas o sentido é o inverso do da Câmara. Atuação em prefeitura ou assembleia

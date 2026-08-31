@@ -4,7 +4,7 @@
   "type": "module",
   "description": "Quiz que compara as posições do eleitor com as dos candidatos de 2026",
   "scripts": {
-    "test": "node --test tests/*.test.js && python3 tests/test_shards.py",
+    "test": "node --test tests/*.test.js && python3 tests/test_quiz.py && python3 tests/test_publicas.py && python3 tests/test_fotos.py && python3 tests/test_shards.py",
     "build": "python3 pipeline/build.py",
     "dev": "python3 -m http.server 8000"
   }
