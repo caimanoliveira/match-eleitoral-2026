@@ -109,6 +109,14 @@ export function ranquear(respostas, teses, candidatos, semente = 0) {
     });
 }
 
+/** Mantém o ranking honesto, mas não apaga da lista quem ainda não pôde ser comparado. */
+export function completarRanking(ranking, candidatos) {
+  const comparados = new Set(ranking.map((r) => r.candidato.id));
+  return [...ranking, ...candidatos
+    .filter((c) => !comparados.has(c.id))
+    .map((c) => ({ candidato: c, score: null, respondidas: 0, detalhe: [] }))];
+}
+
 function desempate(id, semente) {
   // xorshift sobre o id — estável entre recarregamentos, mas sem relação com
   // ordem alfabética ou número na urna.

@@ -1,7 +1,7 @@
 // node --test tests/
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { match, bussola, ranquear } from "../web/match.js";
+import { match, bussola, ranquear, completarRanking } from "../web/match.js";
 
 const TESES = [
   { id: "a", eixo: { economico: 1, social: 0 } },
@@ -87,6 +87,16 @@ test("ranking ordena por score e não devolve quem não dá para comparar", () =
   ];
   const r = ranquear(resp(1, 1, 1), TESES, cs);
   assert.deepEqual(r.map((x) => x.candidato.id), ["otimo", "meio", "ruim"]);
+});
+
+test("lista completa mantém candidatos sem dados abaixo do ranking", () => {
+  const cs = [
+    { id: "comparavel", pos: "+??", src: "5??" },
+    { id: "sem-dados", pos: "???", src: "???" },
+  ];
+  const lista = completarRanking(ranquear(resp(1), TESES, cs), cs);
+  assert.deepEqual(lista.map((x) => x.candidato.id), ["comparavel", "sem-dados"]);
+  assert.equal(lista[1].score, null);
 });
 
 test("empate não segue ordem alfabética nem de entrada", () => {

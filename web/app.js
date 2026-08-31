@@ -1,4 +1,4 @@
-import { match, bussola, ranquear, PULOU } from "./match.js";
+import { match, bussola, ranquear, completarRanking, PULOU } from "./match.js";
 import { cor, tinta, selo, iniciais, logosDisponiveis } from "./partidos.js";
 import { desenharColinha, compartilhar } from "./colinha.js";
 import { vagas, slotsVazios } from "./escolhas.js";
@@ -769,12 +769,14 @@ function telaResultado({ rolar = true } = {}) {
     }
     const universo = estado.dados.porCargo[estado.cargoAtivo] || [];
     // Montando à mão não há percentual: ordem alfabética, e o card sem barra.
+    const comparaveis = montando ? []
+      : ranquear(estado.soImportantes ? importantes() : estado.respostas, estado.teses, universo, SEMENTE);
     const completo = montando
       ? [...universo].sort((a, b) => a.n.localeCompare(b.n, "pt-BR"))
           .map((c) => ({ candidato: c, score: null, detalhe: [], respondidas: 0 }))
       // SEMPRE estado.teses: pos/src são posicionais sobre a lista completa.
       // Passar o subconjunto do quiz rápido desalinhava tudo (bug real).
-      : ranquear(estado.soImportantes ? importantes() : estado.respostas, estado.teses, universo, SEMENTE);
+      : completarRanking(comparaveis, universo);
     const nImp = Object.keys(importantes()).length;
     filtroImp.disabled = !nImp || montando;
     filtroImp.hidden = montando;
@@ -807,7 +809,7 @@ function telaResultado({ rolar = true } = {}) {
         porPartido[r.candidato.p] = (porPartido[r.candidato.p] || 0) + 1;
       }
     }
-    const empatados = completo.filter((r) => r.score === completo[0]?.score).length;
+    const empatados = comparaveis.filter((r) => r.score === comparaveis[0]?.score).length;
 
     avisos.replaceChildren();
     if (vagas(estado.cargoAtivo) > 1) {
@@ -872,7 +874,7 @@ function telaResultado({ rolar = true } = {}) {
     // culpava sempre a falta de dados — inclusive quando quem não respondeu
     // foi o eleitor.
     const semRegistroAlgum = universo.filter((c) => [...c.src].every((s) => s === "?")).length;
-    const semTeseEmComum = universo.length - completo.length - semRegistroAlgum;
+    const semTeseEmComum = universo.length - comparaveis.length - semRegistroAlgum;
     const contagens = [
       alvo
         ? `${visiveis.length} de ${universo.length} candidatos a ` +
@@ -1082,6 +1084,10 @@ function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPar
   det.innerHTML = `<summary>Concordam em ${concordam} de ${temas} temas respondidos — ver quais</summary>`;
   det.append(quebraPorTese(detalhe, candidato.p, candidato));
 
+  const semDados = document.createElement("p");
+  semDados.className = "origem-partido";
+  semDados.textContent = "Sem dados suficientes nas afirmações que você respondeu para calcular um percentual.";
+
   const marcarFixar = (b, on) => {
     b.className = on ? "fixar fixado" : "fixar";
     b.textContent = on ? "✓ Na colinha" : "+ Colinha";
@@ -1141,7 +1147,7 @@ function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPar
   };
   acoes.append(fixar, estrela);
 
-  li.append(topo, ...(origem ? [origem] : []), ...(score === null ? [] : [det]), responder);
+  li.append(topo, ...(score === null ? [semDados] : origem ? [origem, det] : [det]), responder);
   return li;
 }
 
