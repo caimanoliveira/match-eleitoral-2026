@@ -371,6 +371,13 @@ select {
 }
 .linha-colinha .nome { font-weight: 600; }
 
+.chapa-colinha { padding: .8rem; border-bottom: 1px solid var(--linha); font-size: .82rem; }
+.chapa-colinha summary { cursor: pointer; color: var(--suave); }
+.chapa-colinha p { color: var(--suave); line-height: 1.45; }
+.chapa-colinha ul { max-height: 18rem; overflow: auto; margin: .6rem 0 0; padding-left: 1.4rem; }
+.chapa-colinha li { padding: .25rem 0; }
+.chapa-colinha small { color: var(--suave); }
+
 .vazio { padding: 1.4rem; color: var(--suave); margin: 0; font-size: .95rem; }
 
 /* Sem caixa: é ressalva, não alerta. Emoldurar deixaria o aviso competindo

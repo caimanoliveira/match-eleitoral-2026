@@ -258,6 +258,8 @@ def main() -> None:
             "pos": "".join(pos),
             "src": "".join(src),
         }
+        if c["cargo"].startswith("deputado-") and c["federacao"]:
+            registro["f"] = c["federacao"]
         if refs:
             registro["ref"] = refs
         if (c["cargo"], c["uf"], c["numero"]) in disputados:

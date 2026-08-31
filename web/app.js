@@ -1,7 +1,7 @@
 import { match, bussola, ranquear, completarRanking, PULOU } from "./match.js";
 import { cor, tinta, selo, iniciais, logosDisponiveis } from "./partidos.js";
 import { desenharColinha, compartilhar } from "./colinha.js";
-import { vagas, slotsVazios } from "./escolhas.js";
+import { vagas, slotsVazios, candidatosDaChapa } from "./escolhas.js";
 import { codificarValor, decodificarValor, tesesDoModo } from "./questionario.js";
 
 const CARGOS = [
@@ -1623,7 +1623,7 @@ function telaColinha() {
        toque em <b>“+ Colinha”</b> nos candidatos que quiser levar.</p>`;
     compartilharBtn.disabled = true;
   } else {
-    escolhidos.forEach(({ rotulo, candidato }) => {
+    escolhidos.forEach(({ cargo, rotulo, candidato }) => {
       const linha = document.createElement("div");
       linha.className = "linha-colinha";
 
@@ -1648,6 +1648,18 @@ function telaColinha() {
 
       linha.append(av, txt, selo(candidato.p, candidato.pn, 34));
       cartao.append(linha);
+
+      if (cargo.startsWith("deputado-")) {
+        const outros = candidatosDaChapa(candidato, estado.dados.porCargo[cargo] || []);
+        const chapa = candidato.f || candidato.p;
+        const detalhes = document.createElement("details");
+        detalhes.className = "chapa-colinha";
+        detalhes.innerHTML =
+          `<summary>Seu voto também conta para a chapa <b>${esc(chapa)}</b>, com ${outros.length + 1} candidatos — ver quem</summary>` +
+          `<p>O voto ajuda a chapa a conquistar cadeiras; quem assume depende dos votos individuais.</p>` +
+          `<ul>${outros.map((c) => `<li><b>${esc(c.num)}</b> ${esc(c.n)} <small>${esc(c.p)}</small></li>`).join("")}</ul>`;
+        cartao.append(detalhes);
+      }
     });
 
     // A colinha existe para o eleitor digitar o número. Se o número está em
