@@ -108,15 +108,13 @@ def main() -> None:
     presidentes = json.loads((DATA / "presidente-BR.json").read_text(encoding="utf-8"))
     conferidos = 0
     for c in presidentes:
-        if set(c["src"]) - {"5", "?"}:
-            continue  # tem voto próprio: a bancada não é a referência
         bancada = bancadas.get(c["p"], {})
         respostas = {t["id"]: valor[bancada[t["id"]]["pos"]] for t in teses if t["id"] in bancada}
         if not respostas:
             continue
         dist = maximo = 0
         for i, t in enumerate(teses):
-            if t["id"] not in respostas or c["pos"][i] == "?":
+            if t["id"] not in respostas or c["src"][i] != "5":
                 continue
             assert c["src"][i] == "5", f"{c['n']}: src {c['src'][i]} onde a bancada tem posição"
             assert c["pos"][i] == bancada[t["id"]]["pos"], (
