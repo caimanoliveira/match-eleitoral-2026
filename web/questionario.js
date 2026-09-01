@@ -5,3 +5,7 @@ export const decodificarValor = (codigo) =>
   [...CODIGOS].find(([, c]) => c === codigo)?.[0];
 export const tesesDoModo = (teses, modo) =>
   modo === "aprofundado" ? teses : teses.filter((t) => !t.aprofundada);
+
+export const modoInicial = (modo) => modo === "completo" ? "rapido" : modo;
+export const rotuloCompatibilidade = (score, temas) =>
+  `${Math.round(score * 100)}% em ${temas} ${temas === 1 ? "tema" : "temas"}`;

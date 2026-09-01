@@ -201,8 +201,9 @@ select {
 }
 .importante small { color: var(--suave); opacity: .8; }
 
-.navegacao { display: flex; gap: .6rem; margin-top: 1rem; }
+.navegacao { display: flex; gap: .6rem; position: sticky; top: 0; z-index: 3; padding: .5rem 0; background: var(--papel); }
 .navegacao button { flex: 1; }
+.quiz-salvo { margin: 0 0 1rem; color: var(--suave); font-size: .78rem; }
 
 /* ---------------------------------------------------------------- resultado */
 
@@ -310,7 +311,11 @@ select {
 .score { grid-column: 1 / -1; display: flex; align-items: center; gap: .6rem; margin-top: .6rem; }
 .score-barra { flex: 1; height: 7px; background: var(--campo); border-radius: 99px; overflow: hidden; }
 .score-barra i { display: block; height: 100%; background: var(--acento); }
-.score b { font-variant-numeric: tabular-nums; font-size: .95rem; min-width: 3ch; text-align: right; }
+.score b { font-variant-numeric: tabular-nums; font-size: .82rem; min-width: 8.5rem; text-align: right; }
+
+.explorar { margin: 1.2rem 0; border-top: 1px solid var(--linha); border-bottom: 1px solid var(--linha); padding: 1rem 0; }
+.explorar > summary { cursor: pointer; font-weight: 600; }
+.explorar[open] > summary { margin-bottom: 1rem; }
 
 .quebra { margin-top: .7rem; }
 .quebra summary { font-size: .86rem; color: var(--suave); cursor: pointer; }
