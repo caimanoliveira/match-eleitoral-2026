@@ -56,7 +56,7 @@
             <a class="primario cta" href="#/comecar">Descobrir meus candidatos</a>
             <a class="cta-secundario" href="#/colinha">Montar minha colinha</a>
           </div>
-          <p class="cta-nota">34 afirmações, uns 5 minutos · versão rápida de 10 na tela seguinte · sem cadastro · suas respostas não saem do aparelho</p>
+          <p class="cta-nota">10 afirmações, cerca de 2 minutos · depois você pode aprofundar para 34 ou 60 · sem cadastro</p>
         </div>
         <div class="hero-mapa-caixa">
           <div class="hero-mapa" id="hero-mapa" aria-hidden="true"></div>
@@ -140,7 +140,7 @@
     </label>
 
     <button class="primario" id="comecar">Começar</button>
-    <button class="secundario" id="comecar-rapido" hidden>Prefiro o quiz rápido: 10 afirmações, 2 minutos</button>
+    <button class="secundario" id="comecar-completo" hidden>Prefiro o questionário principal: 34 afirmações</button>
 
     <p class="aviso">
       Suas respostas não saem deste aparelho: o cálculo roda no seu navegador e nada
@@ -153,6 +153,11 @@
   <section class="tela quiz">
     <div class="progresso"><div class="barra"></div></div>
     <p class="contador"></p>
+    <div class="navegacao">
+      <button class="secundario" id="voltar">← Pergunta anterior</button>
+      <button class="ver-parcial" id="ver-parcial" hidden></button>
+    </div>
+    <p class="quiz-salvo">Respostas salvas neste aparelho.</p>
 
     <h2 class="tese"></h2>
     <p class="simples"></p>
@@ -176,12 +181,6 @@
       <button class="resp naosei" id="pular">Não sei / pular</button>
     </div>
 
-    <div class="navegacao">
-      <button class="secundario" id="voltar">Voltar</button>
-    </div>
-
-    <button class="ver-parcial" id="ver-parcial" hidden></button>
-
     <p class="dica-teclado" aria-hidden="true">
       No teclado: <kbd>1</kbd> concordo · <kbd>2</kbd> concordo em parte · <kbd>3</kbd> neutro ·
       <kbd>4</kbd> discordo em parte · <kbd>5</kbd> discordo · <kbd>6</kbd> não sei · <kbd>←</kbd> voltar
@@ -195,7 +194,7 @@
     <p class="nota-parcial" id="nota-parcial" hidden></p>
     <button class="secundario continuar" id="continuar" hidden></button>
     <p class="falha-carga" id="falha-carga" hidden></p>
-    <div id="bussola"></div>
+    <h2 id="ranking-titulo">Ranking de candidatos</h2>
     <div class="abas-caixa"><nav class="abas" id="abas"></nav></div>
 
     <div class="busca-linha">
@@ -213,6 +212,10 @@
     <p class="legenda-herdada" id="legenda-herdada" hidden>≈ = posição herdada da bancada do partido</p>
     <ol class="lista" id="lista"></ol>
     <button class="secundario mais" id="mais" hidden>Mostrar mais 30</button>
+    <details class="explorar">
+      <summary>Explorar mapa e radar por tema</summary>
+      <div id="bussola"></div>
+    </details>
     <p class="aviso" id="rodape-fonte"></p>
     <button class="primario" id="ver-colinha">Ver minha colinha</button>
     <button class="primario" id="completar" hidden></button>

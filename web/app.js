@@ -2,7 +2,7 @@ import { match, bussola, ranquear, completarRanking, PULOU } from "./match.js";
 import { cor, tinta, selo, iniciais, logosDisponiveis } from "./partidos.js";
 import { desenharColinha, compartilhar } from "./colinha.js";
 import { vagas, slotsVazios, candidatosDaChapa } from "./escolhas.js";
-import { codificarValor, decodificarValor, tesesDoModo } from "./questionario.js";
+import { codificarValor, decodificarValor, tesesDoModo, modoInicial, rotuloCompatibilidade } from "./questionario.js";
 
 const CARGOS = [
   ["presidente", "Presidente"],
@@ -365,7 +365,7 @@ function zerarSessao() {
 
 function telaInicio(motivo = "", modo = "completo") {
   zerarSessao();
-  estado.modo = modo;
+  estado.modo = modoInicial(modo);
   const node = tpl("tpl-inicio");
   const sel = node.getElementById("uf");
   sel.append(new Option("Selecione…", ""));
@@ -383,19 +383,21 @@ function telaInicio(motivo = "", modo = "completo") {
     erro.textContent = "";
     sel.removeAttribute("aria-invalid");
   };
-  // O rápido é a opção B, oferecida aqui — não um CTA próprio na landing.
-  const rapidoBtn = node.getElementById("comecar-rapido");
+  const completoBtn = node.getElementById("comecar-completo");
   if (modo === "completo") {
-    rapidoBtn.hidden = false;
-    rapidoBtn.onclick = () => {
+    completoBtn.hidden = false;
+    completoBtn.onclick = () => {
       // Só troca o modo depois de validar: antes, um toque sem UF deixava
-      // "rapido" gravado e o "Começar" seguinte abria o quiz errado.
+      // O modo escolhido precisa ser definido antes de reutilizar o fluxo principal.
       if (!sel.value) { document.getElementById("comecar").click(); return; }
-      estado.modo = "rapido";
+      estado.modo = "completo";
       document.getElementById("comecar").click();
     };
   }
-  node.getElementById("comecar").onclick = async (ev) => {
+  const comecar = node.getElementById("comecar");
+  if (estado.modo === "rapido") comecar.textContent = "Começar — 10 afirmações, 2 minutos";
+  comecar.onclick = async (ev) => {
+    const rotulo = ev.target.textContent;
     if (!sel.value) {
       // Antes o botão só dava focus() e nada aparecia: o eleitor tocava,
       // nada acontecia, e ele não tinha como saber por quê.
@@ -415,7 +417,7 @@ function telaInicio(motivo = "", modo = "completo") {
       erro.textContent =
         "Não consegui carregar os candidatos. Verifique sua conexão e tente de novo.";
       ev.target.disabled = false;
-      ev.target.textContent = "Começar";
+      ev.target.textContent = rotulo;
       return;
     }
     estado.indice = 0;
@@ -756,6 +758,8 @@ function telaResultado({ rolar = true } = {}) {
   const legendaHerdada = node.getElementById("legenda-herdada");
 
   function renderLista() {
+    node.getElementById("ranking-titulo").textContent =
+      `Ranking para ${rotuloComUF(estado.cargoAtivo)}`;
     if (!estado.cargoAtivo) {
       // Sem cargo carregado não há o que listar, e montar a frase produzia
       // "0 candidatos a null — RJ" na cara do eleitor.
@@ -1018,7 +1022,7 @@ function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPar
   barra.className = "score";
   barra.innerHTML =
     `<div class="score-barra"><i style="width:${pct(score ?? 0)}"></i></div>` +
-    `<b>${pct(score ?? 0)}</b>`;
+    `<b>${score === null ? "" : rotuloCompatibilidade(score, temas)}</b>`;
 
   topo.append(avatar, nome, selo(candidato.p, candidato.pn));
   if (score !== null) topo.append(barra);
@@ -1081,7 +1085,7 @@ function itemCandidato({ candidato, score, detalhe, respondidas: temas }, porPar
   const det = document.createElement("details");
   det.className = "quebra";
   const concordam = detalhe.filter((d) => d.concorda).length;
-  det.innerHTML = `<summary>Concordam em ${concordam} de ${temas} temas respondidos — ver quais</summary>`;
+  det.innerHTML = `<summary>Concordam em ${concordam} de ${temas} ${temas === 1 ? "tema respondido" : "temas respondidos"} — ver quais</summary>`;
   det.append(quebraPorTese(detalhe, candidato.p, candidato));
 
   const semDados = document.createElement("p");
